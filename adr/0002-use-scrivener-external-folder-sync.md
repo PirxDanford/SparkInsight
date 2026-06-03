@@ -30,3 +30,5 @@ This approach leverages Scrivener's native functionality, minimizing custom tool
 
 - Scrivener documentation: https://www.literatureandlatte.com/scrivener/user-manual/18.0_syncing
 - RFC 0003: Scrivener export proof of concept
+- ADR 0006: Adopt Test-Driven Development (implement sync validation with TDD)
+- ADR 0007: Apply SOLID Principles (sync component design)
