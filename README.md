@@ -1,18 +1,47 @@
 # SparkInsight
 
-A simple tool for sharing content with reviewers, collecting feedback, and letting authors resolve it their way.
+SparkInsight is a lightweight review workflow platform skeleton built for Composer-based deployment and local development.
 
-## Installation
+## What is included
 
-[Add installation instructions here once the project setup is decided.]
+- Slim 4 web application structure
+- GitHub and Google OAuth login support
+- Local demo login for development
+- PSR-4 autoloading and Composer readiness
 
-## Usage
+## Local development
 
-[Add usage instructions here.]
+1. Copy environment variables:
+   ```bash
+   cp .env.example .env
+   ```
+2. Set GitHub and/or Google OAuth credentials in `.env`.
+3. Install dependencies:
+   ```bash
+   composer install
+   ```
+4. Start the app:
+   ```bash
+   composer start
+   ```
+5. Visit `http://localhost:8000`
 
-## Contributing
+## OAuth providers
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to contribute.
+This prototype supports:
+
+- GitHub
+- Google
+
+LinkedIn is intentionally hidden in the UI and reserved for future implementation.
+
+## Composer deployment
+
+The project is designed to be installed and updated via Composer. Once published to GitHub, the repository can be used as a Composer repository target for webserver deployments.
+
+## Documentation
+
+See `docs/Setup.md` for more details on environment setup and running the app.
 
 ## License
 
