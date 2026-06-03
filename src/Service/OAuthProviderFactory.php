@@ -1,0 +1,201 @@
+<?php
+
+declare(strict_types=1);
+
+namespace SparkInsight\Service;
+
+use GuzzleHttp\Client as GuzzleClient;
+use League\OAuth2\Client\Provider\GenericProvider;
+use League\OAuth2\Client\Token\AccessToken;
+use SparkInsight\Config\Config;
+
+final class OAuthProviderFactory implements OAuthProviderFactoryInterface
+{
+    private Config $config;
+
+    public function __construct(Config $config)
+    {
+        $this->config = $config;
+    }
+
+    public function createProvider(string $provider): GenericProvider
+    {
+        $providerConfig = $this->config->getProviderConfig($provider);
+        if (empty($providerConfig['client_id']) || empty($providerConfig['client_secret'])) {
+            throw new \InvalidArgumentException(sprintf('OAuth provider "%s" is not configured.', $provider));
+        }
+
+        $options = [
+            'clientId' => $providerConfig['client_id'],
+            'clientSecret' => $providerConfig['client_secret'],
+            'redirectUri' => $providerConfig['redirect_uri'],
+            'urlAuthorize' => $this->getAuthorizeUrl($provider),
+            'urlAccessToken' => $this->getAccessTokenUrl($provider),
+            'urlResourceOwnerDetails' => $this->getResourceOwnerUrl($provider),
+            'scopes' => explode(' ', $providerConfig['scope']),
+        ];
+
+        // Create HTTP client with SSL verification disabled in development
+        $httpClientOptions = [];
+        if ($this->config->get('app_env') === 'development') {
+            $httpClientOptions['verify'] = false;
+        }
+        $httpClient = new GuzzleClient($httpClientOptions);
+
+        return new GenericProvider($options, ['httpClient' => $httpClient]);
+    }
+
+    public function getUserProfile(string $provider, AccessToken $token): array
+    {
+        $providerName = strtolower($provider);
+
+        if ($providerName === 'google') {
+            $resourceOwner = $this->createProvider($providerName)->getResourceOwner($token);
+            $data = $resourceOwner->toArray();
+
+            return [
+                'provider' => 'google',
+                'provider_id' => $data['sub'] ?? $data['id'] ?? '',
+                'name' => trim($data['name'] ?? ($data['given_name'] . ' ' . ($data['family_name'] ?? ''))),
+                'email' => $data['email'] ?? '',
+                'avatar' => $data['picture'] ?? null,
+            ];
+        }
+
+        if ($providerName === 'github') {
+            $resourceOwner = $this->createProvider($providerName)->getResourceOwner($token);
+            $profile = $resourceOwner->toArray();
+            $email = $profile['email'] ?? '';
+
+            if (empty($email)) {
+                $email = $this->fetchGitHubEmail($token);
+            }
+
+            return [
+                'provider' => 'github',
+                'provider_id' => (string) ($profile['id'] ?? ''),
+                'name' => trim((string) ($profile['name'] ?? $profile['login'] ?? 'GitHub user')),
+                'email' => $email,
+                'avatar' => $profile['avatar_url'] ?? null,
+            ];
+        }
+
+        if ($providerName === 'linkedin') {
+            $resourceOwner = $this->createProvider($providerName)->getResourceOwner($token);
+            $profile = $resourceOwner->toArray();
+            $email = $this->fetchLinkedInEmail($token);
+            $name = trim(sprintf('%s %s', $profile['localizedFirstName'] ?? '', $profile['localizedLastName'] ?? ''));
+
+            return [
+                'provider' => 'linkedin',
+                'provider_id' => (string) ($profile['id'] ?? ''),
+                'name' => $name !== '' ? $name : 'LinkedIn user',
+                'email' => $email,
+                'avatar' => null,
+            ];
+        }
+
+        if ($providerName === 'facebook') {
+            $resourceOwner = $this->createProvider($providerName)->getResourceOwner($token);
+            $profile = $resourceOwner->toArray();
+            $picture = $profile['picture']['data']['url'] ?? null;
+
+            return [
+                'provider' => 'facebook',
+                'provider_id' => (string) ($profile['id'] ?? ''),
+                'name' => trim($profile['name'] ?? 'Facebook user'),
+                'email' => $profile['email'] ?? '',
+                'avatar' => $picture,
+            ];
+        }
+
+        throw new \InvalidArgumentException(sprintf('Provider "%s" is not supported for profile retrieval.', $provider));
+    }
+
+    public function getSupportedProviders(): array
+    {
+        $providers = $this->config->getActiveProviders();
+        return array_intersect_key($providers, array_flip(['github', 'google', 'linkedin', 'facebook']));
+    }
+
+    public function getProviderScope(string $provider): string
+    {
+        return $this->config->getProviderConfig($provider)['scope'] ?? '';
+    }
+
+    private function getAuthorizeUrl(string $provider): string
+    {
+        return match (strtolower($provider)) {
+            'github' => 'https://github.com/login/oauth/authorize',
+            'google' => 'https://accounts.google.com/o/oauth2/v2/auth',
+            'linkedin' => 'https://www.linkedin.com/oauth/v2/authorization',
+            'facebook' => 'https://www.facebook.com/v16.0/dialog/oauth',
+            default => throw new \InvalidArgumentException('Unsupported provider.'),
+        };
+    }
+
+    private function getAccessTokenUrl(string $provider): string
+    {
+        return match (strtolower($provider)) {
+            'github' => 'https://github.com/login/oauth/access_token',
+            'google' => 'https://oauth2.googleapis.com/token',
+            'linkedin' => 'https://www.linkedin.com/oauth/v2/accessToken',
+            'facebook' => 'https://graph.facebook.com/v16.0/oauth/access_token',
+            default => throw new \InvalidArgumentException('Unsupported provider.'),
+        };
+    }
+
+    private function getResourceOwnerUrl(string $provider): string
+    {
+        return match (strtolower($provider)) {
+            'github' => 'https://api.github.com/user',
+            'google' => 'https://openidconnect.googleapis.com/v1/userinfo',
+            'linkedin' => 'https://api.linkedin.com/v2/me',
+            'facebook' => 'https://graph.facebook.com/me?fields=id,name,email,picture',
+            default => throw new \InvalidArgumentException('Unsupported provider.'),
+        };
+    }
+
+    private function fetchGitHubEmail(AccessToken $token): string
+    {
+        $request = $this->createProvider('github')->getAuthenticatedRequest(
+            'GET',
+            'https://api.github.com/user/emails',
+            $token,
+        );
+
+        $response = $this->createProvider('github')->getParsedResponse($request);
+        if (!is_array($response)) {
+            return '';
+        }
+
+        foreach ($response as $item) {
+            if (!empty($item['primary']) && !empty($item['verified'])) {
+                return $item['email'] ?? '';
+            }
+        }
+
+        return $response[0]['email'] ?? '';
+    }
+
+    private function fetchLinkedInEmail(AccessToken $token): string
+    {
+        $request = $this->createProvider('linkedin')->getAuthenticatedRequest(
+            'GET',
+            'https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))',
+            $token,
+        );
+
+        $response = $this->createProvider('linkedin')->getParsedResponse($request);
+        if (!is_array($response)) {
+            return '';
+        }
+
+        $element = $response['elements'][0] ?? null;
+        if (!is_array($element)) {
+            return '';
+        }
+
+        return $element['handle~']['emailAddress'] ?? '';
+    }
+}
