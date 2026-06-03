@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <title>Dashboard for C:\Projekte\SparkInsight\src</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="_css/bootstrap.min.css?v=10.1.16" rel="stylesheet" type="text/css">
+  <link href="_css/nv.d3.min.css?v=10.1.16" rel="stylesheet" type="text/css">
+  <link href="_css/style.css?v=10.1.16" rel="stylesheet" type="text/css">
+  <link href="_css/custom.css" rel="stylesheet" type="text/css">
+ </head>
+ <body>
+  <header>
+   <div class="container-fluid">
+    <div class="row">
+     <div class="col-md-12">
+      <nav aria-label="breadcrumb">
+       <ol class="breadcrumb">
+         <li class="breadcrumb-item"><a href="index.html">C:\Projekte\SparkInsight\src</a></li>
+         <li class="breadcrumb-item active">(Dashboard)</li>
+
+       </ol>
+      </nav>
+     </div>
+    </div>
+   </div>
+  </header>
+  <div class="container-fluid">
+   <div class="row">
+    <div class="col-md-12">
+     <h2>Classes</h2>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Coverage Distribution</h3>
+     <div id="classCoverageDistribution" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Complexity</h3>
+     <div id="classComplexity" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Insufficient Coverage</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Class</th>
+         <th class="text-right">Coverage</th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="Command/InitializeDbCommand.php.html#14">SparkInsight\Command\InitializeDbCommand</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Command/GenerateInvitationCommand.php.html#16">SparkInsight\Command\GenerateInvitationCommand</a></td><td class="text-right">42%</td></tr>
+       <tr><td><a href="Service/OAuthProviderFactory.php.html#12">SparkInsight\Service\OAuthProviderFactory</a></td><td class="text-right">49%</td></tr>
+       <tr><td><a href="Controller/AuthController.php.html#16">SparkInsight\Controller\AuthController</a></td><td class="text-right">66%</td></tr>
+       <tr><td><a href="Command/CheckEnvironmentCommand.php.html#15">SparkInsight\Command\CheckEnvironmentCommand</a></td><td class="text-right">75%</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Project Risks</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Class</th>
+         <th class="text-right"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="Service/OAuthProviderFactory.php.html#12">SparkInsight\Service\OAuthProviderFactory</a></td><td class="text-right">66</td></tr>
+       <tr><td><a href="Controller/AuthController.php.html#16">SparkInsight\Controller\AuthController</a></td><td class="text-right">59</td></tr>
+       <tr><td><a href="Command/InitializeDbCommand.php.html#14">SparkInsight\Command\InitializeDbCommand</a></td><td class="text-right">56</td></tr>
+       <tr><td><a href="Command/GenerateInvitationCommand.php.html#16">SparkInsight\Command\GenerateInvitationCommand</a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="Command/CheckEnvironmentCommand.php.html#15">SparkInsight\Command\CheckEnvironmentCommand</a></td><td class="text-right">9</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-12">
+     <h2>Methods</h2>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Coverage Distribution</h3>
+     <div id="methodCoverageDistribution" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Complexity</h3>
+     <div id="methodComplexity" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Insufficient Coverage</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Method</th>
+         <th class="text-right">Coverage</th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="Command/InitializeDbCommand.php.html#16"><abbr title="SparkInsight\Command\InitializeDbCommand::configure">configure</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Command/InitializeDbCommand.php.html#22"><abbr title="SparkInsight\Command\InitializeDbCommand::execute">execute</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Service/OAuthProviderFactory.php.html#48"><abbr title="SparkInsight\Service\OAuthProviderFactory::getUserProfile">getUserProfile</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Service/OAuthProviderFactory.php.html#124"><abbr title="SparkInsight\Service\OAuthProviderFactory::fetchGitHubEmail">fetchGitHubEmail</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Controller/AuthController.php.html#116"><abbr title="SparkInsight\Controller\AuthController::callback">callback</abbr></a></td><td class="text-right">23%</td></tr>
+       <tr><td><a href="Command/GenerateInvitationCommand.php.html#29"><abbr title="SparkInsight\Command\GenerateInvitationCommand::execute">execute</abbr></a></td><td class="text-right">33%</td></tr>
+       <tr><td><a href="Command/CheckEnvironmentCommand.php.html#23"><abbr title="SparkInsight\Command\CheckEnvironmentCommand::execute">execute</abbr></a></td><td class="text-right">73%</td></tr>
+       <tr><td><a href="Controller/AdminController.php.html#92"><abbr title="SparkInsight\Controller\AdminController::updateUserRoles">updateUserRoles</abbr></a></td><td class="text-right">80%</td></tr>
+       <tr><td><a href="Controller/AuthController.php.html#73"><abbr title="SparkInsight\Controller\AuthController::login">login</abbr></a></td><td class="text-right">87%</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Project Risks</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Method</th>
+         <th class="text-right"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="Controller/AuthController.php.html#116"><abbr title="SparkInsight\Controller\AuthController::callback">callback</abbr></a></td><td class="text-right">76</td></tr>
+       <tr><td><a href="Command/InitializeDbCommand.php.html#22"><abbr title="SparkInsight\Command\InitializeDbCommand::execute">execute</abbr></a></td><td class="text-right">42</td></tr>
+       <tr><td><a href="Service/OAuthProviderFactory.php.html#124"><abbr title="SparkInsight\Service\OAuthProviderFactory::fetchGitHubEmail">fetchGitHubEmail</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="Command/GenerateInvitationCommand.php.html#29"><abbr title="SparkInsight\Command\GenerateInvitationCommand::execute">execute</abbr></a></td><td class="text-right">21</td></tr>
+       <tr><td><a href="Service/OAuthProviderFactory.php.html#48"><abbr title="SparkInsight\Service\OAuthProviderFactory::getUserProfile">getUserProfile</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="Command/CheckEnvironmentCommand.php.html#23"><abbr title="SparkInsight\Command\CheckEnvironmentCommand::execute">execute</abbr></a></td><td class="text-right">7</td></tr>
+       <tr><td><a href="Controller/AuthController.php.html#73"><abbr title="SparkInsight\Controller\AuthController::login">login</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Controller/AdminController.php.html#92"><abbr title="SparkInsight\Controller\AdminController::updateUserRoles">updateUserRoles</abbr></a></td><td class="text-right">5</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <footer>
+    <hr/>
+    <p>
+     <small>Generated by <a href="https://github.com/sebastianbergmann/php-code-coverage" target="_top">php-code-coverage 10.1.16</a> using <a href="https://www.php.net/" target="_top">PHP 8.5.6</a> and <a href="https://phpunit.de/">PHPUnit 10.5.63</a> at Tue May 19 22:07:44 UTC 2026.</small>
+    </p>
+   </footer>
+  </div>
+  <script src="_js/jquery.min.js?v=10.1.16" type="text/javascript"></script>
+  <script src="_js/d3.min.js?v=10.1.16" type="text/javascript"></script>
+  <script src="_js/nv.d3.min.js?v=10.1.16" type="text/javascript"></script>
+  <script type="text/javascript">
+$(document).ready(function() {
+  nv.addGraph(function() {
+    var chart = nv.models.multiBarChart();
+    chart.tooltips(false)
+      .showControls(false)
+      .showLegend(false)
+      .reduceXTicks(false)
+      .staggerLabels(true)
+      .yAxis.tickFormat(d3.format('d'));
+
+    d3.select('#classCoverageDistribution svg')
+      .datum(getCoverageDistributionData([1,0,0,0,0,2,0,1,1,0,1,7], "Class Coverage"))
+      .transition().duration(500).call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  nv.addGraph(function() {
+    var chart = nv.models.multiBarChart();
+    chart.tooltips(false)
+      .showControls(false)
+      .showLegend(false)
+      .reduceXTicks(false)
+      .staggerLabels(true)
+      .yAxis.tickFormat(d3.format('d'));
+
+    d3.select('#methodCoverageDistribution svg')
+      .datum(getCoverageDistributionData([4,0,0,1,1,0,0,0,1,2,1,55], "Method Coverage"))
+      .transition().duration(500).call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  function getCoverageDistributionData(data, label) {
+    var labels = [
+      '0%',
+      '0-10%',
+      '10-20%',
+      '20-30%',
+      '30-40%',
+      '40-50%',
+      '50-60%',
+      '60-70%',
+      '70-80%',
+      '80-90%',
+      '90-100%',
+      '100%'
+    ];
+    var values = [];
+    $.each(labels, function(key) {
+      values.push({x: labels[key], y: data[key]});
+    });
+
+    return [
+      {
+        key: label,
+        values: values,
+        color: "#4572A7"
+      }
+    ];
+  }
+  nv.addGraph(function() {
+    var chart = nv.models.scatterChart()
+      .showDistX(true)
+      .showDistY(true)
+      .showLegend(false)
+      .forceX([0, 100]);
+    chart.tooltipContent(function(graph) {
+      return '<p>' + graph.point.class + '</p>';
+    });
+
+    chart.xAxis.axisLabel('Code Coverage (in percent)');
+    chart.yAxis.axisLabel('Cyclomatic Complexity');
+
+    d3.select('#classComplexity svg')
+      .datum(getComplexityData([[75,8,"<a href=\"Command\/CheckEnvironmentCommand.php.html#15\">SparkInsight\\Command\\CheckEnvironmentCommand<\/a>"],[42.30769230769231,8,"<a href=\"Command\/GenerateInvitationCommand.php.html#16\">SparkInsight\\Command\\GenerateInvitationCommand<\/a>"],[0,7,"<a href=\"Command\/InitializeDbCommand.php.html#14\">SparkInsight\\Command\\InitializeDbCommand<\/a>"],[100,7,"<a href=\"Config\/Config.php.html#9\">SparkInsight\\Config\\Config<\/a>"],[96.29629629629629,19,"<a href=\"Controller\/AdminController.php.html#14\">SparkInsight\\Controller\\AdminController<\/a>"],[66.94214876033058,29,"<a href=\"Controller\/AuthController.php.html#16\">SparkInsight\\Controller\\AuthController<\/a>"],[100,3,"<a href=\"Controller\/DashboardController.php.html#12\">SparkInsight\\Controller\\DashboardController<\/a>"],[100,2,"<a href=\"Controller\/HomeController.php.html#14\">SparkInsight\\Controller\\HomeController<\/a>"],[100,5,"<a href=\"Service\/InvitationService.php.html#9\">SparkInsight\\Service\\InvitationService<\/a>"],[100,7,"<a href=\"Service\/MigrationRunner.php.html#10\">SparkInsight\\Service\\MigrationRunner<\/a>"],[49.31506849315068,19,"<a href=\"Service\/OAuthProviderFactory.php.html#12\">SparkInsight\\Service\\OAuthProviderFactory<\/a>"],[100,24,"<a href=\"Service\/UserService.php.html#9\">SparkInsight\\Service\\UserService<\/a>"],[100,11,"<a href=\"Service\/UserSession.php.html#7\">SparkInsight\\Service\\UserSession<\/a>"]], 'Class Complexity'))
+      .transition()
+      .duration(500)
+      .call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  nv.addGraph(function() {
+    var chart = nv.models.scatterChart()
+      .showDistX(true)
+      .showDistY(true)
+      .showLegend(false)
+      .forceX([0, 100]);
+    chart.tooltipContent(function(graph) {
+      return '<p>' + graph.point.class + '</p>';
+    });
+
+    chart.xAxis.axisLabel('Code Coverage (in percent)');
+    chart.yAxis.axisLabel('Method Complexity');
+
+    d3.select('#methodComplexity svg')
+      .datum(getComplexityData([[100,1,"<a href=\"Command\/CheckEnvironmentCommand.php.html#17\">SparkInsight\\Command\\CheckEnvironmentCommand::configure<\/a>"],[73.80952380952381,7,"<a href=\"Command\/CheckEnvironmentCommand.php.html#23\">SparkInsight\\Command\\CheckEnvironmentCommand::execute<\/a>"],[100,1,"<a href=\"Command\/GenerateInvitationCommand.php.html#18\">SparkInsight\\Command\\GenerateInvitationCommand::configure<\/a>"],[33.33333333333333,7,"<a href=\"Command\/GenerateInvitationCommand.php.html#29\">SparkInsight\\Command\\GenerateInvitationCommand::execute<\/a>"],[0,1,"<a href=\"Command\/InitializeDbCommand.php.html#16\">SparkInsight\\Command\\InitializeDbCommand::configure<\/a>"],[0,6,"<a href=\"Command\/InitializeDbCommand.php.html#22\">SparkInsight\\Command\\InitializeDbCommand::execute<\/a>"],[100,1,"<a href=\"Config\/Config.php.html#13\">SparkInsight\\Config\\Config::__construct<\/a>"],[100,1,"<a href=\"Config\/Config.php.html#18\">SparkInsight\\Config\\Config::fromEnvironment<\/a>"],[100,1,"<a href=\"Config\/Config.php.html#64\">SparkInsight\\Config\\Config::get<\/a>"],[100,1,"<a href=\"Config\/Config.php.html#69\">SparkInsight\\Config\\Config::getProviderConfig<\/a>"],[100,2,"<a href=\"Config\/Config.php.html#74\">SparkInsight\\Config\\Config::getActiveProviders<\/a>"],[100,1,"<a href=\"Config\/Config.php.html#81\">SparkInsight\\Config\\Config::getDatabaseConfig<\/a>"],[100,1,"<a href=\"Controller\/AdminController.php.html#16\">SparkInsight\\Controller\\AdminController::__construct<\/a>"],[100,8,"<a href=\"Controller\/AdminController.php.html#24\">SparkInsight\\Controller\\AdminController::users<\/a>"],[100,5,"<a href=\"Controller\/AdminController.php.html#72\">SparkInsight\\Controller\\AdminController::updateUserStatus<\/a>"],[80,5,"<a href=\"Controller\/AdminController.php.html#92\">SparkInsight\\Controller\\AdminController::updateUserRoles<\/a>"],[100,1,"<a href=\"Controller\/AuthController.php.html#18\">SparkInsight\\Controller\\AuthController::__construct<\/a>"],[100,1,"<a href=\"Controller\/AuthController.php.html#27\">SparkInsight\\Controller\\AuthController::showLogin<\/a>"],[100,1,"<a href=\"Controller\/AuthController.php.html#36\">SparkInsight\\Controller\\AuthController::showSignUp<\/a>"],[93.75,3,"<a href=\"Controller\/AuthController.php.html#48\">SparkInsight\\Controller\\AuthController::buildProviderOptions<\/a>"],[87.5,6,"<a href=\"Controller\/AuthController.php.html#73\">SparkInsight\\Controller\\AuthController::login<\/a>"],[23.404255319148938,12,"<a href=\"Controller\/AuthController.php.html#116\">SparkInsight\\Controller\\AuthController::callback<\/a>"],[100,1,"<a href=\"Controller\/AuthController.php.html#206\">SparkInsight\\Controller\\AuthController::logout<\/a>"],[100,1,"<a href=\"Controller\/AuthController.php.html#212\">SparkInsight\\Controller\\AuthController::demo<\/a>"],[100,1,"<a href=\"Controller\/AuthController.php.html#225\">SparkInsight\\Controller\\AuthController::renderPage<\/a>"],[100,1,"<a href=\"Controller\/AuthController.php.html#232\">SparkInsight\\Controller\\AuthController::redirectWithError<\/a>"],[100,1,"<a href=\"Controller\/AuthController.php.html#237\">SparkInsight\\Controller\\AuthController::renderError<\/a>"],[100,1,"<a href=\"Controller\/DashboardController.php.html#14\">SparkInsight\\Controller\\DashboardController::__construct<\/a>"],[100,2,"<a href=\"Controller\/DashboardController.php.html#20\">SparkInsight\\Controller\\DashboardController::__invoke<\/a>"],[100,1,"<a href=\"Controller\/HomeController.php.html#16\">SparkInsight\\Controller\\HomeController::__construct<\/a>"],[100,1,"<a href=\"Controller\/HomeController.php.html#24\">SparkInsight\\Controller\\HomeController::__invoke<\/a>"],[100,1,"<a href=\"Service\/InvitationService.php.html#11\">SparkInsight\\Service\\InvitationService::__construct<\/a>"],[100,1,"<a href=\"Service\/InvitationService.php.html#15\">SparkInsight\\Service\\InvitationService::generateInvitation<\/a>"],[100,2,"<a href=\"Service\/InvitationService.php.html#33\">SparkInsight\\Service\\InvitationService::validateInvitation<\/a>"],[100,1,"<a href=\"Service\/InvitationService.php.html#52\">SparkInsight\\Service\\InvitationService::markInvitationAsUsed<\/a>"],[100,1,"<a href=\"Service\/MigrationRunner.php.html#14\">SparkInsight\\Service\\MigrationRunner::__construct<\/a>"],[100,2,"<a href=\"Service\/MigrationRunner.php.html#19\">SparkInsight\\Service\\MigrationRunner::getCurrentVersion<\/a>"],[100,4,"<a href=\"Service\/MigrationRunner.php.html#29\">SparkInsight\\Service\\MigrationRunner::runMigrations<\/a>"],[100,1,"<a href=\"Service\/OAuthProviderFactory.php.html#16\">SparkInsight\\Service\\OAuthProviderFactory::__construct<\/a>"],[100,4,"<a href=\"Service\/OAuthProviderFactory.php.html#21\">SparkInsight\\Service\\OAuthProviderFactory::createProvider<\/a>"],[0,4,"<a href=\"Service\/OAuthProviderFactory.php.html#48\">SparkInsight\\Service\\OAuthProviderFactory::getUserProfile<\/a>"],[100,1,"<a href=\"Service\/OAuthProviderFactory.php.html#86\">SparkInsight\\Service\\OAuthProviderFactory::getSupportedProviders<\/a>"],[100,1,"<a href=\"Service\/OAuthProviderFactory.php.html#92\">SparkInsight\\Service\\OAuthProviderFactory::getProviderScope<\/a>"],[100,1,"<a href=\"Service\/OAuthProviderFactory.php.html#97\">SparkInsight\\Service\\OAuthProviderFactory::getAuthorizeUrl<\/a>"],[100,1,"<a href=\"Service\/OAuthProviderFactory.php.html#106\">SparkInsight\\Service\\OAuthProviderFactory::getAccessTokenUrl<\/a>"],[100,1,"<a href=\"Service\/OAuthProviderFactory.php.html#115\">SparkInsight\\Service\\OAuthProviderFactory::getResourceOwnerUrl<\/a>"],[0,5,"<a href=\"Service\/OAuthProviderFactory.php.html#124\">SparkInsight\\Service\\OAuthProviderFactory::fetchGitHubEmail<\/a>"],[100,1,"<a href=\"Service\/UserService.php.html#11\">SparkInsight\\Service\\UserService::__construct<\/a>"],[100,2,"<a href=\"Service\/UserService.php.html#15\">SparkInsight\\Service\\UserService::findOrCreateUser<\/a>"],[100,2,"<a href=\"Service\/UserService.php.html#86\">SparkInsight\\Service\\UserService::getUserByProviderAndId<\/a>"],[100,1,"<a href=\"Service\/UserService.php.html#113\">SparkInsight\\Service\\UserService::setLastLogin<\/a>"],[100,2,"<a href=\"Service\/UserService.php.html#124\">SparkInsight\\Service\\UserService::getUserById<\/a>"],[100,8,"<a href=\"Service\/UserService.php.html#151\">SparkInsight\\Service\\UserService::getAllUsers<\/a>"],[100,2,"<a href=\"Service\/UserService.php.html#208\">SparkInsight\\Service\\UserService::updateUserStatus<\/a>"],[100,1,"<a href=\"Service\/UserService.php.html#223\">SparkInsight\\Service\\UserService::updateUserRoles<\/a>"],[100,5,"<a href=\"Service\/UserService.php.html#234\">SparkInsight\\Service\\UserService::getUserCount<\/a>"],[100,2,"<a href=\"Service\/UserSession.php.html#9\">SparkInsight\\Service\\UserSession::__construct<\/a>"],[100,1,"<a href=\"Service\/UserSession.php.html#16\">SparkInsight\\Service\\UserSession::setUser<\/a>"],[100,1,"<a href=\"Service\/UserSession.php.html#21\">SparkInsight\\Service\\UserSession::getUser<\/a>"],[100,1,"<a href=\"Service\/UserSession.php.html#26\">SparkInsight\\Service\\UserSession::setState<\/a>"],[100,1,"<a href=\"Service\/UserSession.php.html#31\">SparkInsight\\Service\\UserSession::getState<\/a>"],[100,2,"<a href=\"Service\/UserSession.php.html#36\">SparkInsight\\Service\\UserSession::clear<\/a>"],[100,1,"<a href=\"Service\/UserSession.php.html#44\">SparkInsight\\Service\\UserSession::isLoggedIn<\/a>"],[100,1,"<a href=\"Service\/UserSession.php.html#49\">SparkInsight\\Service\\UserSession::setData<\/a>"],[100,1,"<a href=\"Service\/UserSession.php.html#54\">SparkInsight\\Service\\UserSession::getData<\/a>"]], 'Method Complexity'))
+      .transition()
+      .duration(500)
+      .call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  function getComplexityData(data, label) {
+    var values = [];
+    $.each(data, function(key) {
+      var value = Math.round(data[key][0]*100) / 100;
+      values.push({
+        x: value,
+        y: data[key][1],
+        class: data[key][2],
+        size: 0.05,
+        shape: 'diamond'
+      });
+    });
+
+    return [
+      {
+        key: label,
+        values: values,
+        color: "#4572A7"
+      }
+    ];
+  }
+});
+  </script>
+ </body>
+</html>
