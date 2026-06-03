@@ -1,0 +1,79 @@
+<?php
+
+declare(strict_types=1);
+
+use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Slim\Factory\AppFactory;
+use Slim\Views\PhpRenderer;
+use Doctrine\DBAL\DriverManager;
+use SparkInsight\Config\Config;
+use SparkInsight\Controller\AdminController;
+use SparkInsight\Controller\AuthController;
+use SparkInsight\Controller\DashboardController;
+use SparkInsight\Controller\HomeController;
+use SparkInsight\Service\InvitationService;
+use SparkInsight\Service\OAuthProviderFactory;
+use SparkInsight\Service\UserService;
+use SparkInsight\Service\UserSession;
+
+require __DIR__ . '/../vendor/autoload.php';
+
+$config = Config::fromEnvironment();
+$view = new PhpRenderer(__DIR__ . '/../templates');
+$session = new UserSession();
+$providerFactory = new OAuthProviderFactory($config);
+
+// Setup database connection
+$dbConfig = $config->getDatabaseConfig();
+$connection = DriverManager::getConnection([
+    'driver' => $dbConfig['driver'],
+    'host' => $dbConfig['host'],
+    'port' => $dbConfig['port'],
+    'dbname' => $dbConfig['dbname'],
+    'user' => $dbConfig['user'],
+    'password' => $dbConfig['password'],
+    'charset' => $dbConfig['charset'],
+]);
+
+$invitationService = new InvitationService($connection);
+$userService = new UserService($connection);
+
+$app = AppFactory::create();
+$app->addRoutingMiddleware();
+$errorMiddleware = $app->addErrorMiddleware(true, true, true);
+
+$homeController = new HomeController($view, $providerFactory, $config, $session);
+$dashboardController = new DashboardController($view, $session);
+$authController = new AuthController($view, $providerFactory, $session, $invitationService, $userService);
+$adminController = new AdminController($view, $session, $userService, $invitationService, $config, $connection);
+
+$app->get('/style.css', function ($request, $response) {
+    $file = __DIR__ . '/style.css';
+    if (file_exists($file)) {
+        $response->getBody()->write(file_get_contents($file));
+        return $response->withHeader('Content-Type', 'text/css');
+    }
+    return $response->withStatus(404);
+});
+
+$app->get('/favicon.ico', function ($request, $response) {
+    return $response->withStatus(204);
+});
+
+$app->get('/', [$homeController, '__invoke']);
+$app->get('/dashboard', [$dashboardController, '__invoke']);
+$app->get('/login', [$authController, 'showLogin']);
+$app->get('/signup', [$authController, 'showSignUp']);
+$app->get('/logout', [$authController, 'logout']);
+$app->get('/demo', [$authController, 'demo']);
+$app->get('/auth/{provider}', [$authController, 'login']);
+$app->get('/callback/{provider}', [$authController, 'callback']);
+
+$app->get('/admin/users', [$adminController, 'users']);
+$app->get('/admin/invitations', [$adminController, 'invitations']);
+$app->post('/admin/invitations', [$adminController, 'createInvitation']);
+$app->post('/admin/users/{id}/status', [$adminController, 'updateUserStatus']);
+$app->post('/admin/users/{id}/roles', [$adminController, 'updateUserRoles']);
+
+$app->run();
