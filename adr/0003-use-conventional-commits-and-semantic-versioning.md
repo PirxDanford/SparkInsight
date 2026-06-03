@@ -29,5 +29,7 @@ Adopt Conventional Commits for all commit messages and Semantic Versioning for r
 
 - Conventional Commits: https://conventionalcommits.org/
 - Semantic Versioning: https://semver.org/
-- Semantic Release: https://github.com/semantic-release/semantic-release</content>
+- Semantic Release: https://github.com/semantic-release/semantic-release
+- ADR 0006: Adopt Test-Driven Development (test commits use `test:` prefix)
+- ADR 0007: Apply SOLID Principles (refactoring commits use `refactor:` prefix)</content>
 <parameter name="filePath">c:\Projekte\SparkInsight\adr\0003-use-conventional-commits-and-semantic-versioning.md
