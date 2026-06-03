@@ -1,0 +1,36 @@
+
+
+[1;37;40mCode Coverage Report:      [0m
+[1;37;40m  2026-04-23 22:47:41      [0m
+[1;37;40m                           [0m
+[1;37;40m Summary:                  [0m
+[37;41m  Classes:  0.00% (0/13)   [0m
+[37;41m  Methods:  3.12% (2/64)   [0m
+[37;41m  Lines:   19.37% (129/666)[0m
+
+SparkInsight\Command\CheckEnvironmentCommand
+  [37;41mMethods:   0.00% ( 0/ 2)[0m   [37;41mLines:   0.00% (  0/ 44)[0m
+SparkInsight\Command\GenerateInvitationCommand
+  [37;41mMethods:   0.00% ( 0/ 2)[0m   [37;41mLines:   0.00% (  0/ 52)[0m
+SparkInsight\Command\InitializeDbCommand
+  [37;41mMethods:   0.00% ( 0/ 2)[0m   [37;41mLines:   0.00% (  0/ 40)[0m
+SparkInsight\Config\Config
+  [37;41mMethods:   0.00% ( 0/ 6)[0m   [37;41mLines:   0.00% (  0/ 46)[0m
+SparkInsight\Controller\AdminController
+  [37;41mMethods:   0.00% ( 0/ 4)[0m   [37;41mLines:   0.00% (  0/ 54)[0m
+SparkInsight\Controller\AuthController
+  [37;41mMethods:   0.00% ( 0/10)[0m   [37;41mLines:   0.00% (  0/105)[0m
+SparkInsight\Controller\DashboardController
+  [37;41mMethods:   0.00% ( 0/ 2)[0m   [37;41mLines:   0.00% (  0/  6)[0m
+SparkInsight\Controller\HomeController
+  [37;41mMethods:   0.00% ( 0/ 2)[0m   [37;41mLines:   0.00% (  0/ 14)[0m
+SparkInsight\Service\InvitationService
+  [37;41mMethods:   0.00% ( 0/ 4)[0m   [37;41mLines:   0.00% (  0/ 29)[0m
+SparkInsight\Service\MigrationRunner
+  [37;41mMethods:   0.00% ( 0/ 3)[0m   [37;41mLines:   0.00% (  0/ 22)[0m
+SparkInsight\Service\OAuthProviderFactory
+  [37;41mMethods:   0.00% ( 0/ 9)[0m   [37;41mLines:   0.00% (  0/ 73)[0m
+SparkInsight\Service\UserService
+  [37;41mMethods:  22.22% ( 2/ 9)[0m   [30;43mLines:  76.33% (129/169)[0m
+SparkInsight\Service\UserSession
+  [37;41mMethods:   0.00% ( 0/ 9)[0m   [37;41mLines:   0.00% (  0/ 12)[0m
