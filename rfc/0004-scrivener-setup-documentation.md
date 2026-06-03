@@ -48,3 +48,10 @@ Create comprehensive documentation covering:
 - Should the documentation include platform-specific variations (macOS vs. Windows Scrivener)?
 - What level of technical detail is appropriate for non-technical authors?
 - Should there be automated validation of exported files before review import?
+
+## Quality Considerations
+
+Documentation must reference:
+- **RFC 0011**: Quality-First Development Framework (explain how testing is part of review process)
+- **ADR 0006**: Adopt Test-Driven Development (how authors can validate exports locally)
+- **ADR 0007**: Apply SOLID Principles (structured approach to export configuration)

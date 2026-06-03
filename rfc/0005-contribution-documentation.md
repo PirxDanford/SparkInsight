@@ -38,8 +38,13 @@ Create a `CONTRIBUTING.md` file in the repository root with the following sectio
    - How to run tests
    - Writing new tests
    - Coverage expectations
+   - Document `composer coverage` and `composer coverage-html` for running coverage reports locally
+   - Reference RFC 0011 (Quality-First Framework) and ADR 0006 (TDD requirements)
 
-6. **Submitting Contributions**
+6. **Code Architecture**
+   - Reference ADR 0007 (SOLID Principles) and its application to the codebase
+   - Dependency injection patterns for testability
+   - Separating concerns and responsibilities
    - Creating issues and feature requests
    - Pull request process
    - Code review guidelines
@@ -60,5 +65,8 @@ Clear documentation lowers the barrier to entry, ensures consistency, and foster
 
 ## Links
 
-- ADR 0003: Adopt Conventional Commits and Semantic Versioning</content>
+- ADR 0003: Adopt Conventional Commits and Semantic Versioning
+- ADR 0006: Adopt Test-Driven Development
+- ADR 0007: Apply SOLID Principles
+- RFC 0011: Quality-First Development Framework</content>
 <parameter name="filePath">c:\Projekte\SparkInsight\rfc\0005-contribution-documentation.md

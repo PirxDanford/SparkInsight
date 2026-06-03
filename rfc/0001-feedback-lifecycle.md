@@ -35,3 +35,10 @@ It keeps reviewer feedback isolated, while giving reviewers history and explicit
 - Should the review platform support manual reviewer closure as well as author closure?
 - How granular should document anchoring be: paragraph, section, or semantic block?
 - Should author notifications be immediate or batched per version?
+
+## Quality Considerations
+
+Implementation of this RFC must comply with:
+- **RFC 0011**: Quality-First Development Framework (foundational requirement)
+- **ADR 0006**: Adopt Test-Driven Development (write tests for feedback lifecycle state machine)
+- **ADR 0007**: Apply SOLID Principles (separate state management, change detection, and notification concerns)
