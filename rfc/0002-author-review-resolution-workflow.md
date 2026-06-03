@@ -38,3 +38,10 @@ Authors stay in control, and reviewers retain trust in the system.
 - The platform should preserve an immutable audit trail of all author review decisions.
 - The author view can display a per-review timeline of version changes.
 - The system should support later extension to optional reviewer comments on author responses.
+
+## Quality Considerations
+
+Implementation of this RFC must comply with:
+- **RFC 0011**: Quality-First Development Framework (foundational requirement)
+- **ADR 0006**: Adopt Test-Driven Development (test workflow state transitions and author decisions)
+- **ADR 0007**: Apply SOLID Principles (audit trail, decision recording, and status updates as separate concerns)
