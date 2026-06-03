@@ -1,0 +1,258 @@
+<?php
+/**
+ * TEMPLATE: Console Command Integration Test
+ * 
+ * Copy this template and replace:
+ * - [NAMESPACE] → Your namespace (e.g., SparkInsightTest\Integration\Command)
+ * - [CLASS_NAME] → Your command class (e.g., GenerateInvitationCommand)
+ * 
+ * Command tests use REAL database (SQLite in-memory).
+ * This ensures commands work end-to-end with actual data.
+ */
+
+declare(strict_types=1);
+
+namespace [NAMESPACE];
+
+use Doctrine\DBAL\DriverManager;
+use Doctrine\DBAL\Connection;
+use [YOUR_NAMESPACE]\[CLASS_NAME];
+use Symfony\Component\Console\Tester\CommandTester;
+use PHPUnit\Framework\TestCase;
+
+class [CLASS_NAME]IntegrationTest extends TestCase
+{
+    private Connection $connection;
+
+    /**
+     * setUp() creates a fresh in-memory SQLite database for each test
+     */
+    protected function setUp(): void
+    {
+        // Set environment variables for database config
+        $_ENV['APP_ENV'] = 'testing';
+        $_ENV['APP_URL'] = 'http://localhost:8000';
+        
+        // Create in-memory SQLite database
+        $this->connection = DriverManager::getConnection([
+            'driver' => 'pdo_sqlite',
+            'path' => ':memory:',
+        ]);
+        
+        // Create required tables
+        $this->createDatabaseSchema();
+    }
+
+    /**
+     * tearDown() cleans up after each test
+     */
+    protected function tearDown(): void
+    {
+        if ($this->connection) {
+            $this->connection->close();
+        }
+    }
+
+    /**
+     * Create the database schema needed for your command
+     */
+    private function createDatabaseSchema(): void
+    {
+        // Example: Create invitations table for GenerateInvitationCommand
+        $this->connection->executeStatement(<<<SQL
+            CREATE TABLE invitations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                code VARCHAR(255) UNIQUE NOT NULL,
+                roles TEXT NOT NULL,
+                email VARCHAR(255),
+                expires_at DATETIME NOT NULL,
+                used_at DATETIME,
+                user_id INTEGER,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        SQL);
+    }
+
+    /**
+     * Test successful command execution with default options
+     */
+    public function testExecuteCommandWithDefaultOptionsSucceeds(): void
+    {
+        // Arrange - Create command with injected database connection
+        $command = new [CLASS_NAME]($this->connection);
+        $tester = new CommandTester($command);
+        
+        // Act - Execute the command
+        $exitCode = $tester->execute([]);
+        
+        // Assert
+        $this->assertSame(0, $exitCode);
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('success', strtolower($output));
+    }
+
+    /**
+     * Test command execution with specific option
+     */
+    public function testExecuteCommandWithOptionReturnsExpectedResult(): void
+    {
+        // Arrange
+        $command = new [CLASS_NAME]($this->connection);
+        $tester = new CommandTester($command);
+        
+        // Act
+        $exitCode = $tester->execute([
+            '--option' => 'value',
+        ]);
+        
+        // Assert
+        $this->assertSame(0, $exitCode);
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('expected text', $output);
+    }
+
+    /**
+     * Test command failure with invalid option
+     */
+    public function testExecuteCommandWithInvalidOptionFails(): void
+    {
+        // Arrange
+        $command = new [CLASS_NAME]($this->connection);
+        $tester = new CommandTester($command);
+        
+        // Act
+        $exitCode = $tester->execute([
+            '--invalid-option' => 'value',
+        ]);
+        
+        // Assert - non-zero exit code indicates failure
+        $this->assertNotSame(0, $exitCode);
+    }
+
+    /**
+     * Test command produces correct output
+     */
+    public function testExecuteCommandProducesCorrectOutput(): void
+    {
+        // Arrange
+        $command = new [CLASS_NAME]($this->connection);
+        $tester = new CommandTester($command);
+        
+        // Act
+        $tester->execute([]);
+        $output = $tester->getDisplay();
+        
+        // Assert
+        $this->assertStringContainsString('Line 1 of output', $output);
+        $this->assertStringContainsString('Line 2 of output', $output);
+        $this->assertStringNotContainsString('Error', $output);
+    }
+
+    /**
+     * Test command modifies database correctly
+     */
+    public function testExecuteCommandModifiesDatabaseCorrectly(): void
+    {
+        // Arrange
+        $command = new [CLASS_NAME]($this->connection);
+        $tester = new CommandTester($command);
+        
+        // Act
+        $exitCode = $tester->execute([]);
+        
+        // Assert command succeeded
+        $this->assertSame(0, $exitCode);
+        
+        // Verify database was modified
+        $result = $this->connection->executeQuery(
+            'SELECT COUNT(*) as count FROM invitations'
+        )->fetchAssociative();
+        
+        $this->assertGreaterThan(0, $result['count']);
+    }
+
+    /**
+     * Test command with multiple execution scenarios
+     */
+    public function testExecuteCommandMultipleTimesCreatesMultipleRecords(): void
+    {
+        // Arrange
+        $command = new [CLASS_NAME]($this->connection);
+        $tester = new CommandTester($command);
+        
+        // Act - run command twice
+        $tester->execute([]);
+        $tester->execute([]);
+        
+        // Assert - verify both records exist
+        $result = $this->connection->executeQuery(
+            'SELECT COUNT(*) as count FROM invitations'
+        )->fetchAssociative();
+        
+        $this->assertEquals(2, $result['count']);
+    }
+
+    /**
+     * Test error handling when database operation fails
+     * 
+     * This tests edge cases and error scenarios.
+     */
+    public function testExecuteCommandHandlesErrorGracefully(): void
+    {
+        // Arrange - Simulate invalid database state
+        // (e.g., table doesn't exist for some reason)
+        $this->connection->executeStatement('DROP TABLE invitations');
+        
+        $command = new [CLASS_NAME]($this->connection);
+        $tester = new CommandTester($command);
+        
+        // Act
+        $exitCode = $tester->execute([]);
+        
+        // Assert - command should fail gracefully
+        $this->assertNotSame(0, $exitCode);
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('error', strtolower($output));
+    }
+}
+
+/**
+ * TEMPLATE USAGE GUIDE
+ * 
+ * Integration tests use REAL databases (SQLite in-memory for tests).
+ * This verifies the command works end-to-end.
+ * 
+ * WHY INTEGRATION TESTS FOR COMMANDS?
+ * 
+ * Commands interact with:
+ * - Database (reading/writing)
+ * - File system
+ * - External services
+ * - Console output
+ * 
+ * Unit tests with mocks can't fully verify these interactions.
+ * Integration tests use real SQLite to ensure everything works together.
+ * 
+ * KEY PATTERNS
+ * 
+ * Verify exit code:
+ * $this->assertSame(0, $exitCode);      // Success
+ * $this->assertNotSame(0, $exitCode);   // Failure
+ * 
+ * Verify console output:
+ * $output = $tester->getDisplay();
+ * $this->assertStringContainsString('expected', $output);
+ * $this->assertStringNotContainsString('error', $output);
+ * 
+ * Verify database changes:
+ * $result = $this->connection->executeQuery(
+ *     'SELECT * FROM table WHERE condition'
+ * )->fetchAssociative();
+ * $this->assertNotNull($result);
+ * 
+ * Execute with options:
+ * $tester->execute([
+ *     '--option' => 'value',
+ *     '--flag' => true,
+ * ]);
+ */
