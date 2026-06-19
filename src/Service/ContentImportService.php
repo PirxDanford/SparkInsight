@@ -15,7 +15,7 @@ final class ContentImportService
         $this->connection = $connection;
     }
 
-    public function validateFdxContent(string $fdxXml): array
+    public function validateFdxContent(string $fdxXml, ?string $source = null, ?string $versionLabel = null): array
     {
         $errors = [];
         $fdxXml = trim($fdxXml);
@@ -37,16 +37,17 @@ final class ContentImportService
             return $errors;
         }
 
-        if ($xml->getName() !== 'FDX') {
-            $errors[] = 'Import content must be a Scrivener FDX file with a root <FDX> element.';
+        $rootName = $xml->getName();
+        if ($rootName !== 'FDX' && $rootName !== 'FinalDraft') {
+            $errors[] = 'Import content must be a Scrivener/Final Draft XML file with a root <FDX> or <FinalDraft> element.';
         }
 
-        if ($this->extractTitle($xml) === null) {
+        $title = $this->extractTitle($xml) ?? $this->deriveTitleFromSourceOrLabel($source, $versionLabel);
+        if ($title === null) {
             $errors[] = 'Import content must include a document title.';
         }
 
-        $textNodes = $xml->xpath('//TEXT');
-        if ($textNodes === false || count($textNodes) === 0) {
+        if ($this->countTextSections($xml) === 0) {
             $errors[] = 'Import content must include at least one text section.';
         }
 
@@ -55,7 +56,7 @@ final class ContentImportService
 
     public function importFdxContent(string $fdxXml, string $versionLabel, int $authorId, ?string $source = null): int
     {
-        $errors = $this->validateFdxContent($fdxXml);
+        $errors = $this->validateFdxContent($fdxXml, $source, $versionLabel);
         if ($errors !== []) {
             throw new ImportValidationException($errors);
         }
@@ -66,7 +67,7 @@ final class ContentImportService
             throw new ImportValidationException(['Could not parse FDX content after validation.']);
         }
 
-        $title = $this->extractTitle($xml);
+        $title = $this->extractTitle($xml) ?? $this->deriveTitleFromSourceOrLabel($source, $versionLabel);
         if ($title === null) {
             throw new ImportValidationException(['Import content title extraction failed.']);
         }
@@ -165,7 +166,7 @@ final class ContentImportService
                 }
 
                 if ($dryRun) {
-                    $errors = $this->validateFdxContent($fdxXml);
+                    $errors = $this->validateFdxContent($fdxXml, $source, $versionLabel);
                     if ($errors !== []) {
                         $result['failed'][$relativePath] = $errors;
                         continue;
@@ -225,11 +226,30 @@ final class ContentImportService
 
     private function countTextSections(\SimpleXMLElement $xml): int
     {
-        $nodes = $xml->xpath('//TEXT');
+        $nodes = $xml->xpath('//TEXT | //Paragraph');
         if ($nodes === false) {
             return 0;
         }
 
         return count($nodes);
+    }
+
+    private function deriveTitleFromSourceOrLabel(?string $source, ?string $versionLabel): ?string
+    {
+        $candidate = null;
+
+        if ($source !== null && trim($source) !== '') {
+            $candidate = basename(str_replace('\\', '/', $source));
+            $candidate = preg_replace('/\.fdx$/i', '', $candidate);
+        } elseif ($versionLabel !== null && trim($versionLabel) !== '') {
+            $candidate = basename(str_replace('\\', '/', $versionLabel));
+        }
+
+        if ($candidate === null) {
+            return null;
+        }
+
+        $candidate = trim($candidate);
+        return $candidate === '' ? null : $candidate;
     }
 }
