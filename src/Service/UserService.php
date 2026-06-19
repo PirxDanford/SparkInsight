@@ -86,6 +86,32 @@ final class UserService
 
     public function getUserByProviderAndId(string $provider, string $providerId): ?array
     {
+        try {
+            $identityResult = $this->connection->executeQuery(
+                'SELECT u.* FROM oauth_identities oi INNER JOIN users u ON u.id = oi.user_id WHERE oi.provider = ? AND oi.provider_user_id = ? LIMIT 1',
+                [$provider, $providerId]
+            )->fetchAssociative();
+
+            if ($identityResult) {
+                return [
+                    'id' => $identityResult['id'],
+                    'provider' => $identityResult['provider'],
+                    'provider_id' => $identityResult['provider_id'],
+                    'email' => $identityResult['email'],
+                    'name' => $identityResult['name'],
+                    'avatar' => $identityResult['avatar'],
+                    'roles' => json_decode($identityResult['roles'] ?? '[]', true),
+                    'status' => $identityResult['status'],
+                    'invitation_used' => $identityResult['invitation_used'],
+                    'last_login' => $identityResult['last_login'],
+                    'created_at' => $identityResult['created_at'],
+                    'updated_at' => $identityResult['updated_at'],
+                ];
+            }
+        } catch (\Throwable $e) {
+            // Identity table may not exist in older environments; fall back to legacy lookup.
+        }
+
         $result = $this->connection->executeQuery(
             'SELECT * FROM users WHERE provider = ? AND provider_id = ?',
             [$provider, $providerId]
@@ -109,6 +135,57 @@ final class UserService
             'created_at' => $result['created_at'],
             'updated_at' => $result['updated_at'],
         ];
+    }
+
+    public function getUserByEmail(string $email): ?array
+    {
+        $result = $this->connection->executeQuery(
+            'SELECT * FROM users WHERE email = ? LIMIT 1',
+            [$email]
+        )->fetchAssociative();
+
+        if (!$result) {
+            return null;
+        }
+
+        return [
+            'id' => $result['id'],
+            'provider' => $result['provider'],
+            'provider_id' => $result['provider_id'],
+            'email' => $result['email'],
+            'name' => $result['name'],
+            'avatar' => $result['avatar'],
+            'roles' => json_decode($result['roles'] ?? '[]', true),
+            'status' => $result['status'],
+            'invitation_used' => $result['invitation_used'],
+            'last_login' => $result['last_login'],
+            'created_at' => $result['created_at'],
+            'updated_at' => $result['updated_at'],
+        ];
+    }
+
+    public function getLinkedOAuthProviders(int $userId): array
+    {
+        try {
+            return $this->connection->executeQuery(
+                'SELECT provider, provider_user_id, provider_email, linked_at, last_used_at FROM oauth_identities WHERE user_id = ? ORDER BY linked_at ASC',
+                [$userId]
+            )->fetchAllAssociative();
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    public function linkOAuthProvider(int $userId, string $provider, string $providerUserId, ?string $providerEmail = null): bool
+    {
+        $now = date('Y-m-d H:i:s');
+
+        $this->connection->executeStatement(
+            'INSERT INTO oauth_identities (user_id, provider, provider_user_id, provider_email, linked_at, last_used_at) VALUES (?, ?, ?, ?, ?, ?)',
+            [$userId, $provider, $providerUserId, $providerEmail, $now, $now]
+        );
+
+        return true;
     }
 
     public function setLastLogin(int $userId): bool
