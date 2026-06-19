@@ -113,13 +113,28 @@ class UserServiceTest extends TestCase
             'updated_at' => '2023-01-01 00:00:00',
         ];
 
-        $resultMock = $this->createMock(Result::class);
-        $resultMock->method('fetchAssociative')->willReturn($userData);
+        $identityResult = $this->createMock(Result::class);
+        $identityResult->method('fetchAssociative')->willReturn(false);
 
-        $this->connection->expects($this->once())
+        $legacyResult = $this->createMock(Result::class);
+        $legacyResult->method('fetchAssociative')->willReturn($userData);
+
+        $this->connection->expects($this->exactly(2))
             ->method('executeQuery')
-            ->with('SELECT * FROM users WHERE provider = ? AND provider_id = ?', ['github', '123'])
-            ->willReturn($resultMock);
+            ->willReturnCallback(function (string $sql, array $params) use ($identityResult, $legacyResult) {
+                static $call = 0;
+                $call++;
+
+                if ($call === 1) {
+                    $this->assertSame('SELECT u.* FROM oauth_identities oi INNER JOIN users u ON u.id = oi.user_id WHERE oi.provider = ? AND oi.provider_user_id = ? LIMIT 1', $sql);
+                    $this->assertSame(['github', '123'], $params);
+                    return $identityResult;
+                }
+
+                $this->assertSame('SELECT * FROM users WHERE provider = ? AND provider_id = ?', $sql);
+                $this->assertSame(['github', '123'], $params);
+                return $legacyResult;
+            });
 
         $user = $this->userService->getUserByProviderAndId('github', '123');
 
@@ -129,12 +144,15 @@ class UserServiceTest extends TestCase
 
     public function testGetUserByProviderAndIdNotFound(): void
     {
-        $resultMock = $this->createMock(Result::class);
-        $resultMock->method('fetchAssociative')->willReturn(false);
+        $identityResult = $this->createMock(Result::class);
+        $identityResult->method('fetchAssociative')->willReturn(false);
 
-        $this->connection->expects($this->once())
+        $legacyResult = $this->createMock(Result::class);
+        $legacyResult->method('fetchAssociative')->willReturn(false);
+
+        $this->connection->expects($this->exactly(2))
             ->method('executeQuery')
-            ->willReturn($resultMock);
+            ->willReturnOnConsecutiveCalls($identityResult, $legacyResult);
 
         $user = $this->userService->getUserByProviderAndId('github', '123');
 
