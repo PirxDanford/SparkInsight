@@ -53,6 +53,22 @@ XML;
         ], $errors);
     }
 
+    public function testValidateFdxContentAcceptsFinalDraftRootAndParagraphNodes(): void
+    {
+        $xml = <<<'XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<FinalDraft>
+    <Content>
+        <Paragraph Type="General"/>
+    </Content>
+</FinalDraft>
+XML;
+
+        $errors = $this->service->validateFdxContent($xml, 'Notes/Example.fdx');
+
+        $this->assertSame([], $errors);
+    }
+
     public function testImportFdxContentInsertsContentVersionAndReturnsId(): void
     {
         $xml = <<<'XML'
@@ -131,6 +147,54 @@ XML;
             $this->assertSame(['A content version with this title and version label already exists.'], $exception->getErrors());
             throw $exception;
         }
+    }
+
+    public function testImportFdxContentUsesSourceAsTitleFallbackWhenMissingTitle(): void
+    {
+        $xml = <<<'XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<FinalDraft>
+    <Content>
+        <Paragraph Type="General"/>
+    </Content>
+</FinalDraft>
+XML;
+
+        $resultMock = $this->createMock(Result::class);
+        $resultMock->method('fetchOne')->willReturn('0');
+
+        $this->connection->expects($this->once())
+            ->method('executeQuery')
+            ->with('SELECT COUNT(*) FROM content_versions WHERE title = ? AND version_label = ?', ['Sample Chapter', 'v1'])
+            ->willReturn($resultMock);
+
+        $this->connection->expects($this->once())
+            ->method('beginTransaction');
+
+        $this->connection->expects($this->once())
+            ->method('executeStatement')
+            ->with(
+                $this->callback(static function (string $sql) {
+                    return str_contains($sql, 'INSERT INTO content_versions');
+                }),
+                $this->callback(static function (array $params) {
+                    return $params[0] === 'Sample Chapter'
+                        && $params[1] === 'v1'
+                        && $params[3] === 123;
+                })
+            )
+            ->willReturn(1);
+
+        $this->connection->expects($this->once())
+            ->method('lastInsertId')
+            ->willReturn('9');
+
+        $this->connection->expects($this->once())
+            ->method('commit');
+
+        $id = $this->service->importFdxContent($xml, 'v1', 123, 'Notes/Sample Chapter.fdx');
+
+        $this->assertSame(9, $id);
     }
 
     public function testRollbackImportArchivesExistingVersion(): void
@@ -260,9 +324,9 @@ SQL
 
         file_put_contents($directory . '/InvalidDoc.fdx', <<<'XML'
 <?xml version="1.0" encoding="UTF-8"?>
-<FDX>
-    <TEXT>Missing title</TEXT>
-</FDX>
+<NotFdx>
+    <Body>Unsupported structure</Body>
+</NotFdx>
 XML
         );
 
@@ -289,7 +353,8 @@ SQL
 
         $this->assertSame(1, $result['scanned']);
         $this->assertEmpty($result['imported']);
-        $this->assertSame(['Import content must include a document title.'], $result['failed']['InvalidDoc.fdx']);
+        $this->assertArrayHasKey('InvalidDoc.fdx', $result['failed']);
+        $this->assertContains('Import content must be a Scrivener/Final Draft XML file with a root <FDX> or <FinalDraft> element.', $result['failed']['InvalidDoc.fdx']);
 
         $connection->close();
         unlink($dbPath);
