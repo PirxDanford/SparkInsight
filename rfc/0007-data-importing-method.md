@@ -1,6 +1,6 @@
 # RFC 0007: Data Importing Method for Content Ingestion
 
-Status: Draft
+Status: Implemented
 
 Date: 2026-04-18
 
@@ -42,3 +42,9 @@ Enables seamless content ingestion for the review workflow.
 - RFC 0011: Quality-First Development Framework (implementation requires comprehensive tests)
 - ADR 0006: Adopt Test-Driven Development (import validation, error handling)
 - ADR 0007: Apply SOLID Principles (parser, validator, storage as separate concerns)
+
+## Implementation Notes
+
+- Implementation present in `src/Service/ContentImportService.php` and `src/Command/ScrivenerImportCommand.php` which provide FDX validation, import, directory import and a CLI command to import/safely dry-run imports.
+- Database support for content versions (table `content_versions`) is provided via `database/migrations/003_add_content_versions_and_reviews.sql`.
+- Unit tests covering validation, import and rollback exist in `tests/Unit/Service/ContentImportServiceTest.php`.

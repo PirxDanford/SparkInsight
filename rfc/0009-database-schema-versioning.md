@@ -1,6 +1,6 @@
 # RFC 0009: Database Schema Versioning and Migrations
 
-Status: Draft
+Status: Implemented
 
 Date: 2026-04-18
 
@@ -60,3 +60,9 @@ Ensures predictable, safe database changes; enables easy rollback if needed; kee
 - RFC 0011: Quality-First Development Framework (migration implementation requires comprehensive tests)
 - ADR 0006: Adopt Test-Driven Development (test migration up/down paths)
 - ADR 0007: Apply SOLID Principles (clean migration design, separation of concerns)
+
+## Implementation Notes
+
+- Migration implementation provided by `src/Service/MigrationRunner.php` and the `db:migrate` console command in `src/Command/MigrateDbCommand.php`.
+- Migration files live in `database/migrations/` (e.g. `001_initial_schema.sql`, `002_add_user_tracking_fields.sql`, `003_add_content_versions_and_reviews.sql`).
+- Unit tests for migration runner and CLI are present in `tests/Unit/Service/MigrationRunnerTest.php` and `tests/Unit/Command/MigrateDbCommandTest.php`.
