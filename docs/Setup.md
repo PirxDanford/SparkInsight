@@ -33,6 +33,14 @@ Start the built-in PHP server from the project root:
 composer start
 ```
 
+This command is intentionally long-running. Stop it with `Ctrl+C`.
+
+If you prefer to run the server manually (without Composer), use:
+
+```bash
+php -S localhost:8000 -t public public/index.php
+```
+
 Open the app at:
 
 ```text
