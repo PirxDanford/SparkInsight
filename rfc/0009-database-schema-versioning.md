@@ -21,7 +21,8 @@ As the platform evolves, the database schema will need changes (new tables, colu
 
 2. **Migration Files**
    - Store migrations in `database/migrations/` directory.
-   - Naming: `001_initial_schema.sql`, `002_add_reviews_table.sql`, etc.
+   - Initial development naming: keep `001_initial_schema.sql` as the only numbered baseline; keep incremental chapter-era SQL as explicitly dev-only snapshots (for example, `dev_only_add_reviews_table.sql`).
+   - Post-`v1.0.0` release naming: use sequential numbered files for released upgrades (for example, `002_upgrade_v1_0_to_v1_1.sql`).
    - Each file contains SQL for both upgrade (`UP`) and downgrade (`DOWN`) sections.
 
 3. **Migration Tool**
@@ -64,5 +65,5 @@ Ensures predictable, safe database changes; enables easy rollback if needed; kee
 ## Implementation Notes
 
 - Migration implementation provided by `src/Service/MigrationRunner.php` and the `db:migrate` console command in `src/Command/MigrateDbCommand.php`.
-- Migration files live in `database/migrations/` (e.g. `001_initial_schema.sql`, `002_add_user_tracking_fields.sql`, `003_add_content_versions_and_reviews.sql`).
+- Migration files live in `database/migrations/` with `001_initial_schema.sql` as the numbered baseline during initial development; prior iterative steps are retained as `dev_only_*.sql` snapshots.
 - Unit tests for migration runner and CLI are present in `tests/Unit/Service/MigrationRunnerTest.php` and `tests/Unit/Command/MigrateDbCommandTest.php`.

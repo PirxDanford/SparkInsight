@@ -6,35 +6,34 @@ Date: 2026-04-18
 
 ## Summary
 
-Define the documentation and guidance for authors using Scrivener to prepare content for the review system. This includes setup steps, export configuration, and workflow best practices to ensure exported data is review-ready.
+Define the documentation and guidance for authors using Scrivener to prepare content for the review system. This includes setup steps, backup workflow configuration, and workflow best practices to ensure imported data is review-ready.
 
 ## Problem
 
-Authors need clear, actionable guidance on configuring Scrivener for review exports. Without this, exports may lack necessary structure or metadata, breaking the review anchoring and change detection features.
+Authors need clear, actionable guidance on producing and sharing Scrivener project backups for import. Without this, imports may lack necessary structure or metadata, breaking review anchoring, hierarchy display, and change detection features.
 
 ## Proposal
 
 Create comprehensive documentation covering:
 
 1. Scrivener project setup for review workflows
-   - Collection organization (e.g., "For Review" collection usage)
-     - Note: In Scrivener, collections do not automatically include sub-items when adding a folder. Each individual document and folder must be explicitly added to the collection via the context menu (right-click > Add to Collection).
-   - External folder sync configuration
-   - Export format selection and rationale
+   - Binder organization and naming conventions for predictable review navigation.
+   - Backup generation workflow (manual/automated backup settings).
+   - Recommended backup location conventions within the repository.
 
-2. Export workflow
-   - Triggering exports (manual vs. automated)
-   - File naming conventions
+2. Backup workflow
+   - Triggering backups (manual vs. automated).
+   - File naming conventions for backup snapshots.
    - Version management in Scrivener
 
 3. Best practices
    - Content structuring for optimal review anchoring
-   - Metadata preservation tips
-   - Troubleshooting common export issues
+   - Metadata preservation tips (`.scrivx` integrity, UUID stability)
+   - Troubleshooting common backup/import issues
 
 4. Integration points
-   - How exports feed into the review system
-   - Feedback on export quality and completeness
+   - How backups feed into the review system
+   - Feedback on import quality and completeness
 
 ## Implementation notes
 
@@ -47,11 +46,11 @@ Create comprehensive documentation covering:
 
 - Should the documentation include platform-specific variations (macOS vs. Windows Scrivener)?
 - What level of technical detail is appropriate for non-technical authors?
-- Should there be automated validation of exported files before review import?
+- Should there be automated validation of backup structure before review import?
 
 ## Quality Considerations
 
 Documentation must reference:
 - **RFC 0011**: Quality-First Development Framework (explain how testing is part of review process)
-- **ADR 0006**: Adopt Test-Driven Development (how authors can validate exports locally)
-- **ADR 0007**: Apply SOLID Principles (structured approach to export configuration)
+- **ADR 0006**: Adopt Test-Driven Development (how authors can validate imports locally)
+- **ADR 0007**: Apply SOLID Principles (structured approach to import configuration)

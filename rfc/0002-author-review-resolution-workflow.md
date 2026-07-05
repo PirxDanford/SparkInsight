@@ -1,6 +1,6 @@
 # RFC 0002: Author-driven review resolution workflow
 
-Status: Draft
+Status: Accepted
 
 Date: 2026-04-15
 
@@ -27,6 +27,7 @@ Instead, the author must decide whether a change resolves or preserves reviewer 
    - `Still relevant` — feedback still applies despite the change.
    - `Ignored` — feedback was intentionally not incorporated.
 5. Reviewers see status updates of their own feedback only.
+6. Reviewer history surfaces author-attributed resolution metadata for resolved items (resolver identity/role, decision outcome, and resolution timestamp), so "resolved by author" is explicit and auditable.
 
 ## Motivation
 

@@ -6,19 +6,19 @@ Date: 2026-04-18
 
 ## Summary
 
-Define a method for importing content data (e.g., from Scrivener exports) into the review platform.
+Define a method for importing content data (primarily from Scrivener project backups) into the review platform.
 
 ## Problem
 
-Authors need to upload or sync content for review without manual processes. The system must handle structured data imports, validate formats, and store versions immutably in MariaDB.
+Authors need to provide content for review without manual reformatting. The system must handle structured backup imports, validate project data, and store versions immutably in MariaDB.
 
 ## Proposal
 
-1. Support file upload (e.g., FDX, Markdown) via web interface.
-2. Parse and validate imported data using PHP (e.g., XML parser for FDX).
-3. Store as immutable versions with metadata (author, timestamp).
-4. Provide feedback on import success/failures.
-5. Integrate with ADR 0002 for Scrivener sync as a future extension.
+1. Support Scrivener backup directory import (`.scriv`) via CLI as the primary ingestion path.
+2. Parse and validate `.scrivx` hierarchy metadata and `Files/Data/<UUID>/content.rtf` content.
+3. Store as immutable versions with metadata (author, timestamp, hierarchy/order metadata).
+4. Provide feedback on import success/failures and safe purge/re-import operations.
+5. Retain FDX directory import as a compatibility fallback, not the preferred path.
 
 For local testing:
 - Set up local MariaDB instance (via Docker or XAMPP).
@@ -31,7 +31,7 @@ Enables seamless content ingestion for the review workflow.
 
 ## Open Questions
 
-- Supported formats beyond FDX?
+- Should web upload support be added for backup archives/directories?
 - Error handling for malformed imports?
 - Batch import capabilities?
 
@@ -45,6 +45,6 @@ Enables seamless content ingestion for the review workflow.
 
 ## Implementation Notes
 
-- Implementation present in `src/Service/ContentImportService.php` and `src/Command/ScrivenerImportCommand.php` which provide FDX validation, import, directory import and a CLI command to import/safely dry-run imports.
-- Database support for content versions (table `content_versions`) is provided via `database/migrations/003_add_content_versions_and_reviews.sql`.
-- Unit tests covering validation, import and rollback exist in `tests/Unit/Service/ContentImportServiceTest.php`.
+- Implementation present in `src/Service/ContentImportService.php` and `src/Command/ScrivenerImportCommand.php` which provide backup parsing/import, directory-aware metadata handling, and CLI import/dry-run support.
+- Database support for content versions (table `content_versions`) is part of the baseline schema in `database/migrations/001_initial_schema.sql`; the initial development history is retained as dev-only snapshots (for example, `database/migrations/dev_only_add_content_versions_and_reviews.sql`).
+- Unit tests covering validation, import hierarchy/order handling, and rollback exist in `tests/Unit/Service/ContentImportServiceTest.php`.

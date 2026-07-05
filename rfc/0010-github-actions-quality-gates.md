@@ -24,6 +24,7 @@ Currently, there are no automated checks on commits or pull requests. Code quali
    - PHPUnit test execution
    - Code coverage reporting (when driver available)
    - Composer dependency validation
+   - Migration naming policy enforcement for `database/migrations/` (allow `001_initial_schema.sql` as the only initial-development numbered baseline, require `dev_only_*.sql` for chapter-era development snapshots, and reserve next numbered migrations for release upgrades like `002_upgrade_v1_0_to_v1_1.sql`)
    - Basic security scans (e.g., via tools like PHPStan or Psalm if added later)
 
 3. Workflow structure:

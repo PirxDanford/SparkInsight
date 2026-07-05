@@ -24,6 +24,12 @@ SparkInsight is a lightweight review workflow platform skeleton built for Compos
    ```bash
    composer start
    ```
+   This is a long-running development server. Stop with `Ctrl+C`.
+
+   Manual alternative:
+   ```bash
+   php -S localhost:8000 -t public public/index.php
+   ```
 5. Visit `http://localhost:8000`
 
 ## OAuth providers

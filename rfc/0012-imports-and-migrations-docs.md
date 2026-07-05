@@ -10,7 +10,7 @@ Provide concrete, repository-hosted documentation for content import formats and
 
 ## Proposal
 
-- Create a documentation chapter (or pages) covering supported content import formats, validation rules, example FDX files, dry-run guidance, metadata schema, and performance/size notes. Link to `src/Service/ContentImportService.php` and the `content:import-scrivener` command.
+- Create a documentation chapter (or pages) covering supported content import formats, validation rules, example Scrivener backup project structures (`.scrivx` + `Files/Data`), dry-run guidance, metadata schema, and performance/size notes. Link to `src/Service/ContentImportService.php` and the `content:import-scrivener` command.
 - Create a documentation chapter covering the migration tooling: how to run `db:migrate`, how schema versions are tracked (`schema_version`), how to inspect pending migrations, how to rollback safely, and which migrations are considered irreversible. Link to `src/Service/MigrationRunner.php`, `src/Command/MigrateDbCommand.php`, and `database/migrations/` examples.
 - Add recommended CI checks to validate migrations before deployment (e.g., `db:migrate --status` baseline check in a pre-deploy step, or an explicit migration test job), and document the recommended workflow for staging/production migration rollouts.
 
