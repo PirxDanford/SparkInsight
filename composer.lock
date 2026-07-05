@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5f52021d0538dc1e31ceefd2437e71d0",
+    "content-hash": "76a44df7bfa2945b8a2ff354568e558b",
     "packages": [
         {
             "name": "doctrine/collections",
@@ -1198,6 +1198,53 @@
                 }
             ],
             "time": "2026-03-10T16:41:02+00:00"
+        },
+        {
+            "name": "henck/rtf-to-html",
+            "version": "1.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/henck/rtf-html-php.git",
+                "reference": "36e4cdcc78d6b4f7075522c93fc41547a0faffe7"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/henck/rtf-html-php/zipball/36e4cdcc78d6b4f7075522c93fc41547a0faffe7",
+                "reference": "36e4cdcc78d6b4f7075522c93fc41547a0faffe7",
+                "shasum": ""
+            },
+            "require": {
+                "ext-mbstring": "*"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "7"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "RtfHtmlPhp\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Alexander van Oostenrijk",
+                    "email": "alex.vanoostenrijk@gmail.com"
+                }
+            ],
+            "description": "RTF to HTML converter in PHP",
+            "keywords": [
+                "converter",
+                "rtf"
+            ],
+            "support": {
+                "issues": "https://github.com/henck/rtf-html-php/issues",
+                "source": "https://github.com/henck/rtf-html-php/tree/v1.3"
+            },
+            "time": "2026-03-10T18:58:29+00:00"
         },
         {
             "name": "league/oauth2-client",

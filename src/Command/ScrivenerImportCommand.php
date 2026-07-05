@@ -26,11 +26,12 @@ final class ScrivenerImportCommand extends Command
     protected function configure(): void
     {
         $this->setName('content:import-scrivener')
-            ->setDescription('Import Scrivener FDX files from a synced directory')
-            ->addOption('directory', null, InputOption::VALUE_REQUIRED, 'Directory containing Scrivener FDX exports', $this->defaultDirectory)
+            ->setDescription('Import Scrivener project backup items from a synced directory')
+            ->addOption('directory', null, InputOption::VALUE_REQUIRED, 'Directory containing Scrivener .scriv backups (or a direct .scriv path)', $this->defaultDirectory)
             ->addOption('author-id', null, InputOption::VALUE_REQUIRED, 'Author ID to assign to imported content versions', '1')
+            ->addOption('book-title', null, InputOption::VALUE_REQUIRED, 'Optional book title for this import batch', null)
             ->addOption('label-prefix', null, InputOption::VALUE_REQUIRED, 'Optional prefix for generated version labels', null)
-            ->addOption('dry-run', null, InputOption::VALUE_NONE, 'Validate FDX files without inserting them into the database');
+            ->addOption('dry-run', null, InputOption::VALUE_NONE, 'Validate Scrivener backup items without inserting them into the database');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -38,6 +39,10 @@ final class ScrivenerImportCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $directory = (string) $input->getOption('directory');
         $authorId = (int) $input->getOption('author-id');
+        $bookTitle = $input->getOption('book-title') !== null ? trim((string) $input->getOption('book-title')) : null;
+        if ($bookTitle === '') {
+            $bookTitle = null;
+        }
         $labelPrefix = $input->getOption('label-prefix') !== null ? (string) $input->getOption('label-prefix') : null;
         $dryRun = $input->getOption('dry-run');
 
@@ -53,27 +58,34 @@ final class ScrivenerImportCommand extends Command
         $service = new ContentImportService($connection);
 
         try {
-            $result = $service->importFdxDirectory($directory, $authorId, $labelPrefix, $dryRun);
+            $result = $service->importScrivenerDirectory($directory, $authorId, $labelPrefix, $dryRun, $bookTitle);
         } catch (\Throwable $e) {
             $io->error($e->getMessage());
             return Command::FAILURE;
         }
 
-        $io->section($dryRun ? 'Scrivener FDX dry-run validation' : 'Scrivener FDX import result');
+        $io->section($dryRun ? 'Scrivener backup dry-run validation' : 'Scrivener backup import result');
         $io->text('Directory: ' . $directory);
+        if ($bookTitle !== null) {
+            $io->text('Book title: ' . $bookTitle);
+        }
+        if (isset($result['scanned_projects'])) {
+            $io->text('Scanned projects: ' . $result['scanned_projects']);
+        }
         $io->text('Scanned files: ' . $result['scanned']);
-        $io->text('Imported files: ' . count($result['imported']));
-        $io->text('Failed files: ' . count($result['failed']));
+        $io->text('Imported items: ' . count($result['imported']));
+        $io->text('Failed items: ' . count($result['failed']));
 
         if (!empty($result['imported'])) {
-            $io->section('Imported files');
+            $io->section('Imported items');
             foreach ($result['imported'] as $path => $info) {
-                $io->text(sprintf('- %s (%s)', $path, $info['version_label']));
+                $kind = (string) ($info['kind'] ?? 'item');
+                $io->text(sprintf('- %s [%s] (%s)', $path, $kind, $info['version_label']));
             }
         }
 
         if (!empty($result['failed'])) {
-            $io->section('Failed files');
+            $io->section('Failed items');
             foreach ($result['failed'] as $path => $errors) {
                 $io->writeln(sprintf('- %s', $path));
                 foreach ($errors as $error) {
@@ -85,11 +97,11 @@ final class ScrivenerImportCommand extends Command
         }
 
         if ($result['scanned'] === 0) {
-            $io->warning('No Scrivener FDX files were found in the directory.');
+            $io->warning('No Scrivener binder items were found in the selected directory.');
             return Command::SUCCESS;
         }
 
-        $io->success($dryRun ? 'Dry-run validation completed successfully.' : 'Scrivener FDX import completed successfully.');
+        $io->success($dryRun ? 'Dry-run validation completed successfully.' : 'Scrivener backup import completed successfully.');
 
         return Command::SUCCESS;
     }
