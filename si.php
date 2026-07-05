@@ -8,6 +8,7 @@ use SparkInsight\Command\GenerateInvitationCommand;
 use SparkInsight\Command\InitializeDbCommand;
 use SparkInsight\Command\ListUsersCommand;
 use SparkInsight\Command\MigrateDbCommand;
+use SparkInsight\Command\PurgeContentImportsCommand;
 use SparkInsight\Command\ScrivenerImportCommand;
 use Symfony\Component\Console\Application;
 
@@ -19,6 +20,7 @@ $app->add(new InitializeDbCommand());
 $app->add(new BootstrapAdminCommand());
 $app->add(new ListUsersCommand());
 $app->add(new MigrateDbCommand());
+$app->add(new PurgeContentImportsCommand());
 $app->add(new GenerateInvitationCommand());
 $app->add(new ScrivenerImportCommand());
 $app->run();

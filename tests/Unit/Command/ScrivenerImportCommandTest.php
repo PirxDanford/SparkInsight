@@ -12,6 +12,7 @@ final class ScrivenerImportCommandTest extends TestCase
 {
     private string $dbFile;
     private string $scrivenerDir;
+    private string $projectDir;
 
     protected function setUp(): void
     {
@@ -27,16 +28,34 @@ final class ScrivenerImportCommandTest extends TestCase
 
         $this->scrivenerDir = sys_get_temp_dir() . '/sparkinsight_scrivener_' . bin2hex(random_bytes(8));
         mkdir($this->scrivenerDir, 0777, true);
+        $this->projectDir = $this->scrivenerDir . '/book.scriv';
+        mkdir($this->projectDir . '/Files/Data/A1111111-1111-1111-1111-111111111111', 0777, true);
 
-        file_put_contents($this->scrivenerDir . '/ImportDoc.fdx', <<<'XML'
+        file_put_contents($this->projectDir . '/book.scrivx', <<<'XML'
 <?xml version="1.0" encoding="UTF-8"?>
-<FDX>
-    <PROJECT>
-        <NAME>Imported Document</NAME>
-    </PROJECT>
-    <TEXT>Import paragraph</TEXT>
-</FDX>
+<ScrivenerProject>
+    <Binder>
+        <BinderItem UUID="ROOT-BOOK" Type="Folder">
+            <Title>The Book</Title>
+            <Children>
+                <BinderItem UUID="F1111111-1111-1111-1111-111111111111" Type="Folder">
+                    <Title>Front Matter</Title>
+                    <Children>
+                        <BinderItem UUID="A1111111-1111-1111-1111-111111111111" Type="Text">
+                            <Title>Title page</Title>
+                        </BinderItem>
+                    </Children>
+                </BinderItem>
+            </Children>
+        </BinderItem>
+    </Binder>
+</ScrivenerProject>
 XML
+        );
+
+        file_put_contents(
+            $this->projectDir . '/Files/Data/A1111111-1111-1111-1111-111111111111/content.rtf',
+            '{\\rtf1\\ansi\\deff0 Title page text\\par Import paragraph}'
         );
 
         $pdo = new \PDO('sqlite:' . $this->dbFile);
@@ -45,8 +64,11 @@ XML
 CREATE TABLE content_versions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
+    book_title TEXT,
     version_label TEXT NOT NULL,
     source TEXT,
+    content_rtf TEXT,
+    content_text TEXT,
     author_id INTEGER,
     status TEXT NOT NULL,
     metadata TEXT,
@@ -75,8 +97,13 @@ SQL
         $files = glob($this->scrivenerDir . '/*');
         if ($files !== false) {
             foreach ($files as $file) {
-                if (is_file($file)) {
+                if (is_file($file) || is_link($file)) {
                     unlink($file);
+                    continue;
+                }
+
+                if (is_dir($file)) {
+                    $this->deleteDirectoryRecursively($file);
                 }
             }
         }
@@ -94,17 +121,47 @@ SQL
         $exitCode = $tester->execute([
             '--directory' => $this->scrivenerDir,
             '--author-id' => '1',
+            '--book-title' => 'My Test Book',
         ]);
 
         $this->assertSame(0, $exitCode);
-        $this->assertStringContainsString('Imported files: 1', $tester->getDisplay());
-        $this->assertStringContainsString('Scrivener FDX import completed successfully.', $tester->getDisplay());
+        $this->assertStringContainsString('Book title: My Test Book', $tester->getDisplay());
+        $this->assertStringContainsString('Scanned projects: 1', $tester->getDisplay());
+        $this->assertStringContainsString('Imported items: 2', $tester->getDisplay());
+        $this->assertStringContainsString('Scrivener backup import completed successfully.', $tester->getDisplay());
 
         $pdo = new \PDO('sqlite:' . $this->dbFile);
         $count = (int) $pdo->query('SELECT COUNT(*) FROM content_versions')->fetchColumn();
-        $this->assertSame(1, $count);
+        $this->assertSame(2, $count);
 
-        $versionLabel = $pdo->query("SELECT version_label FROM content_versions LIMIT 1")->fetchColumn();
-        $this->assertSame('ImportDoc', $versionLabel);
+        $versionLabel = (string) $pdo->query("SELECT version_label FROM content_versions WHERE title = 'Title page' LIMIT 1")->fetchColumn();
+        $this->assertStringContainsString('The Book/Front Matter/Title page', $versionLabel);
+
+        $bookTitle = $pdo->query("SELECT book_title FROM content_versions LIMIT 1")->fetchColumn();
+        $this->assertSame('My Test Book', $bookTitle);
+    }
+
+    private function deleteDirectoryRecursively(string $directory): void
+    {
+        $items = scandir($directory);
+        if ($items === false) {
+            return;
+        }
+
+        foreach ($items as $item) {
+            if ($item === '.' || $item === '..') {
+                continue;
+            }
+
+            $path = $directory . '/' . $item;
+            if (is_dir($path) && !is_link($path)) {
+                $this->deleteDirectoryRecursively($path);
+                continue;
+            }
+
+            @unlink($path);
+        }
+
+        @rmdir($directory);
     }
 }
