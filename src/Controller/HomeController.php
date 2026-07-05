@@ -36,6 +36,8 @@ final class HomeController
             'providers' => $activeLinks,
             'appUrl' => $this->config->get('app_url'),
             'showDemo' => true,
+            'user' => $this->session->getUser(),
+            'flash_message' => $this->session->getFlash(),
         ]);
     }
 }

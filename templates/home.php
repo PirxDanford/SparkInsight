@@ -17,6 +17,26 @@ ob_start();
             <p>Secure OAuth authentication with local development readiness.</p>
             <p>Connect with GitHub or Google for seamless access to collaborative review tools.</p>
         </div>
+
+        <div class="card home-cta-card">
+            <div class="card-header">
+                <h2><?= ($user ?? null) ? 'Continue Your Review Work' : 'Get Started' ?></h2>
+                <p>
+                    <?= ($user ?? null)
+                        ? 'Go straight to your dashboard and switch into reviewer view as needed.'
+                        : 'Sign in to access reviewer, author, and admin experiences.' ?>
+                </p>
+            </div>
+
+            <div class="action-group home-cta-actions">
+                <?php if ($user ?? null): ?>
+                    <a class="button" href="/dashboard">Open Dashboard</a>
+                <?php else: ?>
+                    <a class="button" href="/login">Start with Login</a>
+                    <a class="button secondary" href="/signup">Use Invitation Signup</a>
+                <?php endif; ?>
+            </div>
+        </div>
     </div>
 </div>
 

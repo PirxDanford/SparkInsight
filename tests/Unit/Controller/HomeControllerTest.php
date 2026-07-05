@@ -67,6 +67,8 @@ class HomeControllerTest extends TestCase
                     ],
                     'appUrl' => 'http://localhost:8000',
                     'showDemo' => true,
+                    'user' => null,
+                    'flash_message' => null,
                 ]
             )
             ->willReturn($response);

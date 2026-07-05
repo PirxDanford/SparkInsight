@@ -1,34 +1,878 @@
 <?php
-$title = 'Dashboard';
+$title = $title ?? 'Review';
+$reviewer_queue_filters = isset($reviewer_queue_filters) && is_array($reviewer_queue_filters) ? $reviewer_queue_filters : [];
+$reviewer_queue_pagination = isset($reviewer_queue_pagination) && is_array($reviewer_queue_pagination) ? $reviewer_queue_pagination : [];
+$formatQueuePath = static function (string $path): string {
+    $segments = array_values(array_filter(explode('/', str_replace('\\', '/', $path)), static fn (string $segment): bool => trim($segment) !== ''));
+
+    return implode(' / ', $segments);
+};
 ob_start();
 ?>
 <div class="hero-panel">
-    <div class="welcome-section">
-        <h2>Welcome back, <?= htmlspecialchars($user['name'] ?? 'Reviewer', ENT_QUOTES, 'UTF-8') ?>!</h2>
-        <p>You are signed in through <?= htmlspecialchars($user['provider'] ?? 'unknown provider', ENT_QUOTES, 'UTF-8') ?>.</p>
-    </div>
-
-    <div class="card">
-        <div class="card-header">
-            <h2>Your Session Details</h2>
+    <?php if (!empty($flash_message) && is_array($flash_message)): ?>
+        <div class="notice <?= htmlspecialchars($flash_message['type'] ?? 'info', ENT_QUOTES, 'UTF-8') ?>">
+            <strong><?= htmlspecialchars(ucfirst((string) ($flash_message['type'] ?? 'Notice')), ENT_QUOTES, 'UTF-8') ?>:</strong>
+            <span><?= htmlspecialchars((string) ($flash_message['message'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
         </div>
+    <?php endif; ?>
 
-        <dl class="details-list">
-            <dt>Name</dt>
-            <dd><?= htmlspecialchars($user['name'] ?? '', ENT_QUOTES, 'UTF-8') ?></dd>
-            <dt>Email</dt>
-            <dd><?= htmlspecialchars($user['email'] ?? '', ENT_QUOTES, 'UTF-8') ?></dd>
-            <dt>Provider</dt>
-            <dd><?= htmlspecialchars($user['provider'] ?? '', ENT_QUOTES, 'UTF-8') ?></dd>
-        </dl>
+    <?php if (($dashboard_mode ?? 'review') === 'review'): ?>
+        <?php if (!empty($review_item) && is_array($review_item)): ?>
+            <?php
+                $draftStatus = (string) ($review_draft['status'] ?? 'open');
+                $draftDetails = (string) ($review_draft['details'] ?? '');
+                $reader = is_array($review_item['reader'] ?? null) ? $review_item['reader'] : [
+                    'available' => false,
+                    'sections' => [],
+                    'paragraph_count' => 0,
+                    'word_count' => 0,
+                    'source_label' => 'Unavailable',
+                    'notice' => 'The source content could not be loaded.',
+                ];
+            ?>
+            <section class="card dashboard-section review-focus-panel">
+                <div class="card-header review-focus-header">
+                    <div>
+                        <p class="eyebrow">Open review item</p>
+                        <h2><?= htmlspecialchars((string) $review_item['title'], ENT_QUOTES, 'UTF-8') ?></h2>
+                        <p><?= htmlspecialchars((string) $review_item['author_name'], ENT_QUOTES, 'UTF-8') ?> · Imported <?= htmlspecialchars(date('Y-m-d', strtotime((string) $review_item['imported_at'])), ENT_QUOTES, 'UTF-8') ?></p>
+                    </div>
+                    <div class="review-focus-actions">
+                        <span class="status-pill status-<?= htmlspecialchars((string) $review_item['status_tone'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $review_item['status_label'], ENT_QUOTES, 'UTF-8') ?></span>
+                        <a class="button secondary" href="/dashboard/review">Back to queue</a>
+                    </div>
+                </div>
 
-        <div class="action-group">
-            <a class="button secondary" href="/logout">
-                <span class="icon">🚪</span>
-                Sign out
-            </a>
-        </div>
-    </div>
+                <section class="card immersive-reader-shell" aria-label="Read-only content display">
+                    <div class="card-header immersive-reader-header">
+                        <div>
+                            <h3>Reader view</h3>
+                            <p>Text-first display for focused review, with quick jumps between sections.</p>
+                        </div>
+                        <div class="reader-source-meta">
+                            <span><strong>Source:</strong> <?= htmlspecialchars((string) ($reader['source_label'] ?? 'Unavailable'), ENT_QUOTES, 'UTF-8') ?></span>
+                            <span><strong>Paragraphs:</strong> <?= (int) ($reader['paragraph_count'] ?? 0) ?></span>
+                            <span><strong>Words:</strong> <?= (int) ($reader['word_count'] ?? 0) ?></span>
+                        </div>
+                    </div>
+
+                    <?php if (!empty($reader['available']) && !empty($reader['sections']) && is_array($reader['sections'])): ?>
+                        <div class="immersive-reader-grid">
+                            <aside class="reader-outline" aria-label="Section navigation">
+                                <p class="eyebrow eyebrow-subtle">Sections</p>
+                                <ol class="reader-outline-list">
+                                    <?php foreach ($reader['sections'] as $index => $section): ?>
+                                        <li>
+                                            <a href="#<?= htmlspecialchars((string) ($section['anchor'] ?? ('section-' . ($index + 1))), ENT_QUOTES, 'UTF-8') ?>">
+                                                <span class="reader-outline-index"><?= (int) $index + 1 ?></span>
+                                                <span><?= htmlspecialchars((string) ($section['label'] ?? 'Section'), ENT_QUOTES, 'UTF-8') ?></span>
+                                            </a>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ol>
+                            </aside>
+
+                            <article class="reader-surface" aria-label="Content text">
+                                <?php foreach ($reader['sections'] as $index => $section): ?>
+                                    <section class="reader-section" id="<?= htmlspecialchars((string) ($section['anchor'] ?? ('section-' . ($index + 1))), ENT_QUOTES, 'UTF-8') ?>">
+                                        <header class="reader-section-header">
+                                            <span class="reader-section-number">Section <?= (int) $index + 1 ?></span>
+                                            <?php if (!empty($section['type'])): ?>
+                                                <span class="status-pill status-neutral"><?= htmlspecialchars((string) $section['type'], ENT_QUOTES, 'UTF-8') ?></span>
+                                            <?php endif; ?>
+                                        </header>
+                                        <p><?= nl2br(htmlspecialchars((string) ($section['text'] ?? ''), ENT_QUOTES, 'UTF-8')) ?></p>
+                                    </section>
+                                <?php endforeach; ?>
+                            </article>
+                        </div>
+                    <?php else: ?>
+                        <p class="empty-state"><?= htmlspecialchars((string) ($reader['notice'] ?? 'No reader content available.'), ENT_QUOTES, 'UTF-8') ?></p>
+                    <?php endif; ?>
+                </section>
+
+                <div class="review-focus-grid">
+                    <section class="card review-summary-panel">
+                        <div class="card-header">
+                            <h3>Item snapshot</h3>
+                            <p>Context details while reviewing the text.</p>
+                        </div>
+
+                        <dl class="details-list review-meta-list">
+                            <dt>Submission</dt>
+                            <dd><?= htmlspecialchars((string) $review_item['title'], ENT_QUOTES, 'UTF-8') ?></dd>
+                            <dt>Version</dt>
+                            <dd><?= htmlspecialchars((string) $review_item['version_label'], ENT_QUOTES, 'UTF-8') ?></dd>
+                            <dt>Author</dt>
+                            <dd><?= htmlspecialchars((string) $review_item['author_name'], ENT_QUOTES, 'UTF-8') ?></dd>
+                            <dt>Source</dt>
+                            <dd><?= htmlspecialchars((string) ($review_item['source'] ?: 'Not provided'), ENT_QUOTES, 'UTF-8') ?></dd>
+                            <dt>State</dt>
+                            <dd><?= htmlspecialchars((string) $review_item['status_label'], ENT_QUOTES, 'UTF-8') ?></dd>
+                        </dl>
+
+                        <div class="review-summary-metrics">
+                            <?php foreach (($review_item['summary'] ?? []) as $metric): ?>
+                                <article class="metric-card metric-<?= htmlspecialchars((string) $metric['tone'], ENT_QUOTES, 'UTF-8') ?>">
+                                    <p><?= htmlspecialchars((string) $metric['label'], ENT_QUOTES, 'UTF-8') ?></p>
+                                    <strong><?= htmlspecialchars((string) $metric['value'], ENT_QUOTES, 'UTF-8') ?></strong>
+                                </article>
+                            <?php endforeach; ?>
+                        </div>
+                    </section>
+
+                    <section class="card review-thread-panel">
+                        <div class="card-header">
+                            <h3>Leave a review note</h3>
+                            <p>Capture observations without leaving the reader flow.</p>
+                        </div>
+
+                        <form class="review-note-form" method="post" action="/dashboard/review/<?= (int) $review_item['id'] ?>">
+                            <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string) ($csrf_token ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+
+                            <label>
+                                <span>Status</span>
+                                <select name="status">
+                                    <option value="open" <?= $draftStatus === 'open' ? 'selected' : '' ?>>Open</option>
+                                    <option value="needs_author_review" <?= $draftStatus === 'needs_author_review' ? 'selected' : '' ?>>Needs author reply</option>
+                                    <option value="resolved" <?= $draftStatus === 'resolved' ? 'selected' : '' ?>>Resolved</option>
+                                </select>
+                            </label>
+
+                            <label>
+                                <span>Comment</span>
+                                <textarea name="details" rows="7" placeholder="Describe what stands out, what should change, or what already looks solid."><?= htmlspecialchars($draftDetails, ENT_QUOTES, 'UTF-8') ?></textarea>
+                            </label>
+
+                            <div class="action-group">
+                                <button class="button" type="submit">Save review update</button>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+
+                <section class="review-history-panel">
+                    <div class="card-header">
+                        <h3>Review history</h3>
+                        <p>Recent notes and status changes for this submission.</p>
+                    </div>
+
+                    <div class="review-history-list">
+                        <?php if (!empty($review_item['reviews'])): ?>
+                            <?php foreach (($review_item['reviews'] ?? []) as $review): ?>
+                                <article class="review-note-card">
+                                    <div class="review-note-card-header">
+                                        <div>
+                                            <strong><?= htmlspecialchars((string) $review['reviewer'], ENT_QUOTES, 'UTF-8') ?></strong>
+                                            <p><?= htmlspecialchars((string) $review['title'], ENT_QUOTES, 'UTF-8') ?></p>
+                                        </div>
+                                        <span class="status-pill status-<?= htmlspecialchars((string) $review['status_tone'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $review['status_label'], ENT_QUOTES, 'UTF-8') ?></span>
+                                    </div>
+                                    <dl class="details-list review-note-meta">
+                                        <dt>Submitted</dt>
+                                        <dd><?= htmlspecialchars(date('Y-m-d H:i', strtotime((string) $review['created_at'])), ENT_QUOTES, 'UTF-8') ?></dd>
+                                        <dt>Resolved</dt>
+                                        <dd><?= !empty($review['resolved_at']) ? htmlspecialchars(date('Y-m-d H:i', strtotime((string) $review['resolved_at'])), ENT_QUOTES, 'UTF-8') : 'Not resolved yet' ?></dd>
+                                    </dl>
+                                    <p><?= htmlspecialchars($review['details'] !== '' ? (string) $review['details'] : 'No comment provided.', ENT_QUOTES, 'UTF-8') ?></p>
+                                </article>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <p class="empty-state">No comments yet. Be the first reviewer to leave guidance.</p>
+                        <?php endif; ?>
+                    </div>
+                </section>
+            </section>
+        <?php endif; ?>
+
+        <section class="dashboard-section">
+            <div class="card-header">
+                <h2>Reviewer Snapshot</h2>
+                <p>Reviewer-only context for items assigned to you.</p>
+            </div>
+
+            <div class="reviewer-metrics">
+                <?php foreach (($reviewer_metrics ?? []) as $metric): ?>
+                    <article class="metric-card metric-<?= htmlspecialchars($metric['tone'], ENT_QUOTES, 'UTF-8') ?>">
+                        <p><?= htmlspecialchars($metric['label'], ENT_QUOTES, 'UTF-8') ?></p>
+                        <strong><?= htmlspecialchars($metric['value'], ENT_QUOTES, 'UTF-8') ?></strong>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        </section>
+
+        <section class="card dashboard-section">
+            <div class="card-header">
+                <h2>Ready For Review</h2>
+                <p>Current set of assigned submissions for one book queue.</p>
+            </div>
+
+            <form class="queue-filters" method="get" action="/dashboard/review">
+                <label class="queue-filter-search">
+                    <span>Search</span>
+                    <input type="text" name="q" value="<?= htmlspecialchars((string) (($reviewer_queue_filters['q'] ?? '') ?: ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Title, book, author...">
+                </label>
+
+                <label class="queue-filter-priority">
+                    <span>Priority</span>
+                    <select name="priority">
+                        <?php $currentPriority = (string) ($reviewer_queue_filters['priority'] ?? 'all'); ?>
+                        <option value="all" <?= $currentPriority === 'all' ? 'selected' : '' ?>>All priorities</option>
+                        <option value="highest" <?= $currentPriority === 'highest' ? 'selected' : '' ?>>Highest</option>
+                        <option value="high" <?= $currentPriority === 'high' ? 'selected' : '' ?>>High</option>
+                        <option value="normal" <?= $currentPriority === 'normal' ? 'selected' : '' ?>>Normal</option>
+                        <option value="low" <?= $currentPriority === 'low' ? 'selected' : '' ?>>Low</option>
+                        <option value="lowest" <?= $currentPriority === 'lowest' ? 'selected' : '' ?>>Lowest</option>
+                    </select>
+                </label>
+
+                <label class="queue-filter-state">
+                    <span>Review State</span>
+                    <select name="state">
+                        <?php $currentState = (string) ($reviewer_queue_filters['state'] ?? 'all'); ?>
+                        <option value="all" <?= $currentState === 'all' ? 'selected' : '' ?>>All states</option>
+                        <option value="placeholder" <?= $currentState === 'placeholder' ? 'selected' : '' ?>>Structure</option>
+                        <option value="ready_for_review" <?= $currentState === 'ready_for_review' ? 'selected' : '' ?>>Ready for review</option>
+                        <option value="in_review" <?= $currentState === 'in_review' ? 'selected' : '' ?>>In review</option>
+                        <option value="needs_author_reply" <?= $currentState === 'needs_author_reply' ? 'selected' : '' ?>>Needs author reply</option>
+                        <option value="resolved" <?= $currentState === 'resolved' ? 'selected' : '' ?>>Resolved</option>
+                    </select>
+                </label>
+
+                <label class="queue-filter-sort">
+                    <span>Sort</span>
+                    <select name="sort">
+                        <?php $currentSort = (string) ($reviewer_queue_filters['sort'] ?? 'binder_asc'); ?>
+                        <option value="binder_asc" <?= $currentSort === 'binder_asc' ? 'selected' : '' ?>>Binder order</option>
+                        <option value="due_asc" <?= $currentSort === 'due_asc' ? 'selected' : '' ?>>Due date (soonest)</option>
+                        <option value="due_desc" <?= $currentSort === 'due_desc' ? 'selected' : '' ?>>Due date (latest)</option>
+                        <option value="chapter_asc" <?= $currentSort === 'chapter_asc' ? 'selected' : '' ?>>Chapter title (A-Z)</option>
+                        <option value="chapter_desc" <?= $currentSort === 'chapter_desc' ? 'selected' : '' ?>>Chapter title (Z-A)</option>
+                        <option value="imported_desc" <?= $currentSort === 'imported_desc' ? 'selected' : '' ?>>Most recently imported</option>
+                    </select>
+                </label>
+
+                <label class="queue-filter-per-page">
+                    <span>Per page</span>
+                    <select name="per_page">
+                        <?php $currentPerPage = (int) ($reviewer_queue_filters['per_page'] ?? 10); ?>
+                        <option value="10" <?= $currentPerPage === 10 ? 'selected' : '' ?>>10</option>
+                        <option value="25" <?= $currentPerPage === 25 ? 'selected' : '' ?>>25</option>
+                        <option value="50" <?= $currentPerPage === 50 ? 'selected' : '' ?>>50</option>
+                        <option value="100" <?= $currentPerPage === 100 ? 'selected' : '' ?>>100</option>
+                    </select>
+                </label>
+
+                <div class="queue-filter-actions">
+                    <button type="submit" class="button small">Apply</button>
+                    <a href="/dashboard/review" class="button small secondary">Reset</a>
+                </div>
+            </form>
+
+            <div class="queue-context">
+                <p>
+                    <strong>Author:</strong>
+                    <?= htmlspecialchars((string) (($reviewer_queue_context['author'] ?? null) ?? 'Not available'), ENT_QUOTES, 'UTF-8') ?>
+                    &nbsp;|&nbsp;
+                    <strong>Book:</strong>
+                    <?= htmlspecialchars((string) (($reviewer_queue_context['book_title'] ?? null) ?? 'Not set'), ENT_QUOTES, 'UTF-8') ?>
+                </p>
+            </div>
+
+            <div class="queue-tree-tools" aria-label="Queue tree controls">
+                <button type="button" class="button small secondary" data-tree-collapse-all data-tree-table-target="reviewer-ready-queue">Collapse all folders</button>
+                <button type="button" class="button small secondary" data-tree-expand-all data-tree-table-target="reviewer-ready-queue">Expand all folders</button>
+            </div>
+
+            <div class="queue-table-wrap">
+                <table class="queue-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Status</th>
+                            <th>Due</th>
+                            <th>Priority</th>
+                        </tr>
+                    </thead>
+                    <tbody data-tree-table="reviewer-ready-queue">
+                        <?php if (!empty($reviewer_queue)): ?>
+                            <?php $reviewerQueueRows = array_values($reviewer_queue ?? []); ?>
+                            <?php for ($index = 0, $reviewerQueueRowCount = count($reviewerQueueRows); $index < $reviewerQueueRowCount; $index++): ?>
+                                <?php
+                                    $row = $reviewerQueueRows[$index];
+                                    $depth = max(0, (int) ($row['depth'] ?? 0));
+                                    $displayTitle = (string) (($row['display_title'] ?? '') !== '' ? $row['display_title'] : ($row['title'] ?? 'Untitled'));
+                                    $hasChildren = !empty($row['is_directory']) && !empty($row['has_children']);
+                                    $listPath = (string) ($row['list_path'] ?? '');
+                                    $parentPath = (string) ($row['parent_path'] ?? '');
+                                    $parentPathDisplay = $parentPath !== '' ? $formatQueuePath($parentPath) : '';
+                                    $pathDisplay = $listPath !== '' ? $formatQueuePath($listPath) : '';
+                                    $childFolderCount = max(0, (int) ($row['child_folder_count'] ?? 0));
+                                    $childItemCount = max(0, (int) ($row['child_item_count'] ?? 0));
+                                ?>
+                                <tr class="queue-row <?= !empty($row['is_directory']) ? 'queue-row-directory' : 'queue-row-content' ?>" data-tree-row="true" data-kind="<?= htmlspecialchars(!empty($row['is_directory']) ? 'directory' : 'item', ENT_QUOTES, 'UTF-8') ?>" data-depth="<?= $depth ?>" data-list-path="<?= htmlspecialchars((string) ($row['list_path'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" data-collapsed="false">
+                                    <td>
+                                        <div class="queue-tree-label <?= !empty($row['is_directory']) ? 'queue-tree-directory' : 'queue-tree-item' ?>" style="--queue-depth: <?= $depth ?>;">
+                                            <?php if (!empty($row['is_directory']) && $hasChildren): ?>
+                                                <button class="queue-tree-toggle" type="button" data-tree-toggle aria-expanded="true" aria-label="Collapse folder">
+                                                    <span class="queue-tree-toggle-icon" data-tree-toggle-icon aria-hidden="true">▾</span>
+                                                    <span class="queue-tree-toggle-text" aria-hidden="true">📁</span>
+                                                </button>
+                                            <?php else: ?>
+                                                <span class="queue-tree-glyph" aria-hidden="true"><?= !empty($row['is_directory']) ? '▸' : '•' ?></span>
+                                            <?php endif; ?>
+                                            <?php if (!empty($row['is_openable']) && !empty($row['url'])): ?>
+                                                <a class="queue-item-link <?= !empty($row['is_directory']) ? 'queue-item-link--directory' : 'queue-item-link--content' ?>" href="<?= htmlspecialchars((string) $row['url'], ENT_QUOTES, 'UTF-8') ?>">
+                                                    <?= htmlspecialchars($displayTitle, ENT_QUOTES, 'UTF-8') ?>
+                                                </a>
+                                            <?php else: ?>
+                                                <span class="queue-item-title-static <?= !empty($row['is_directory']) ? 'queue-item-title-directory' : 'queue-item-title-content' ?>"><?= htmlspecialchars($displayTitle, ENT_QUOTES, 'UTF-8') ?></span>
+                                            <?php endif; ?>
+                                            <?php if (!empty($row['is_directory'])): ?>
+                                                <span class="queue-folder-count-badge" title="Direct children in this folder"><?= $childFolderCount ?> folders · <?= $childItemCount ?> items</span>
+                                            <?php endif; ?>
+                                        </div>
+                                        <?php if (!empty($row['is_directory'])): ?>
+                                            <span class="queue-item-meta">Folder</span>
+                                            <?php if ($pathDisplay !== ''): ?>
+                                                <span class="queue-item-path">Path: <?= htmlspecialchars($pathDisplay, ENT_QUOTES, 'UTF-8') ?></span>
+                                            <?php endif; ?>
+                                        <?php else: ?>
+                                            <span class="queue-item-meta"><?= htmlspecialchars((string) $row['comments'], ENT_QUOTES, 'UTF-8') ?> notes</span>
+                                            <?php if ($parentPathDisplay !== ''): ?>
+                                                <span class="queue-item-path">Parent: <?= htmlspecialchars($parentPathDisplay, ENT_QUOTES, 'UTF-8') ?></span>
+                                            <?php endif; ?>
+                                        <?php endif; ?>
+                                    </td>
+                                    <?php if (!empty($row['is_directory'])): ?>
+                                        <td colspan="3"></td>
+                                    <?php else: ?>
+                                        <td><span class="status-pill status-<?= htmlspecialchars((string) $row['status_tone'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $row['status'], ENT_QUOTES, 'UTF-8') ?></span></td>
+                                        <td><?= htmlspecialchars((string) $row['due'], ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td><span class="priority priority-<?= htmlspecialchars((string) $row['priority'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(ucfirst((string) $row['priority']), ENT_QUOTES, 'UTF-8') ?></span></td>
+                                    <?php endif; ?>
+                                </tr>
+                            <?php endfor; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="4">No queue items match your current filter.</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <?php
+                $pagination = is_array($reviewer_queue_pagination ?? null) ? $reviewer_queue_pagination : [];
+                $baseFilters = is_array($reviewer_queue_filters ?? null) ? $reviewer_queue_filters : [];
+                $prevFilters = $baseFilters;
+                $nextFilters = $baseFilters;
+                $prevFilters['page'] = (int) (($pagination['prev_page'] ?? 1) ?: 1);
+                $nextFilters['page'] = (int) (($pagination['next_page'] ?? 1) ?: 1);
+            ?>
+            <div class="queue-pagination">
+                <p>
+                    Showing page <?= (int) ($pagination['page'] ?? 1) ?> of <?= (int) ($pagination['total_pages'] ?? 1) ?>
+                    (<?= (int) ($pagination['total'] ?? 0) ?> item(s))
+                </p>
+                <div class="queue-pagination-actions">
+                    <?php if (!empty($pagination['has_prev'])): ?>
+                        <a class="button small secondary" href="/dashboard/review?<?= htmlspecialchars((string) http_build_query($prevFilters), ENT_QUOTES, 'UTF-8') ?>">Previous</a>
+                    <?php else: ?>
+                        <span class="button small secondary" aria-disabled="true">Previous</span>
+                    <?php endif; ?>
+
+                    <?php if (!empty($pagination['has_next'])): ?>
+                        <a class="button small secondary" href="/dashboard/review?<?= htmlspecialchars((string) http_build_query($nextFilters), ENT_QUOTES, 'UTF-8') ?>">Next</a>
+                    <?php else: ?>
+                        <span class="button small secondary" aria-disabled="true">Next</span>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </section>
+
+        <section class="card dashboard-section">
+            <div class="card-header">
+                <h2>Not Yet Ready</h2>
+                <p>Assigned submissions that are not yet in the ready queue, grouped by content state.</p>
+            </div>
+
+            <?php if (!empty($reviewer_other_items_by_state) && is_array($reviewer_other_items_by_state)): ?>
+                <?php foreach ($reviewer_other_items_by_state as $group): ?>
+                    <div class="queue-context">
+                        <p>
+                            <strong>State:</strong>
+                            <span class="status-pill status-<?= htmlspecialchars((string) ($group['status_tone'] ?? 'neutral'), ENT_QUOTES, 'UTF-8') ?>">
+                                <?= htmlspecialchars((string) ($group['status_label'] ?? 'Unknown'), ENT_QUOTES, 'UTF-8') ?>
+                            </span>
+                            &nbsp;|&nbsp;
+                            <strong>Items:</strong>
+                            <?= count((array) ($group['items'] ?? [])) ?>
+                        </p>
+                    </div>
+
+                    <div class="queue-tree-tools" aria-label="Queue tree controls">
+                        <button type="button" class="button small secondary" data-tree-collapse-all data-tree-table-target="reviewer-state-<?= htmlspecialchars((string) ($group['status_key'] ?? 'unknown'), ENT_QUOTES, 'UTF-8') ?>">Collapse all folders</button>
+                        <button type="button" class="button small secondary" data-tree-expand-all data-tree-table-target="reviewer-state-<?= htmlspecialchars((string) ($group['status_key'] ?? 'unknown'), ENT_QUOTES, 'UTF-8') ?>">Expand all folders</button>
+                    </div>
+
+                    <div class="queue-table-wrap">
+                        <table class="queue-table">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Review State</th>
+                                    <th>Due</th>
+                                    <th>Priority</th>
+                                </tr>
+                            </thead>
+                            <tbody data-tree-table="reviewer-state-<?= htmlspecialchars((string) ($group['status_key'] ?? 'unknown'), ENT_QUOTES, 'UTF-8') ?>">
+                                <?php $groupRows = array_values($group['items'] ?? []); ?>
+                                <?php for ($index = 0, $groupRowCount = count($groupRows); $index < $groupRowCount; $index++): ?>
+                                    <?php
+                                        $row = $groupRows[$index];
+                                        $depth = max(0, (int) ($row['depth'] ?? 0));
+                                        $displayTitle = (string) (($row['display_title'] ?? '') !== '' ? $row['display_title'] : ($row['title'] ?? 'Untitled'));
+                                        $hasChildren = !empty($row['is_directory']) && !empty($row['has_children']);
+                                        $listPath = (string) ($row['list_path'] ?? '');
+                                        $parentPath = (string) ($row['parent_path'] ?? '');
+                                        $parentPathDisplay = $parentPath !== '' ? $formatQueuePath($parentPath) : '';
+                                        $pathDisplay = $listPath !== '' ? $formatQueuePath($listPath) : '';
+                                        $childFolderCount = max(0, (int) ($row['child_folder_count'] ?? 0));
+                                        $childItemCount = max(0, (int) ($row['child_item_count'] ?? 0));
+                                    ?>
+                                    <tr class="queue-row <?= !empty($row['is_directory']) ? 'queue-row-directory' : 'queue-row-content' ?>" data-tree-row="true" data-kind="<?= htmlspecialchars(!empty($row['is_directory']) ? 'directory' : 'item', ENT_QUOTES, 'UTF-8') ?>" data-depth="<?= $depth ?>" data-list-path="<?= htmlspecialchars((string) ($row['list_path'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" data-collapsed="false">
+                                        <td>
+                                            <div class="queue-tree-label <?= !empty($row['is_directory']) ? 'queue-tree-directory' : 'queue-tree-item' ?>" style="--queue-depth: <?= $depth ?>;">
+                                                <?php if (!empty($row['is_directory']) && $hasChildren): ?>
+                                                    <button class="queue-tree-toggle" type="button" data-tree-toggle aria-expanded="true" aria-label="Collapse folder">
+                                                        <span class="queue-tree-toggle-icon" data-tree-toggle-icon aria-hidden="true">▾</span>
+                                                        <span class="queue-tree-toggle-text" aria-hidden="true">📁</span>
+                                                    </button>
+                                                <?php else: ?>
+                                                    <span class="queue-tree-glyph" aria-hidden="true"><?= !empty($row['is_directory']) ? '▸' : '•' ?></span>
+                                                <?php endif; ?>
+                                                <?php if (!empty($row['is_openable']) && !empty($row['url'])): ?>
+                                                    <a class="queue-item-link <?= !empty($row['is_directory']) ? 'queue-item-link--directory' : 'queue-item-link--content' ?>" href="<?= htmlspecialchars((string) $row['url'], ENT_QUOTES, 'UTF-8') ?>">
+                                                        <?= htmlspecialchars($displayTitle, ENT_QUOTES, 'UTF-8') ?>
+                                                    </a>
+                                                <?php else: ?>
+                                                    <span class="queue-item-title-static <?= !empty($row['is_directory']) ? 'queue-item-title-directory' : 'queue-item-title-content' ?>"><?= htmlspecialchars($displayTitle, ENT_QUOTES, 'UTF-8') ?></span>
+                                                <?php endif; ?>
+                                                <?php if (!empty($row['is_directory'])): ?>
+                                                    <span class="queue-folder-count-badge" title="Direct children in this folder"><?= $childFolderCount ?> folders · <?= $childItemCount ?> items</span>
+                                                <?php endif; ?>
+                                            </div>
+                                            <?php if (!empty($row['is_directory'])): ?>
+                                                <span class="queue-item-meta">Folder</span>
+                                                <?php if ($pathDisplay !== ''): ?>
+                                                    <span class="queue-item-path">Path: <?= htmlspecialchars($pathDisplay, ENT_QUOTES, 'UTF-8') ?></span>
+                                                <?php endif; ?>
+                                            <?php else: ?>
+                                                <span class="queue-item-meta"><?= htmlspecialchars((string) $row['comments'], ENT_QUOTES, 'UTF-8') ?> notes</span>
+                                                <?php if ($parentPathDisplay !== ''): ?>
+                                                    <span class="queue-item-path">Parent: <?= htmlspecialchars($parentPathDisplay, ENT_QUOTES, 'UTF-8') ?></span>
+                                                <?php endif; ?>
+                                            <?php endif; ?>
+                                        </td>
+                                        <?php if (!empty($row['is_directory'])): ?>
+                                            <td colspan="3"></td>
+                                        <?php else: ?>
+                                            <td><span class="status-pill status-<?= htmlspecialchars((string) $row['status_tone'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $row['status'], ENT_QUOTES, 'UTF-8') ?></span></td>
+                                            <td><?= htmlspecialchars((string) $row['due'], ENT_QUOTES, 'UTF-8') ?></td>
+                                            <td><span class="priority priority-<?= htmlspecialchars((string) $row['priority'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(ucfirst((string) $row['priority']), ENT_QUOTES, 'UTF-8') ?></span></td>
+                                        <?php endif; ?>
+                                    </tr>
+                                <?php endfor; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <p class="empty-state">No additional assigned items outside the ready queue.</p>
+            <?php endif; ?>
+        </section>
+
+        <section class="card dashboard-section">
+            <div class="card-header">
+                <h2>Reviewer Actions</h2>
+                <p>Prototype action points for final reviewer workflow implementation.</p>
+            </div>
+
+            <ul class="action-checklist">
+                <li>Open a submission directly from the queue and keep the surrounding list in view</li>
+                <li>Use a quick status selector to mark work as open, needs reply, or resolved</li>
+                <li>Leave short context notes so the next reviewer or author knows what changed</li>
+                <li>Track review history on the item page without losing your place in the queue</li>
+            </ul>
+        </section>
+    <?php else: ?>
+        <section class="dashboard-section">
+            <div class="card-header">
+                <h2>Author Snapshot</h2>
+                <p>Author-only context focused on writing progress and reviewer feedback.</p>
+            </div>
+
+            <div class="reviewer-metrics">
+                <?php foreach (($author_metrics ?? []) as $metric): ?>
+                    <article class="metric-card metric-<?= htmlspecialchars($metric['tone'], ENT_QUOTES, 'UTF-8') ?>">
+                        <p><?= htmlspecialchars($metric['label'], ENT_QUOTES, 'UTF-8') ?></p>
+                        <strong><?= htmlspecialchars($metric['value'], ENT_QUOTES, 'UTF-8') ?></strong>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        </section>
+
+        <section class="card dashboard-section">
+            <div class="card-header">
+                <h2>Your Author Queue</h2>
+                <p>Track feedback status and next actions for your submissions.</p>
+            </div>
+
+            <div class="queue-table-wrap">
+                <table class="queue-table">
+                    <thead>
+                        <tr>
+                            <th>Submission</th>
+                            <th>Reviewer</th>
+                            <th>Status</th>
+                            <th>Updated</th>
+                            <th>Next Step</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach (($author_queue ?? []) as $row): ?>
+                            <tr>
+                                <td><?= htmlspecialchars($row['title'], ENT_QUOTES, 'UTF-8') ?></td>
+                                <td><?= htmlspecialchars($row['reviewer'], ENT_QUOTES, 'UTF-8') ?></td>
+                                <td><?= htmlspecialchars($row['status'], ENT_QUOTES, 'UTF-8') ?></td>
+                                <td><?= htmlspecialchars($row['updated'], ENT_QUOTES, 'UTF-8') ?></td>
+                                <td><?= htmlspecialchars($row['next_step'], ENT_QUOTES, 'UTF-8') ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="card dashboard-section">
+            <div class="card-header">
+                <h2>Author Actions</h2>
+                <p>Prototype action points for final author workflow implementation.</p>
+            </div>
+
+            <ul class="action-checklist">
+                <li>Open reviewer comments and resolve each discussion thread</li>
+                <li>Update chapter drafts and mark sections as ready for re-review</li>
+                <li>Track reviewer assignment and turnaround time per chapter</li>
+                <li>Export approved sections once all reviewer checks are resolved</li>
+            </ul>
+        </section>
+    <?php endif; ?>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const dashboardStateKey = <?= json_encode('sparkinsight.dashboard.state:' . (string) ($dashboard_mode ?? 'review')); ?>;
+        const queueFiltersForm = document.querySelector('.queue-filters');
+        const treeTables = document.querySelectorAll('[data-tree-table]');
+        const collapseAllButtons = document.querySelectorAll('[data-tree-collapse-all]');
+        const expandAllButtons = document.querySelectorAll('[data-tree-expand-all]');
+        const queueItemLinks = document.querySelectorAll('.queue-item-link--content');
+        let suppressStateSave = false;
+
+        function readDashboardState() {
+            try {
+                const raw = window.localStorage.getItem(dashboardStateKey);
+                if (!raw) {
+                    return null;
+                }
+
+                const parsed = JSON.parse(raw);
+                return parsed && typeof parsed === 'object' ? parsed : null;
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function writeDashboardState(state) {
+            try {
+                window.localStorage.setItem(dashboardStateKey, JSON.stringify(state));
+            } catch (error) {
+            }
+        }
+
+        function currentFiltersFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            const filters = {};
+
+            ['q', 'priority', 'state', 'sort', 'page', 'per_page'].forEach((key) => {
+                const value = params.get(key);
+                if (value !== null && value !== '') {
+                    filters[key] = value;
+                }
+            });
+
+            return filters;
+        }
+
+        function buildUrlFromFilters(filters) {
+            const params = new URLSearchParams();
+
+            ['q', 'priority', 'state', 'sort', 'page', 'per_page'].forEach((key) => {
+                const value = filters[key];
+                if (value !== undefined && value !== null && String(value) !== '') {
+                    params.set(key, String(value));
+                }
+            });
+
+            const query = params.toString();
+            return query === '' ? window.location.pathname : window.location.pathname + '?' + query + window.location.hash;
+        }
+
+        function captureTreeState() {
+            const treeState = {};
+
+            treeTables.forEach((tableBody) => {
+                const tableKey = tableBody.dataset.treeTable || 'default';
+                tableBody.querySelectorAll('tr[data-tree-row][data-kind="directory"]').forEach((row) => {
+                    const listPath = row.dataset.listPath || '';
+                    if (listPath !== '') {
+                        treeState[tableKey + '::' + listPath] = row.dataset.collapsed === 'true';
+                    }
+                });
+            });
+
+            return treeState;
+        }
+
+        function saveDashboardStateFromUrl() {
+            if (suppressStateSave) {
+                return;
+            }
+
+            const state = readDashboardState() || {};
+            state.filters = currentFiltersFromUrl();
+            state.treeState = captureTreeState();
+            state.scrollY = Math.max(0, Math.round(window.scrollY || 0));
+            state.updatedAt = Date.now();
+            writeDashboardState(state);
+        }
+
+        function saveDashboardState() {
+            saveDashboardStateFromUrl();
+        }
+
+        function saveDashboardStateFromForm() {
+            if (!queueFiltersForm) {
+                return;
+            }
+
+            const formValues = Object.fromEntries(new FormData(queueFiltersForm).entries());
+            const state = readDashboardState() || {};
+            state.filters = {
+                q: String(formValues.q ?? ''),
+                priority: String(formValues.priority ?? 'all'),
+                state: String(formValues.state ?? 'all'),
+                sort: String(formValues.sort ?? 'binder_asc'),
+                page: '1',
+                per_page: String(formValues.per_page ?? '10'),
+            };
+            state.treeState = captureTreeState();
+            state.scrollY = Math.max(0, Math.round(window.scrollY || 0));
+            state.updatedAt = Date.now();
+            writeDashboardState(state);
+        }
+
+        function restoreSavedFilters() {
+            if (!queueFiltersForm) {
+                return false;
+            }
+
+            if (window.location.search && window.location.search !== '?') {
+                return false;
+            }
+
+            const savedState = readDashboardState();
+            const savedFilters = savedState && typeof savedState === 'object' ? savedState.filters : null;
+            if (!savedFilters || typeof savedFilters !== 'object' || Object.keys(savedFilters).length === 0) {
+                return false;
+            }
+
+            const targetUrl = buildUrlFromFilters(savedFilters);
+            if (targetUrl !== window.location.pathname + window.location.search + window.location.hash) {
+                suppressStateSave = true;
+                window.location.replace(targetUrl);
+                return true;
+            }
+
+            return false;
+        }
+
+        function restoreCollapsedState() {
+            const savedState = readDashboardState();
+            const treeState = savedState && typeof savedState.treeState === 'object' && !Array.isArray(savedState.treeState)
+                ? savedState.treeState
+                : null;
+
+            treeTables.forEach((tableBody) => {
+                const tableKey = tableBody.dataset.treeTable || 'default';
+                tableBody.querySelectorAll('tr[data-tree-row][data-kind="directory"]').forEach((row) => {
+                    const listPath = row.dataset.listPath || '';
+                    if (listPath === '' || treeState === null) {
+                        return;
+                    }
+
+                    const stateKey = tableKey + '::' + listPath;
+                    if (Object.prototype.hasOwnProperty.call(treeState, stateKey)) {
+                        row.dataset.collapsed = treeState[stateKey] ? 'true' : 'false';
+                    }
+                });
+            });
+        }
+
+        function restoreScrollPosition() {
+            const savedState = readDashboardState();
+            const y = savedState && typeof savedState.scrollY === 'number'
+                ? savedState.scrollY
+                : null;
+
+            if (y === null || y <= 0) {
+                return;
+            }
+
+            window.requestAnimationFrame(() => {
+                window.scrollTo(0, y);
+            });
+        }
+
+        function refreshTreeVisibility(tableBody) {
+            const rows = Array.from(tableBody.querySelectorAll('tr[data-tree-row]'));
+            const collapsedAncestors = [];
+
+            rows.forEach((row) => {
+                const depth = Number(row.dataset.depth || '0');
+
+                while (collapsedAncestors.length > 0 && collapsedAncestors[collapsedAncestors.length - 1] >= depth) {
+                    collapsedAncestors.pop();
+                }
+
+                row.hidden = collapsedAncestors.length > 0;
+
+                const isCollapsed = row.dataset.collapsed === 'true';
+                const toggle = row.querySelector('[data-tree-toggle]');
+                const toggleIcon = row.querySelector('[data-tree-toggle-icon]');
+
+                if (toggle) {
+                    toggle.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+                    toggle.setAttribute('aria-label', isCollapsed ? 'Expand folder' : 'Collapse folder');
+                    toggle.classList.toggle('is-collapsed', isCollapsed);
+                    if (toggleIcon) {
+                        toggleIcon.textContent = isCollapsed ? '▸' : '▾';
+                    }
+                }
+
+                if ((row.dataset.kind || '') === 'directory' && isCollapsed) {
+                    collapsedAncestors.push(depth);
+                }
+            });
+        }
+
+        if (restoreSavedFilters()) {
+            return;
+        }
+
+        restoreCollapsedState();
+
+        treeTables.forEach((tableBody) => {
+            tableBody.querySelectorAll('[data-tree-toggle]').forEach((toggle) => {
+                toggle.addEventListener('click', () => {
+                    const row = toggle.closest('tr[data-tree-row]');
+                    if (!row) {
+                        return;
+                    }
+
+                    row.dataset.collapsed = row.dataset.collapsed === 'true' ? 'false' : 'true';
+                    refreshTreeVisibility(tableBody);
+                    saveDashboardStateFromUrl();
+                });
+            });
+
+            refreshTreeVisibility(tableBody);
+        });
+
+        collapseAllButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                const targetTableKey = button.getAttribute('data-tree-table-target') || '';
+                const tableBody = document.querySelector('[data-tree-table="' + CSS.escape(targetTableKey) + '"]');
+                if (!tableBody) {
+                    return;
+                }
+
+                tableBody.querySelectorAll('tr[data-tree-row][data-kind="directory"]').forEach((row) => {
+                    if (row.querySelector('[data-tree-toggle]')) {
+                        row.dataset.collapsed = 'true';
+                    }
+                });
+
+                refreshTreeVisibility(tableBody);
+                saveDashboardStateFromUrl();
+            });
+        });
+
+        expandAllButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                const targetTableKey = button.getAttribute('data-tree-table-target') || '';
+                const tableBody = document.querySelector('[data-tree-table="' + CSS.escape(targetTableKey) + '"]');
+                if (!tableBody) {
+                    return;
+                }
+
+                tableBody.querySelectorAll('tr[data-tree-row][data-kind="directory"]').forEach((row) => {
+                    row.dataset.collapsed = 'false';
+                });
+
+                refreshTreeVisibility(tableBody);
+                saveDashboardStateFromUrl();
+            });
+        });
+
+        queueItemLinks.forEach((link) => {
+            link.addEventListener('click', () => {
+                saveDashboardStateFromUrl();
+            });
+        });
+
+        if (queueFiltersForm) {
+            queueFiltersForm.addEventListener('submit', () => {
+                saveDashboardStateFromForm();
+            });
+        }
+
+        restoreScrollPosition();
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                saveDashboardState();
+            }
+        });
+
+        window.addEventListener('pagehide', saveDashboardStateFromUrl);
+        window.addEventListener('beforeunload', saveDashboardStateFromUrl);
+        window.addEventListener('pageshow', (event) => {
+            if (!event.persisted) {
+                return;
+            }
+
+            restoreCollapsedState();
+            treeTables.forEach((tableBody) => {
+                refreshTreeVisibility(tableBody);
+            });
+            restoreScrollPosition();
+        });
+    });
+    </script>
+
 </div>
 <?php
 $content = ob_get_clean();
