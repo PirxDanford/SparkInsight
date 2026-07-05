@@ -11,7 +11,6 @@ use SparkInsight\Config\Config;
 use SparkInsight\Controller\AdminController;
 use SparkInsight\Controller\AuthController;
 use SparkInsight\Controller\DashboardController;
-use SparkInsight\Controller\HomeController;
 use SparkInsight\Service\InvitationService;
 use SparkInsight\Service\OAuthProviderFactory;
 use SparkInsight\Service\UserService;
@@ -43,8 +42,7 @@ $app = AppFactory::create();
 $app->addRoutingMiddleware();
 $errorMiddleware = $app->addErrorMiddleware(true, true, true);
 
-$homeController = new HomeController($view, $providerFactory, $config, $session);
-$dashboardController = new DashboardController($view, $session);
+$dashboardController = new DashboardController($view, $session, $connection);
 $authController = new AuthController($view, $providerFactory, $session, $invitationService, $userService);
 $adminController = new AdminController($view, $session, $userService, $invitationService, $config, $connection);
 
@@ -61,8 +59,12 @@ $app->get('/favicon.ico', function ($request, $response) {
     return $response->withStatus(204);
 });
 
-$app->get('/', [$homeController, '__invoke']);
+$app->get('/', [$dashboardController, '__invoke']);
 $app->get('/dashboard', [$dashboardController, '__invoke']);
+$app->get('/dashboard/review', [$dashboardController, 'review']);
+$app->get('/dashboard/review/{id:[0-9]+}', [$dashboardController, 'reviewItem']);
+$app->post('/dashboard/review/{id:[0-9]+}', [$dashboardController, 'submitReview']);
+$app->get('/dashboard/author', [$dashboardController, 'author']);
 $app->get('/login', [$authController, 'showLogin']);
 $app->get('/signup', [$authController, 'showSignUp']);
 $app->get('/logout', [$authController, 'logout']);
