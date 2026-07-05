@@ -10,9 +10,9 @@ use SparkInsightTest\Integration\DatabaseTestCase;
 /**
  * Integration test for GitHub OAuth signup flow.
  * 
- * This test verifies that the database schema migration 002 (add_user_tracking_fields)
- * correctly supports the OAuth signup flow by testing UserService operations against
- * the test database with the new schema fields.
+ * This test verifies that the baseline database schema includes user tracking fields
+ * needed by the OAuth signup flow by testing UserService operations against
+ * the test database with these fields.
  */
 class AuthControllerCallbackIntegrationTest extends DatabaseTestCase
 {
@@ -26,7 +26,7 @@ class AuthControllerCallbackIntegrationTest extends DatabaseTestCase
 
     /**
      * Test that a new GitHub OAuth user can be created with all schema fields.
-     * This specifically verifies migration 002 fields (status, invitation_used, last_login) work.
+    * This specifically verifies baseline user tracking fields (status, invitation_used, last_login) work.
      */
     public function testGitHubOAuthSignupCreatesUserWithNewSchemaFields(): void
     {
@@ -45,15 +45,15 @@ class AuthControllerCallbackIntegrationTest extends DatabaseTestCase
         $this->assertEquals('user@github.com', $user['email']);
         $this->assertEquals('GitHub User', $user['name']);
         
-        // Verify NEW schema fields from migration 002 exist and have correct default values
-        $this->assertArrayHasKey('status', $user, 'Status column should exist (migration 002)');
+        // Verify baseline schema fields exist and have correct default values
+        $this->assertArrayHasKey('status', $user, 'Status column should exist in baseline schema');
         $this->assertEquals('active', $user['status'], 'New users should have status "active"');
         
-        $this->assertArrayHasKey('invitation_used', $user, 'Invitation_used column should exist (migration 002)');
+        $this->assertArrayHasKey('invitation_used', $user, 'Invitation_used column should exist in baseline schema');
         // First call to findOrCreateUser sets last_login to current time, so invitation_used will be null
         $this->assertNull($user['invitation_used'], 'OAuth signup should not have invitation_used set');
         
-        $this->assertArrayHasKey('last_login', $user, 'Last_login column should exist (migration 002)');
+        $this->assertArrayHasKey('last_login', $user, 'Last_login column should exist in baseline schema');
         // After findOrCreateUser, last_login is set to now for new users
         $this->assertNotNull($user['last_login'], 'New users should have last_login set');
         

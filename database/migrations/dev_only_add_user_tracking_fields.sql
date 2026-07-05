@@ -1,4 +1,4 @@
--- Migration: 002_add_user_tracking_fields
+-- Dev-only migration snapshot: add_user_tracking_fields
 -- UP
 ALTER TABLE users
 ADD COLUMN IF NOT EXISTS status ENUM('active', 'disabled') NOT NULL DEFAULT 'active' AFTER roles,

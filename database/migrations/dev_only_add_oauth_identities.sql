@@ -1,4 +1,4 @@
--- Migration: 004_add_oauth_identities
+-- Dev-only migration snapshot: add_oauth_identities
 -- UP
 CREATE TABLE IF NOT EXISTS oauth_identities (
     id INT AUTO_INCREMENT PRIMARY KEY,
