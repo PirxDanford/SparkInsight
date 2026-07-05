@@ -1,4 +1,4 @@
--- Migration: 003_add_content_versions_and_reviews
+-- Dev-only migration snapshot: add_content_versions_and_reviews
 -- UP
 CREATE TABLE IF NOT EXISTS content_versions (
     id INT AUTO_INCREMENT PRIMARY KEY,
