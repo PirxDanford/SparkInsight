@@ -11,6 +11,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Slim\Views\PhpRenderer;
 use SparkInsight\Config\Config;
 use SparkInsight\Controller\AdminController;
+use SparkInsight\Service\AppSettingsService;
 use SparkInsight\Service\InvitationService;
 use SparkInsight\Service\UserService;
 use SparkInsight\Service\UserSession;
@@ -21,6 +22,7 @@ class AdminControllerTest extends TestCase
     private UserSession $session;
     private UserService $userService;
     private InvitationService $invitationService;
+    private AppSettingsService $settingsService;
     private Connection $connection;
     private Config $config;
     private AdminController $controller;
@@ -33,6 +35,7 @@ class AdminControllerTest extends TestCase
         $this->connection = $this->createMock(Connection::class);
         $this->userService = new UserService($this->connection);
         $this->invitationService = new InvitationService($this->connection);
+        $this->settingsService = new AppSettingsService($this->connection);
         $this->config = Config::fromEnvironment();
 
         $this->controller = new AdminController(
@@ -40,6 +43,7 @@ class AdminControllerTest extends TestCase
             $this->session,
             $this->userService,
             $this->invitationService,
+            $this->settingsService,
             $this->config,
             $this->connection,
         );
@@ -343,10 +347,22 @@ class AdminControllerTest extends TestCase
         ];
 
         $callIndex = 0;
-        $this->connection->expects($this->exactly(2))
+        $this->connection->expects($this->exactly(3))
             ->method('executeQuery')
             ->willReturnCallback(function ($sql, $params = []) use (&$callIndex, $resultSet) {
                 if ($callIndex === 0) {
+                    $this->assertSame('SELECT setting_key, setting_value, value_type FROM app_settings', $sql);
+                    $callIndex++;
+
+                    return $this->createConfiguredMock(\Doctrine\DBAL\Result::class, [
+                        'fetchAllAssociative' => [
+                            ['setting_key' => 'invitation_default_hours', 'setting_value' => '168', 'value_type' => 'int'],
+                            ['setting_key' => 'invitation_default_roles', 'setting_value' => '["reviewer"]', 'value_type' => 'json'],
+                        ],
+                    ]);
+                }
+
+                if ($callIndex === 1) {
                     $this->assertStringContainsString('SELECT COUNT(*) as count FROM invitations', $sql);
                     $callIndex++;
 
@@ -378,6 +394,94 @@ class AdminControllerTest extends TestCase
         $result = $this->controller->invitations($request, $response);
 
         $this->assertSame($response, $result);
+    }
+
+    public function testSettingsRendersPageForAdmin(): void
+    {
+        $this->session->setUser(['id' => 1, 'roles' => ['admin']]);
+
+        $request = $this->createMock(ServerRequestInterface::class);
+        $response = $this->createMock(ResponseInterface::class);
+
+        $this->connection->expects($this->once())
+            ->method('executeQuery')
+            ->with('SELECT setting_key, setting_value, value_type FROM app_settings')
+            ->willReturn($this->createConfiguredMock(\Doctrine\DBAL\Result::class, [
+                'fetchAllAssociative' => [
+                    ['setting_key' => 'invitation_default_hours', 'setting_value' => '168', 'value_type' => 'int'],
+                    ['setting_key' => 'invitation_default_roles', 'setting_value' => '["reviewer"]', 'value_type' => 'json'],
+                    ['setting_key' => 'import_cron_schedule', 'setting_value' => '0 2 * * *', 'value_type' => 'string'],
+                    ['setting_key' => 'invitation_cleanup_cron_schedule', 'setting_value' => '30 2 * * *', 'value_type' => 'string'],
+                ],
+            ]));
+
+        $this->renderer->expects($this->once())
+            ->method('render')
+            ->with($response, 'admin/settings.php', $this->callback(function ($data) {
+                return $data['title'] === 'Admin Settings'
+                    && $data['settings']['invitation_default_hours'] === 168
+                    && is_array($data['cron_snippets'])
+                    && isset($data['cron_snippets']['import'])
+                    && isset($data['cron_snippets']['invitation_cleanup']);
+            }))
+            ->willReturn($response);
+
+        $result = $this->controller->settings($request, $response);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testSaveSettingsRedirectsForInvalidCsrf(): void
+    {
+        $this->session->setUser(['id' => 1, 'roles' => ['admin']]);
+
+        $request = $this->createMock(ServerRequestInterface::class);
+        $request->expects($this->once())
+            ->method('getParsedBody')
+            ->willReturn([
+                '_csrf' => 'invalid-token',
+                'invitation_default_hours' => '168',
+            ]);
+
+        $response = new TestResponse();
+        $result = $this->controller->saveSettings($request, $response);
+
+        $this->assertSame(302, $result->getStatusCode());
+        $this->assertSame(['/admin/settings'], $result->getHeader('Location'));
+    }
+
+    public function testSaveSettingsPersistsData(): void
+    {
+        $this->session->setUser(['id' => 1, 'roles' => ['admin']]);
+        $csrfToken = $this->session->getCsrfToken();
+
+        $request = $this->createMock(ServerRequestInterface::class);
+        $request->expects($this->once())
+            ->method('getParsedBody')
+            ->willReturn([
+                '_csrf' => $csrfToken,
+                'invitation_default_hours' => '200',
+                'invitation_default_roles' => ['reviewer', 'author'],
+                'import_cron_schedule' => '0 3 * * *',
+                'invitation_cleanup_cron_schedule' => '30 3 * * *',
+            ]);
+
+        $response = new TestResponse();
+
+        $this->connection->expects($this->exactly(4))
+            ->method('executeStatement')
+            ->with(
+                $this->stringContains('INSERT INTO app_settings'),
+                $this->callback(static function ($params): bool {
+                    return is_array($params) && count($params) === 3;
+                })
+            )
+            ->willReturn(1);
+
+        $result = $this->controller->saveSettings($request, $response);
+
+        $this->assertSame(302, $result->getStatusCode());
+        $this->assertSame(['/admin/settings'], $result->getHeader('Location'));
     }
 
     public function testCreateInvitationForAdmin(): void
@@ -474,7 +578,7 @@ class AdminControllerTest extends TestCase
                 '_csrf' => $csrfToken,
                 'email' => 'not-an-email',
                 'roles' => ['reviewer'],
-                'hours' => '24',
+                'hours' => '168',
             ]);
 
         $response = $this->createMock(ResponseInterface::class);

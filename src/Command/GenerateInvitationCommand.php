@@ -7,6 +7,7 @@ namespace SparkInsight\Command;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 use SparkInsight\Config\Config;
+use SparkInsight\Service\AppSettingsService;
 use SparkInsight\Service\InvitationService;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -37,7 +38,7 @@ final class GenerateInvitationCommand extends Command
              ->addOption('reviewer', 'r', InputOption::VALUE_NONE, 'Make user reviewer (default if no role specified)')
              ->addOption('author', null, InputOption::VALUE_NONE, 'Make user author')
              ->addOption('email', 'e', InputOption::VALUE_OPTIONAL, 'Email to restrict invitation to (optional)')
-             ->addOption('hours', null, InputOption::VALUE_REQUIRED, 'Hours until expiration', '24');
+             ->addOption('hours', null, InputOption::VALUE_OPTIONAL, 'Hours until expiration (defaults to admin settings value)');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -78,8 +79,13 @@ final class GenerateInvitationCommand extends Command
         }
 
         $invitationService = new InvitationService($this->connection);
+        $settingsService = new AppSettingsService($this->connection);
         $email = $input->getOption('email');
-        $hours = (int) $input->getOption('hours');
+        $hoursInput = $input->getOption('hours');
+        $hours = $hoursInput !== null ? (int) $hoursInput : $settingsService->getInvitationDefaultHours();
+        if ($hours < 1) {
+            $hours = $settingsService->getInvitationDefaultHours();
+        }
 
         try {
             $code = $invitationService->generateInvitation($roles, $email, $hours);

@@ -43,6 +43,25 @@ class GenerateInvitationCommandIntegrationTest extends TestCase
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         SQL);
+
+        $this->connection->executeStatement(<<<SQL
+            CREATE TABLE app_settings (
+                setting_key VARCHAR(100) PRIMARY KEY,
+                setting_value TEXT NOT NULL,
+                value_type VARCHAR(16) NOT NULL DEFAULT 'string',
+                updated_at DATETIME NOT NULL
+            )
+        SQL);
+
+        $this->connection->executeStatement(
+            'INSERT INTO app_settings (setting_key, setting_value, value_type, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)',
+            ['invitation_default_hours', '168', 'int']
+        );
+
+        $this->connection->executeStatement(
+            'INSERT INTO app_settings (setting_key, setting_value, value_type, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)',
+            ['invitation_default_roles', '["reviewer"]', 'json']
+        );
     }
 
     protected function tearDown(): void
@@ -111,6 +130,7 @@ class GenerateInvitationCommandIntegrationTest extends TestCase
         $this->assertSame(0, $exitCode);
         $output = $tester->getDisplay();
         $this->assertStringContainsString('reviewer', $output);
+        $this->assertStringContainsString('168 hours', $output);
     }
 
     public function testGenerateInvitationWithEmailRestriction(): void

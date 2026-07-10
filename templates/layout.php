@@ -16,6 +16,7 @@
         'Review' => ['label' => 'Review', 'icon' => '🔎'],
         'User Management' => ['label' => 'Users', 'icon' => '👥'],
         'Invitations' => ['label' => 'Invites', 'icon' => '✉️'],
+        'Admin Settings' => ['label' => 'Settings', 'icon' => '⚙️'],
     ];
     $currentView = $viewMeta[$title ?? 'Home'] ?? [
         'label' => (string) ($title ?? 'Home'),
@@ -52,8 +53,9 @@
                         <?php endif; ?>
                     <?php endif; ?>
                     <?php if ($isAdmin): ?>
-                        <li class="<?= in_array($title, ['User Management', 'Invitations']) ? 'active' : '' ?>"><a href="/admin/users">Users</a></li>
+                        <li class="<?= in_array($title, ['User Management', 'Invitations', 'Admin Settings']) ? 'active' : '' ?>"><a href="/admin/users">Users</a></li>
                         <li class="<?= $title === 'Invitations' ? 'active' : '' ?>"><a href="/admin/invitations">Invitations</a></li>
+                        <li class="<?= $title === 'Admin Settings' ? 'active' : '' ?>"><a href="/admin/settings">Settings</a></li>
                     <?php endif; ?>
                 </ul>
             </nav>

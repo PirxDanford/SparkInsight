@@ -66,4 +66,12 @@ class GenerateInvitationCommandTest extends TestCase
         $this->assertTrue($definition->hasOption('email'));
         $this->assertTrue($definition->hasOption('hours'));
     }
+
+    public function testHoursOptionDefaultsToNull(): void
+    {
+        $command = new GenerateInvitationCommand();
+        $definition = $command->getDefinition();
+
+        $this->assertNull($definition->getOption('hours')->getDefault());
+    }
 }

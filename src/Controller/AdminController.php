@@ -9,6 +9,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Views\PhpRenderer;
 use SparkInsight\Config\Config;
+use SparkInsight\Service\AppSettingsService;
 use SparkInsight\Service\InvitationService;
 use SparkInsight\Service\UserService;
 use SparkInsight\Service\UserSession;
@@ -20,6 +21,7 @@ final class AdminController
         private readonly UserSession $session,
         private readonly UserService $userService,
         private readonly InvitationService $invitationService,
+        private readonly AppSettingsService $settingsService,
         private readonly Config $config,
         private readonly Connection $connection,
     ) {
@@ -104,6 +106,7 @@ final class AdminController
         $savedEmail = $this->session->getData('invitation_email');
         $savedRoles = $this->session->getData('invitation_roles');
         $savedHours = $this->session->getData('invitation_hours');
+        $settings = $this->settingsService->getAll();
 
         if ($invitationCode !== null) {
             $this->session->setData('invitation_code', null);
@@ -127,8 +130,8 @@ final class AdminController
             'user' => $user,
             'invitations' => $invitations,
             'email' => $savedEmail ?? null,
-            'roles' => is_array($savedRoles) ? $savedRoles : ['reviewer'],
-            'hours' => $savedHours !== null ? (int) $savedHours : 24,
+            'roles' => is_array($savedRoles) ? $savedRoles : ($settings['invitation_default_roles'] ?? ['reviewer']),
+            'hours' => $savedHours !== null ? (int) $savedHours : (int) ($settings['invitation_default_hours'] ?? 168),
             'invitationCode' => $invitationCode,
             'appUrl' => $this->config->get('app_url'),
             'flash_message' => $flashMessage,
@@ -158,8 +161,8 @@ final class AdminController
                 'user' => $user,
                 'invitations' => $this->invitationService->getInvitations([], 50, 0),
                 'email' => trim((string) ($data['email'] ?? '')),
-                'roles' => array_values(array_filter((array) ($data['roles'] ?? ['reviewer']), static fn ($role) => in_array($role, ['reviewer', 'author', 'admin']))),
-                'hours' => max(1, (int) ($data['hours'] ?? 24)),
+                'roles' => array_values(array_filter((array) ($data['roles'] ?? $this->settingsService->getInvitationDefaultRoles()), static fn ($role) => in_array($role, ['reviewer', 'author', 'admin']))),
+                'hours' => max(1, (int) ($data['hours'] ?? $this->settingsService->getInvitationDefaultHours())),
                 'invitationCode' => null,
                 'appUrl' => $this->config->get('app_url'),
                 'flash_message' => [
@@ -175,14 +178,14 @@ final class AdminController
         }
 
         $email = trim((string) ($data['email'] ?? '')) ?: null;
-        $roles = array_values(array_filter((array) ($data['roles'] ?? ['reviewer']), static fn ($role) => in_array($role, ['reviewer', 'author', 'admin'])));
+        $roles = array_values(array_filter((array) ($data['roles'] ?? $this->settingsService->getInvitationDefaultRoles()), static fn ($role) => in_array($role, ['reviewer', 'author', 'admin'])));
         if (empty($roles)) {
-            $roles = ['reviewer'];
+            $roles = $this->settingsService->getInvitationDefaultRoles();
         }
 
-        $hours = (int) ($data['hours'] ?? 24);
+        $hours = (int) ($data['hours'] ?? $this->settingsService->getInvitationDefaultHours());
         if ($hours < 1) {
-            $hours = 24;
+            $hours = $this->settingsService->getInvitationDefaultHours();
         }
 
         if ($email !== null && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -215,6 +218,69 @@ final class AdminController
         $this->session->setData('invitation_hours', $hours);
 
         return $response->withHeader('Location', '/admin/invitations')->withStatus(302);
+    }
+
+    public function settings(Request $request, Response $response): Response
+    {
+        $user = $this->session->getUser();
+        if (!$user || !in_array('admin', $user['roles'] ?? [])) {
+            return $response->withHeader('Location', '/')->withStatus(302);
+        }
+
+        $settings = $this->settingsService->getAll();
+        $flashMessage = $this->session->getFlash();
+        $appPath = realpath(__DIR__ . '/../../');
+        $phpBinary = PHP_BINARY;
+
+        $importDirectory = $appPath !== false ? $appPath . DIRECTORY_SEPARATOR . 'scrivener' : './scrivener';
+        $cron = [
+            'import' => sprintf(
+                '%s cd %s && %s si.php content:import-scrivener --directory="%s"',
+                $settings['import_cron_schedule'] ?? '0 2 * * *',
+                $appPath !== false ? $appPath : '.',
+                $phpBinary,
+                $importDirectory
+            ),
+            'invitation_cleanup' => sprintf(
+                '%s cd %s && %s si.php invite:purge-expired --force',
+                $settings['invitation_cleanup_cron_schedule'] ?? '30 2 * * *',
+                $appPath !== false ? $appPath : '.',
+                $phpBinary
+            ),
+        ];
+
+        return $this->renderer->render($response, 'admin/settings.php', [
+            'title' => 'Admin Settings',
+            'user' => $user,
+            'settings' => $settings,
+            'cron_snippets' => $cron,
+            'flash_message' => $flashMessage,
+            'csrf_token' => $this->session->getCsrfToken(),
+        ]);
+    }
+
+    public function saveSettings(Request $request, Response $response): Response
+    {
+        $user = $this->session->getUser();
+        if (!$user || !in_array('admin', $user['roles'] ?? [])) {
+            return $response->withHeader('Location', '/')->withStatus(302);
+        }
+
+        $data = $request->getParsedBody();
+        if (!$this->validateCsrfData((array) $data)) {
+            $this->session->setFlash('error', 'Invalid form submission. Please try again.');
+
+            return $response->withHeader('Location', '/admin/settings')->withStatus(302);
+        }
+
+        try {
+            $this->settingsService->saveFromAdminInput((array) $data);
+            $this->session->setFlash('success', 'Settings saved.');
+        } catch (\Throwable $e) {
+            $this->session->setFlash('error', 'Settings could not be saved: ' . $e->getMessage());
+        }
+
+        return $response->withHeader('Location', '/admin/settings')->withStatus(302);
     }
 
     private function validateCsrfData(array $data): bool

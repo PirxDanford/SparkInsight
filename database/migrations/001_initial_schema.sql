@@ -55,14 +55,49 @@ CREATE TABLE reviews (
     anchor_start_offset INT NULL,
     anchor_end_offset INT NULL,
     anchor_container_path VARCHAR(255) NULL,
+    anchor_remap_state VARCHAR(24) NULL,
+    anchor_remap_confidence VARCHAR(16) NULL,
+    anchor_remap_reason VARCHAR(255) NULL,
+    anchor_remapped_from_review_id INT NULL,
+    anchor_remapped_from_content_version_id INT NULL,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL,
     resolved_at DATETIME,
+    resolution_decision VARCHAR(32) NULL,
+    resolution_actor_id INT NULL,
+    resolution_actor_role VARCHAR(32) NULL,
+    resolution_recorded_at DATETIME NULL,
     FOREIGN KEY (content_version_id) REFERENCES content_versions(id) ON DELETE CASCADE,
     FOREIGN KEY (reviewer_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (resolution_actor_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (anchor_remapped_from_review_id) REFERENCES reviews(id) ON DELETE SET NULL,
+    FOREIGN KEY (anchor_remapped_from_content_version_id) REFERENCES content_versions(id) ON DELETE SET NULL,
     INDEX idx_content_version_id (content_version_id),
     INDEX idx_reviewer_id (reviewer_id),
-    INDEX idx_review_status (status)
+    INDEX idx_review_status (status),
+    INDEX idx_review_resolution_decision (resolution_decision),
+    INDEX idx_review_anchor_remap_state (anchor_remap_state),
+    INDEX idx_review_anchor_remap_confidence (anchor_remap_confidence)
+);
+
+CREATE TABLE review_resolution_events (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    review_id INT NOT NULL,
+    source_content_version_id INT NOT NULL,
+    target_content_version_id INT NOT NULL,
+    previous_status VARCHAR(32) NULL,
+    target_status VARCHAR(32) NOT NULL,
+    resolution_decision VARCHAR(32) NOT NULL,
+    actor_id INT NULL,
+    actor_role VARCHAR(32) NULL,
+    recorded_at DATETIME NOT NULL,
+    FOREIGN KEY (review_id) REFERENCES reviews(id) ON DELETE CASCADE,
+    FOREIGN KEY (source_content_version_id) REFERENCES content_versions(id) ON DELETE CASCADE,
+    FOREIGN KEY (target_content_version_id) REFERENCES content_versions(id) ON DELETE CASCADE,
+    FOREIGN KEY (actor_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_resolution_events_review_id (review_id),
+    INDEX idx_resolution_events_recorded_at (recorded_at),
+    INDEX idx_resolution_events_decision (resolution_decision)
 );
 
 CREATE TABLE oauth_identities (
@@ -108,13 +143,29 @@ CREATE TABLE invitations (
     INDEX idx_expires_at (expires_at)
 );
 
+CREATE TABLE app_settings (
+    setting_key VARCHAR(100) PRIMARY KEY,
+    setting_value TEXT NOT NULL,
+    value_type VARCHAR(16) NOT NULL DEFAULT 'string',
+    updated_at DATETIME NOT NULL
+);
+
+INSERT INTO app_settings (setting_key, setting_value, value_type, updated_at)
+VALUES
+    ('invitation_default_hours', '168', 'int', NOW()),
+    ('invitation_default_roles', '["reviewer"]', 'json', NOW()),
+    ('import_cron_schedule', '0 2 * * *', 'string', NOW()),
+    ('invitation_cleanup_cron_schedule', '30 2 * * *', 'string', NOW());
+
 INSERT INTO schema_version (version, applied_at) VALUES (1, NOW());
 
 -- DOWN
 DROP TABLE review_assignments;
 DROP TABLE oauth_identities;
+DROP TABLE review_resolution_events;
 DROP TABLE reviews;
 DROP TABLE content_versions;
 DROP TABLE invitations;
+DROP TABLE app_settings;
 DROP TABLE users;
 DROP TABLE schema_version;

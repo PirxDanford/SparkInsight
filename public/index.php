@@ -11,6 +11,7 @@ use SparkInsight\Config\Config;
 use SparkInsight\Controller\AdminController;
 use SparkInsight\Controller\AuthController;
 use SparkInsight\Controller\DashboardController;
+use SparkInsight\Service\AppSettingsService;
 use SparkInsight\Service\InvitationService;
 use SparkInsight\Service\OAuthProviderFactory;
 use SparkInsight\Service\UserService;
@@ -36,6 +37,7 @@ $connection = DriverManager::getConnection([
 ]);
 
 $invitationService = new InvitationService($connection);
+$settingsService = new AppSettingsService($connection);
 $userService = new UserService($connection);
 
 $app = AppFactory::create();
@@ -44,7 +46,7 @@ $errorMiddleware = $app->addErrorMiddleware(true, true, true);
 
 $dashboardController = new DashboardController($view, $session, $connection);
 $authController = new AuthController($view, $providerFactory, $session, $invitationService, $userService);
-$adminController = new AdminController($view, $session, $userService, $invitationService, $config, $connection);
+$adminController = new AdminController($view, $session, $userService, $invitationService, $settingsService, $config, $connection);
 
 $app->get('/style.css', function ($request, $response) {
     $file = __DIR__ . '/style.css';
@@ -65,6 +67,9 @@ $app->get('/dashboard/review', [$dashboardController, 'review']);
 $app->get('/dashboard/review/{id:[0-9]+}', [$dashboardController, 'reviewItem']);
 $app->post('/dashboard/review/{id:[0-9]+}', [$dashboardController, 'submitReview']);
 $app->get('/dashboard/author', [$dashboardController, 'author']);
+$app->get('/dashboard/author/{id:[0-9]+}', [$dashboardController, 'authorItem']);
+$app->post('/dashboard/author/{id:[0-9]+}/review/{reviewId:[0-9]+}/resolve', [$dashboardController, 'resolveAuthorReview']);
+$app->post('/dashboard/author/export', [$dashboardController, 'exportAuthorPdf']);
 $app->get('/login', [$authController, 'showLogin']);
 $app->get('/signup', [$authController, 'showSignUp']);
 $app->get('/logout', [$authController, 'logout']);
@@ -75,6 +80,8 @@ $app->get('/callback/{provider}', [$authController, 'callback']);
 $app->get('/admin/users', [$adminController, 'users']);
 $app->get('/admin/invitations', [$adminController, 'invitations']);
 $app->post('/admin/invitations', [$adminController, 'createInvitation']);
+$app->get('/admin/settings', [$adminController, 'settings']);
+$app->post('/admin/settings', [$adminController, 'saveSettings']);
 $app->post('/admin/users/{id}/status', [$adminController, 'updateUserStatus']);
 $app->post('/admin/users/{id}/roles', [$adminController, 'updateUserRoles']);
 

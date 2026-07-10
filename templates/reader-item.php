@@ -39,6 +39,11 @@ $notes = array_values(array_filter(array_map(static function (array $review): ar
         'anchor_container_path' => trim((string) ($review['anchor_container_path'] ?? '')),
         'requires_action' => (bool) ($review['requires_action'] ?? false),
         'created_at' => (string) ($review['created_at'] ?? ''),
+        'resolved_at' => (string) ($review['resolved_at'] ?? ''),
+        'resolution_decision_label' => (string) ($review['resolution_decision_label'] ?? ''),
+        'resolution_actor_name' => (string) ($review['resolution_actor_name'] ?? ''),
+        'resolution_actor_role' => (string) ($review['resolution_actor_role'] ?? ''),
+        'resolution_recorded_at' => (string) ($review['resolution_recorded_at'] ?? ''),
     ];
 }, is_array($review_item['reviews'] ?? null) ? $review_item['reviews'] : []), static fn (array $note): bool => $note['id'] > 0));
 $chapterNoteIds = array_values(array_map(static fn (array $note): int => (int) $note['id'], array_filter(
@@ -181,6 +186,7 @@ ob_start();
                                 <input type="hidden" name="anchor_end_offset" value="<?= $draftAnchorEndOffset !== null ? (int) $draftAnchorEndOffset : '' ?>" data-anchor-end-offset-input>
                                 <input type="hidden" name="anchor_container_path" value="<?= htmlspecialchars($draftAnchorContainerPath, ENT_QUOTES, 'UTF-8') ?>" data-anchor-container-path-input>
                                 <input type="hidden" name="note_id" value="0" data-note-id-input>
+                                <input type="hidden" name="note_action" value="save" data-note-action-input>
 
                                 <p class="reader-edit-state" data-edit-state hidden>
                                     <span data-edit-state-label></span>
@@ -206,6 +212,7 @@ ob_start();
                                 </label>
 
                                 <div class="action-group review-note-actions">
+                                    <button class="button small warning" type="button" data-delete-note-button hidden>Delete note</button>
                                     <button class="button small secondary" type="button" data-clear-comment>Clear comment</button>
                                     <button class="button button-full" type="submit" data-save-note-button>Save note</button>
                                 </div>
@@ -242,14 +249,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const mainGrid = document.querySelector('.reader-main-grid');
     const readerViewInput = document.querySelector('[data-reader-view-input]');
     const readerContent = document.querySelector('[data-reader-content]');
+    const primaryContentRoot = document.querySelector('.reader-view-compact .reader-flow-text');
     const selectionPreview = document.querySelector('[data-selection-preview]');
     const selectedExcerptInput = document.querySelector('[data-selected-excerpt-input]');
     const anchorStartOffsetInput = document.querySelector('[data-anchor-start-offset-input]');
     const anchorEndOffsetInput = document.querySelector('[data-anchor-end-offset-input]');
     const anchorContainerPathInput = document.querySelector('[data-anchor-container-path-input]');
     const noteIdInput = document.querySelector('[data-note-id-input]');
+    const noteActionInput = document.querySelector('[data-note-action-input]');
     const dismissSelectionButton = document.querySelector('[data-dismiss-selection]');
     const clearCommentButton = document.querySelector('[data-clear-comment]');
+    const deleteNoteButton = document.querySelector('[data-delete-note-button]');
     const cancelEditButton = document.querySelector('[data-cancel-edit]');
     const editState = document.querySelector('[data-edit-state]');
     const editStateLabel = document.querySelector('[data-edit-state-label]');
@@ -275,6 +285,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Never keep edit mode active across page loads.
     if (noteIdInput) {
         noteIdInput.value = '0';
+    }
+    if (noteActionInput) {
+        noteActionInput.value = 'save';
     }
     if (editStateLabel) {
         editStateLabel.textContent = '';
@@ -409,6 +422,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (editState) {
             editState.hidden = !editing;
+        }
+
+        if (deleteNoteButton) {
+            deleteNoteButton.hidden = !editing;
+            deleteNoteButton.style.setProperty('display', editing ? 'inline-flex' : 'none', 'important');
+        }
+
+        if (noteActionInput) {
+            noteActionInput.value = 'save';
         }
     }
 
@@ -579,6 +601,15 @@ document.addEventListener('DOMContentLoaded', function() {
             date.textContent = formatNoteTime(note.created_at || '');
             footer.appendChild(date);
 
+            if ((note.resolution_decision_label || '') !== '' && (note.resolution_actor_name || '') !== '') {
+                const resolution = document.createElement('span');
+                const actorRole = (note.resolution_actor_role || '').trim();
+                const roleText = actorRole !== '' ? actorRole : 'actor';
+                const recordedAt = note.resolution_recorded_at || note.resolved_at || '';
+                resolution.textContent = note.resolution_decision_label + ' by ' + note.resolution_actor_name + ' (' + roleText + ')' + (recordedAt !== '' ? ' · ' + formatNoteTime(recordedAt) : '');
+                footer.appendChild(resolution);
+            }
+
             const edit = document.createElement('button');
             edit.type = 'button';
             edit.className = 'button small secondary';
@@ -640,6 +671,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         noteIdInput.value = String(note.id || 0);
+        if (noteActionInput) {
+            noteActionInput.value = 'save';
+        }
         detailsTextarea.value = note.details || '';
         setSelectionAnchorData({
             start: note.anchor_start_offset,
@@ -787,10 +821,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     return NodeFilter.FILTER_REJECT;
                 }
 
-                if (node.parentElement && node.parentElement.closest('[data-note-anchor]')) {
-                    return NodeFilter.FILTER_REJECT;
-                }
-
+                // Keep text inside existing anchors in the offset model so
+                // subsequent highlights still map to original absolute offsets.
                 return NodeFilter.FILTER_ACCEPT;
             }
         });
@@ -875,21 +907,31 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function extractSelectionAnchor(selectionRange) {
-        if (!readerContent || !selectionRange) {
+        if (!primaryContentRoot || !selectionRange) {
             return null;
         }
 
         try {
+            function measureRangeTextLength(range) {
+                if (!range) {
+                    return 0;
+                }
+
+                const fragment = range.cloneContents();
+                const text = fragment && typeof fragment.textContent === 'string' ? fragment.textContent : '';
+                return text.length;
+            }
+
             const startProbe = document.createRange();
-            startProbe.selectNodeContents(readerContent);
+            startProbe.selectNodeContents(primaryContentRoot);
             startProbe.setEnd(selectionRange.startContainer, selectionRange.startOffset);
 
             const endProbe = document.createRange();
-            endProbe.selectNodeContents(readerContent);
+            endProbe.selectNodeContents(primaryContentRoot);
             endProbe.setEnd(selectionRange.endContainer, selectionRange.endOffset);
 
-            const startOffset = startProbe.toString().length;
-            const endOffset = endProbe.toString().length;
+            const startOffset = measureRangeTextLength(startProbe);
+            const endOffset = measureRangeTextLength(endProbe);
             if (!Number.isFinite(startOffset) || !Number.isFinite(endOffset) || endOffset <= startOffset) {
                 return null;
             }
@@ -897,7 +939,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return {
                 start: Math.max(0, startOffset),
                 end: Math.max(0, endOffset),
-                path: buildStructuralPathForNode(selectionRange.commonAncestorContainer, readerContent),
+                path: buildStructuralPathForNode(selectionRange.commonAncestorContainer, primaryContentRoot),
             };
         } catch (error) {
             return null;
@@ -938,7 +980,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         return {
-            offset: Array.from(offsetGroups.values()).sort((a, b) => a.start - b.start),
+            // Apply offset-based anchors from right to left to avoid DOM mutations
+            // shifting character positions for notes that start later in the text.
+            offset: Array.from(offsetGroups.values()).sort((a, b) => b.start - a.start),
             excerpt: Array.from(excerptGroups.entries()).map(([excerpt, groupedNotes]) => ({ excerpt, notes: groupedNotes })),
         };
     }
@@ -967,6 +1011,62 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function createNoteAnchor(noteIds) {
+        const anchor = document.createElement('span');
+        anchor.className = 'reader-note-highlight';
+        anchor.setAttribute('tabindex', '0');
+        anchor.setAttribute('role', 'button');
+        anchor.setAttribute('data-note-anchor', '');
+        anchor.setAttribute('data-note-ids', noteIds.join(','));
+
+        return anchor;
+    }
+
+    function insertHighlightAnchorFromRange(range, noteIds) {
+        if (!range || !noteIds || noteIds.length === 0) {
+            return false;
+        }
+
+        const contents = range.extractContents();
+        const anchor = createNoteAnchor(noteIds);
+        anchor.appendChild(contents);
+        trimAnchorBoundaryWhitespace(anchor);
+
+        if (sanitizeExcerptText(anchor.textContent || '') === '') {
+            return false;
+        }
+
+        range.insertNode(anchor);
+        return true;
+    }
+
+    function buildHighlightRangesForExcerpt(root, rawExcerpt, minOffset) {
+        const excerpt = String(rawExcerpt || '');
+        const lineParts = excerpt
+            .split(/\r?\n+/u)
+            .map((part) => sanitizeExcerptText(part))
+            .filter((part) => part !== '');
+
+        if (lineParts.length <= 1) {
+            const single = buildHighlightRange(root, excerpt, minOffset);
+            return single ? [single] : [];
+        }
+
+        const results = [];
+        let cursor = Math.max(0, minOffset);
+        for (const part of lineParts) {
+            const segment = buildHighlightRange(root, part, cursor);
+            if (!segment) {
+                continue;
+            }
+
+            results.push(segment);
+            cursor = segment.nextOffset;
+        }
+
+        return results;
+    }
+
     function decorateSelectionAnchors(root) {
         const grouped = groupSelectionNotes();
         if (grouped.offset.length === 0 && grouped.excerpt.length === 0) {
@@ -976,44 +1076,58 @@ document.addEventListener('DOMContentLoaded', function() {
         let offset = searchOffsetByRoot.get(root) || 0;
 
         grouped.offset.forEach((group) => {
-            const result = buildHighlightRangeFromOffsets(root, group.start, group.end);
-            if (!result) {
+            const noteIds = group.notes.map((note) => Number(note.id || 0)).filter((id) => id > 0);
+            const rawExcerpt = (group.notes[0] && group.notes[0].selected_excerpt) || '';
+            const expectedExcerpt = sanitizeExcerptText(rawExcerpt);
+            let results = [];
+
+            if (expectedExcerpt !== '') {
+                results = buildHighlightRangesForExcerpt(root, rawExcerpt, offset);
+                if (results.length > 0) {
+                    offset = results[results.length - 1].nextOffset;
+                }
+            }
+
+            if (results.length === 0) {
+                const fallback = buildHighlightRangeFromOffsets(root, group.start, group.end);
+                if (fallback) {
+                    results = [fallback];
+                }
+            }
+
+            if (results.length > 0 && expectedExcerpt !== '') {
+                const actualExcerpt = sanitizeExcerptText(results.map((entry) => entry.range.toString()).join(' '));
+                const overlapsExpected = actualExcerpt !== ''
+                    && (actualExcerpt.includes(expectedExcerpt) || expectedExcerpt.includes(actualExcerpt));
+
+                if (!overlapsExpected) {
+                    const retry = buildHighlightRangesForExcerpt(root, rawExcerpt, 0);
+                    if (retry.length > 0) {
+                        results = retry;
+                    }
+                }
+            }
+
+            if (results.length === 0 || noteIds.length === 0) {
                 return;
             }
 
-            const anchor = document.createElement('span');
-            anchor.className = 'reader-note-highlight';
-            anchor.setAttribute('tabindex', '0');
-            anchor.setAttribute('role', 'button');
-            anchor.setAttribute('data-note-anchor', '');
-            anchor.setAttribute('data-note-ids', group.notes.map((note) => Number(note.id || 0)).filter((id) => id > 0).join(','));
-
-            const contents = result.range.extractContents();
-            anchor.appendChild(contents);
-            trimAnchorBoundaryWhitespace(anchor);
-
-            result.range.insertNode(anchor);
+            results.forEach((result) => {
+                insertHighlightAnchorFromRange(result.range, noteIds);
+            });
         });
 
         grouped.excerpt.forEach((group) => {
-            const result = buildHighlightRange(root, group.excerpt, offset);
-            if (!result) {
+            const noteIds = group.notes.map((note) => Number(note.id || 0)).filter((id) => id > 0);
+            const results = buildHighlightRangesForExcerpt(root, group.excerpt, offset);
+            if (results.length === 0 || noteIds.length === 0) {
                 return;
             }
 
-            const anchor = document.createElement('span');
-            anchor.className = 'reader-note-highlight';
-            anchor.setAttribute('tabindex', '0');
-            anchor.setAttribute('role', 'button');
-            anchor.setAttribute('data-note-anchor', '');
-            anchor.setAttribute('data-note-ids', group.notes.map((note) => Number(note.id || 0)).filter((id) => id > 0).join(','));
-
-            const contents = result.range.extractContents();
-            anchor.appendChild(contents);
-            trimAnchorBoundaryWhitespace(anchor);
-
-            result.range.insertNode(anchor);
-            offset = result.nextOffset;
+            results.forEach((result) => {
+                insertHighlightAnchorFromRange(result.range, noteIds);
+            });
+            offset = results[results.length - 1].nextOffset;
         });
 
         searchOffsetByRoot.set(root, offset);
@@ -1049,7 +1163,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function captureSelectionFromReader() {
-        if (!readerContent) {
+        if (!primaryContentRoot) {
             return;
         }
 
@@ -1059,7 +1173,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const range = selection.getRangeAt(0);
-        if (!readerContent.contains(range.commonAncestorContainer)) {
+        if (!primaryContentRoot.contains(range.startContainer) || !primaryContentRoot.contains(range.endContainer)) {
             return;
         }
 
@@ -1069,24 +1183,27 @@ document.addEventListener('DOMContentLoaded', function() {
         updateSelectionPreview(text.length > 500 ? text.slice(0, 500).trim() + '...' : text);
     }
 
-    if (readerContent) {
+    if (primaryContentRoot) {
         document.addEventListener('selectionchange', captureSelectionFromReader);
-        readerContent.addEventListener('mouseup', captureSelectionFromReader);
-        readerContent.addEventListener('keyup', captureSelectionFromReader);
+        primaryContentRoot.addEventListener('mouseup', captureSelectionFromReader);
+        primaryContentRoot.addEventListener('keyup', captureSelectionFromReader);
     }
 
     if (dismissSelectionButton) {
         dismissSelectionButton.addEventListener('click', () => {
             updateSelectionPreview('');
             setSelectionAnchorData(null);
+            if (noteActionInput) {
+                noteActionInput.value = 'save';
+            }
 
             const selection = window.getSelection();
             if (selection && selection.removeAllRanges) {
                 selection.removeAllRanges();
             }
 
-            if (readerContent) {
-                readerContent.focus?.();
+            if (primaryContentRoot) {
+                primaryContentRoot.focus?.();
             }
 
             if (noteIdInput) {
@@ -1108,6 +1225,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (noteIdInput) {
                 noteIdInput.value = '0';
             }
+            if (noteActionInput) {
+                noteActionInput.value = 'save';
+            }
             detailsTextarea.focus();
             if (editStateLabel) {
                 editStateLabel.textContent = '';
@@ -1124,6 +1244,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (noteIdInput) {
                 noteIdInput.value = '0';
             }
+            if (noteActionInput) {
+                noteActionInput.value = 'save';
+            }
             if (editStateLabel) {
                 editStateLabel.textContent = '';
             }
@@ -1131,6 +1254,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 editState.hidden = true;
             }
             updateFormActionState();
+        });
+    }
+
+    if (deleteNoteButton) {
+        deleteNoteButton.addEventListener('click', () => {
+            const noteId = noteIdInput ? Number(noteIdInput.value || 0) : 0;
+            if (noteId <= 0) {
+                return;
+            }
+
+            if (!window.confirm('Delete this note? This cannot be undone.')) {
+                return;
+            }
+
+            if (noteActionInput) {
+                noteActionInput.value = 'delete';
+            }
+
+            const form = deleteNoteButton.closest('form');
+            if (form && typeof form.requestSubmit === 'function') {
+                form.requestSubmit();
+                return;
+            }
+
+            if (form && typeof form.submit === 'function') {
+                form.submit();
+            }
         });
     }
 
@@ -1152,9 +1302,7 @@ document.addEventListener('DOMContentLoaded', function() {
         end: anchorEndOffsetInput ? anchorEndOffsetInput.value : null,
         path: anchorContainerPathInput ? anchorContainerPathInput.value : '',
     });
-    const contentRoots = [
-        document.querySelector('.reader-view-compact .reader-flow-text')
-    ].filter(Boolean);
+    const contentRoots = [primaryContentRoot].filter(Boolean);
 
     contentRoots.forEach((root) => {
         decorateSelectionAnchors(root);
