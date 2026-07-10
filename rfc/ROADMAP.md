@@ -107,25 +107,23 @@ Implementation chapters are listed in dependency order, not in expected release 
 ### Chapter 4: Author and Admin Experience
 
 - **Primary RFCs:** 0001, 0002
-- **Status:** Planned
+- **Status:** Complete
 - **Scope:** Author dashboard, review resolution, feedback lifecycle
 
 - **Chapter note:** These workflows must be complete and verified before the `v1.0.0` release branch is tagged.
-
-#### Chapter 4 Open Items
-
-- [ ] Add PDF export for single items and selected item sets
-- [ ] Implement author review resolution workflows
-- [ ] Implement reviewer-visible author-attributed resolution metadata in reviewer history ("resolved by author" actor identity/decision/timestamp) and add controller/rendering test coverage (RFC 0002 ownership)
-- [ ] Surface reviewer feedback status to authors
-- [ ] Integrate Scrivener sync planning notes
-- [ ] Create a settings interface for administrators, move as many config values in there as feasible e.g. the default invitation validity duration (1 week by default)
-- [ ] Add reviewer default panel visibility preference in user settings (for reader modes: Pure Content, Content + Panel)
-- [ ] Add author-side selection note highlighting and re-anchoring for reviewer location markers
-- [ ] For the CLI make the invitation validity duration for invite:generate overridable via parameter
-- [ ] Check if RFCs 1 and 2 can be marked as implemented, add more todos to tackle what is missing, else mark accordingly
-- [ ] Perform Chapter 4 security review, including author access, review resolution, and feedback privacy, only work on this item after every other item is done
-- [ ] Tidy up Chapter 4 documentation and checklist style, meaning to delete the "### Chapter 4 Open Items" section and instead fill in a "**Chapter deliverables:**" section as in chapters 0 to 3
+- **Chapter deliverables:**
+  - Added PDF export for single items and selected item sets
+  - Implemented author dashboard review resolution workflows, including explicit `resolved`, `still relevant`, and `ignored` actions
+  - Added reviewer-visible author-attributed resolution metadata in reviewer history, with controller and rendering coverage for RFC 0002 ownership
+  - Surfaced reviewer feedback status and unresolved-location handling to authors, including fallback context for remapped or missing anchors
+  - Implemented import-time reviewer anchor remapping for updated Scrivener versions, with confidence and failure states
+  - Extended author resolution context to show original target context, current changed context, and version linkage with regression coverage
+  - Added an append-only review resolution audit log so author decisions are preserved immutably as decision history events
+  - Added reviewer default panel visibility preference and completed related author/reviewer reader mode support
+  - Added administrator settings UI coverage for configurable application values, including invitation validity defaults
+  - Added CLI support to override invitation validity duration for `invite:generate`
+  - Marked RFC 0001 and RFC 0002 as implemented in the roadmap and source RFC tracking
+  - Completed Chapter 4 security review on 2026-07-10, including author access, resolution integrity, and remap-context privacy hardening with regression coverage
 
 ---
 
@@ -139,6 +137,10 @@ Implementation chapters are listed in dependency order, not in expected release 
 
 #### Chapter 5 Open Items
 
+- [ ] Merge the Users, Invitations and Settings tab into one Admin tab for a unified Admin Dashboard
+- [ ] Enable custom names for display for users, which are not related to the user accounts
+- [ ] Enable a basic management in the admin interface for users and invitations
+- [ ] Are there any CLI commands we will need in a production system? If yes we need to enable them in some maintenance page or on the admin page
 - [ ] Complete end-to-end OAuth provider QA for Google, LinkedIn and Facebook
 - [ ] Add import and migration documentation (RFC 0012)
 - [ ] Add migration CI checks and migration-runner usage docs (RFC 0012)
@@ -151,8 +153,9 @@ Implementation chapters are listed in dependency order, not in expected release 
 - [ ] Complete RFC 0010 implementation for GitHub Actions quality gates
 - [ ] Add commit signing check to RFC 0010 quality gate requirements
 - [ ] Add CI enforcement for code coverage, static analysis, and style checks
+- [ ] Revisit reviewer note action button order and visual styling (Save, Clear, Delete) for final UX polish.
 - [ ] Add CI quality gate to enforce migration naming policy (`001_initial_schema.sql` baseline, `dev_only_*.sql` for initial-development snapshots, numbered `002+` reserved for release upgrades)
-- [ ] Check if RFCs 3, 4, 5, 10 and 12 can be marked as implemented, add more todos to tackle what is missing, else mark accordingly
+- [ ] Check if RFCs 3, 4, 5, 10 and 12 can be marked as implemented, add more todos to tackle what is missing above also keep this line then stop, else mark the rfcs source files accordingly as well as content in the roadmap and then tick this item
 - [ ] Perform Chapter 5 security review, including release readiness, contributor enforcement, and deployment controls, only work on this item after every other item is done
 - [ ] Check if "## Cross-phase security review checklist" can be deleted now, do we need to put any security related info into documentation?
 - [ ] Freeze the release branch and collapse the migration history so only `database/migrations/001_initial_schema.sql` remains as the release baseline
@@ -190,6 +193,9 @@ Implementation chapters are listed in dependency order, not in expected release 
 - [ ] Add a reader theme switcher with Paper as default and at least Dark and Green Classic alternatives.
 - [ ] Add client-side automated backup tooling for Scrivener workflows to reduce manual backup/export steps and support more automated ingestion preparation.
 - [ ] Complete RFC 0013 scope for reviewer cross-device experience (tablet/mobile layout, touch-first controls, and acceptance pass).
+- [ ] Make CLI deletion of content with reviewer notes intentionally hard (strong safeguards/explicit confirmations required).
+- [ ] Move deleted reviewer notes to a separate archive table (instead of hard delete) and provide an author-facing option to review deleted notes.
+- [ ] Re-introduce author-side range context expansion in a usable reviewer-style embedded reader view, with neat in-text highlight and surrounding content (replace the current non-usable expansion approach).
 - [x] Created RFC 0013 to formalize v1.1 reviewer cross-device scope.
 
 ---
@@ -219,8 +225,8 @@ This checklist is intentionally cross-phase; these checks should be verified dur
 | 0007 | Data importing method | Implemented | 2 | High | Implemented: `src/Service/ContentImportService.php`, `src/Command/ScrivenerImportCommand.php`, baseline schema in `database/migrations/001_initial_schema.sql` (dev snapshot retained as `database/migrations/dev_only_add_content_versions_and_reviews.sql`) |
 | 0009 | Database schema versioning | Implemented | 2 | High | Implemented: `src/Service/MigrationRunner.php`, `src/Command/MigrateDbCommand.php`, migrations in `database/migrations/` |
 | 0008 | Initial reviewer display | Implemented | 3 | High | Implemented for v1.0.0 reviewer display scope (dashboard, filtering, panel preference, note submission, anchor persistence, queue-state persistence); explicit author-attributed resolution semantics are delegated to RFC 0002/Chapter 4 |
-| 0001 | Feedback lifecycle | Draft | 4 | Medium | Open questions on reviewer closure |
-| 0002 | Author-driven review resolution | Accepted | 4 | Medium | Owns reviewer-visible author-attributed resolution semantics ("resolved by author" identity/decision/timestamp) |
+| 0001 | Feedback lifecycle | Implemented | 4 | Medium | Implemented in Chapter 4, including explicit author decisions (`resolved`, `still relevant`, `ignored`), immutable review decision history, and original-vs-current context/version linkage |
+| 0002 | Author-driven review resolution | Implemented | 4 | Medium | Implemented in Chapter 4 with author-driven status handling, reviewer-visible author-attributed resolution metadata, and append-only audit trail coverage |
 | 0003 | Scrivener ingestion proof of concept | Implemented | 2 | Low | Completed with backup-first ingestion; export-only paths retained as non-primary alternatives |
 | 0004 | Scrivener setup documentation | Draft | 5 | Low | Defer until Chapter 5 |
 | 0005 | Contribution documentation | Draft | 5 | High | Create CONTRIBUTING.md in Chapter 5; must document TDD/SOLID |

@@ -1,6 +1,6 @@
 # RFC 0002: Author-driven review resolution workflow
 
-Status: Accepted
+Status: Implemented
 
 Date: 2026-04-15
 

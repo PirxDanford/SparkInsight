@@ -1,6 +1,6 @@
 # RFC 0001: Feedback lifecycle for Scrivener review system
 
-Status: Draft
+Status: Implemented
 
 Date: 2026-04-15
 
