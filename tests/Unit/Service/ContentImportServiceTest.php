@@ -112,7 +112,7 @@ XML;
             ->method('executeStatement')
             ->with(
                 $this->callback(static function (string $sql) {
-                    return str_contains($sql, 'INSERT INTO content_versions') && str_contains($sql, 'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+                    return str_contains($sql, 'INSERT INTO content_versions') && str_contains($sql, 'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
                 }),
                 $this->callback(static function (array $params) {
                     return $params[0] === 'My Imported Document'
@@ -392,6 +392,7 @@ CREATE TABLE content_versions (
     author_id INTEGER,
     status TEXT NOT NULL,
     metadata TEXT,
+    import_batch_id TEXT,
     imported_at TEXT NOT NULL,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
@@ -449,6 +450,7 @@ CREATE TABLE content_versions (
     author_id INTEGER,
     status TEXT NOT NULL,
     metadata TEXT,
+    import_batch_id TEXT,
     imported_at TEXT NOT NULL,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
@@ -524,6 +526,7 @@ CREATE TABLE content_versions (
     author_id INTEGER,
     status TEXT NOT NULL,
     metadata TEXT,
+    import_batch_id TEXT,
     imported_at TEXT NOT NULL,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
@@ -539,13 +542,13 @@ SQL
         $this->assertCount(4, $result['imported']);
         $this->assertEmpty($result['failed']);
 
-        $this->assertArrayHasKey('The Book/Front Matter', $result['imported']);
-        $this->assertArrayHasKey('The Book/Front Matter/Title page', $result['imported']);
-        $this->assertArrayHasKey('The Book/Chapters', $result['imported']);
-        $this->assertArrayHasKey('The Book/Chapters/1 Foundations', $result['imported']);
+        $this->assertArrayHasKey('Book Import/Front Matter', $result['imported']);
+        $this->assertArrayHasKey('Book Import/Front Matter/Title page', $result['imported']);
+        $this->assertArrayHasKey('Book Import/Chapters', $result['imported']);
+        $this->assertArrayHasKey('Book Import/Chapters/1 Foundations', $result['imported']);
 
-        $frontMatterOrder = $result['imported']['The Book/Front Matter']['order_path'];
-        $chaptersOrder = $result['imported']['The Book/Chapters']['order_path'];
+        $frontMatterOrder = $result['imported']['Book Import/Front Matter']['order_path'];
+        $chaptersOrder = $result['imported']['Book Import/Chapters']['order_path'];
         $this->assertSame('0001', $frontMatterOrder);
         $this->assertSame('0002', $chaptersOrder);
 
@@ -615,6 +618,7 @@ CREATE TABLE content_versions (
     author_id INTEGER,
     status TEXT NOT NULL,
     metadata TEXT,
+    import_batch_id TEXT,
     imported_at TEXT NOT NULL,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
@@ -637,6 +641,245 @@ SQL
         $metadata = json_decode((string) $folderRow['metadata'], true, 512, JSON_THROW_ON_ERROR);
         $this->assertSame('directory', $metadata['scrivener']['kind']);
         $this->assertTrue((bool) $metadata['scrivener']['has_data_file']);
+
+        $connection->close();
+        unlink($dbPath);
+        $this->deleteDirectoryRecursively($directory);
+    }
+
+    public function testImportScrivenerDirectoryRemapsReviewerAnchorsToUpdatedVersionWithHighConfidence(): void
+    {
+        $directory = sys_get_temp_dir() . '/sparkinsight_scrivener_' . bin2hex(random_bytes(8));
+        $project = $directory . '/book.scriv';
+        $uuid = 'A1111111-1111-1111-1111-111111111111';
+        mkdir($project . '/Files/Data/' . $uuid, 0777, true);
+
+        file_put_contents($project . '/book.scrivx', <<<'XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<ScrivenerProject>
+    <Binder>
+        <BinderItem UUID="ROOT-BOOK" Type="Folder">
+            <Title>The Book</Title>
+            <Children>
+                <BinderItem UUID="A1111111-1111-1111-1111-111111111111" Type="Text">
+                    <Title>Scene One</Title>
+                </BinderItem>
+            </Children>
+        </BinderItem>
+    </Binder>
+</ScrivenerProject>
+XML
+        );
+
+        $dbPath = sys_get_temp_dir() . '/sparkinsight_import_' . bin2hex(random_bytes(8)) . '.sqlite';
+        $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbPath]);
+        $connection->executeStatement(<<<'SQL'
+CREATE TABLE content_versions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    book_title TEXT,
+    version_label TEXT NOT NULL,
+    source TEXT,
+    content_rtf TEXT,
+    content_text TEXT,
+    author_id INTEGER,
+    status TEXT NOT NULL,
+    metadata TEXT,
+    import_batch_id TEXT,
+    imported_at TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+SQL
+        );
+        $connection->executeStatement(<<<'SQL'
+CREATE TABLE reviews (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    content_version_id INTEGER NOT NULL,
+    reviewer_id INTEGER,
+    title TEXT NOT NULL,
+    status TEXT NOT NULL,
+    details TEXT,
+    selected_excerpt TEXT,
+    anchor_start_offset INTEGER,
+    anchor_end_offset INTEGER,
+    anchor_container_path TEXT,
+    anchor_remap_state TEXT,
+    anchor_remap_confidence TEXT,
+    anchor_remap_reason TEXT,
+    anchor_remapped_from_review_id INTEGER,
+    anchor_remapped_from_content_version_id INTEGER,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    resolved_at TEXT,
+    resolution_decision TEXT,
+    resolution_actor_id INTEGER,
+    resolution_actor_role TEXT,
+    resolution_recorded_at TEXT
+);
+SQL
+        );
+
+        file_put_contents($project . '/Files/Data/' . $uuid . '/content.rtf', '{\\rtf1\\ansi\\deff0 Alpha beta gamma delta}');
+
+        $service = new ContentImportService($connection);
+        $firstImport = $service->importScrivenerDirectory($directory, 123, 'v1', false, 'Book Import');
+        $firstVersionId = (int) ($firstImport['imported']['Book Import/Scene One']['id'] ?? 0);
+        $this->assertGreaterThan(0, $firstVersionId);
+
+        $connection->executeStatement(
+            "INSERT INTO reviews (content_version_id, reviewer_id, title, status, details, selected_excerpt, anchor_start_offset, anchor_end_offset, anchor_container_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))",
+            [$firstVersionId, 9, 'Reviewer note', 'open', 'Please revisit this phrase.', 'beta gamma', 6, 16, 'article[1]/p[1]']
+        );
+
+        file_put_contents($project . '/Files/Data/' . $uuid . '/content.rtf', '{\\rtf1\\ansi\\deff0 Intro text. Alpha beta gamma delta}');
+
+        $secondImport = $service->importScrivenerDirectory($directory, 123, 'v2', false, 'Book Import');
+        $secondVersionId = (int) ($secondImport['imported']['Book Import/Scene One']['id'] ?? 0);
+        $this->assertGreaterThan(0, $secondVersionId);
+        $this->assertNotSame($firstVersionId, $secondVersionId);
+
+        $remapped = $connection->fetchAssociative(
+            'SELECT content_version_id, reviewer_id, status, selected_excerpt, anchor_start_offset, anchor_end_offset, anchor_remap_state, anchor_remap_confidence, anchor_remap_reason, anchor_remapped_from_content_version_id, anchor_remapped_from_review_id FROM reviews WHERE content_version_id = ? ORDER BY id DESC LIMIT 1',
+            [$secondVersionId]
+        );
+
+        $this->assertIsArray($remapped);
+        $this->assertSame($secondVersionId, (int) $remapped['content_version_id']);
+        $this->assertSame(9, (int) $remapped['reviewer_id']);
+        $this->assertSame('needs_author_review', (string) $remapped['status']);
+        $this->assertSame('beta gamma', (string) $remapped['selected_excerpt']);
+        $this->assertSame('mapped', (string) $remapped['anchor_remap_state']);
+        $this->assertSame('high', (string) $remapped['anchor_remap_confidence']);
+        $this->assertSame('excerpt_unique_match', (string) $remapped['anchor_remap_reason']);
+        $this->assertSame($firstVersionId, (int) $remapped['anchor_remapped_from_content_version_id']);
+        $this->assertGreaterThan(0, (int) $remapped['anchor_remapped_from_review_id']);
+        $this->assertGreaterThan(6, (int) $remapped['anchor_start_offset']);
+        $this->assertGreaterThan((int) $remapped['anchor_start_offset'], (int) $remapped['anchor_end_offset']);
+
+        $updatedMetadata = $connection->fetchOne('SELECT metadata FROM content_versions WHERE id = ?', [$secondVersionId]);
+        $this->assertIsString($updatedMetadata);
+        $metadata = json_decode($updatedMetadata, true, 512, JSON_THROW_ON_ERROR);
+        $this->assertSame($firstVersionId, (int) ($metadata['anchor_remap']['previous_content_version_id'] ?? 0));
+        $this->assertSame(1, (int) ($metadata['anchor_remap']['copied_reviews'] ?? 0));
+        $this->assertSame(1, (int) ($metadata['anchor_remap']['mapped_high'] ?? 0));
+        $this->assertSame(0, (int) ($metadata['anchor_remap']['failed'] ?? 0));
+
+        $connection->close();
+        unlink($dbPath);
+        $this->deleteDirectoryRecursively($directory);
+    }
+
+    public function testImportScrivenerDirectoryMarksFailedRemapWhenAnchorCannotBeFound(): void
+    {
+        $directory = sys_get_temp_dir() . '/sparkinsight_scrivener_' . bin2hex(random_bytes(8));
+        $project = $directory . '/book.scriv';
+        $uuid = 'A1111111-1111-1111-1111-111111111111';
+        mkdir($project . '/Files/Data/' . $uuid, 0777, true);
+
+        file_put_contents($project . '/book.scrivx', <<<'XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<ScrivenerProject>
+    <Binder>
+        <BinderItem UUID="ROOT-BOOK" Type="Folder">
+            <Title>The Book</Title>
+            <Children>
+                <BinderItem UUID="A1111111-1111-1111-1111-111111111111" Type="Text">
+                    <Title>Scene One</Title>
+                </BinderItem>
+            </Children>
+        </BinderItem>
+    </Binder>
+</ScrivenerProject>
+XML
+        );
+
+        $dbPath = sys_get_temp_dir() . '/sparkinsight_import_' . bin2hex(random_bytes(8)) . '.sqlite';
+        $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbPath]);
+        $connection->executeStatement(<<<'SQL'
+CREATE TABLE content_versions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    book_title TEXT,
+    version_label TEXT NOT NULL,
+    source TEXT,
+    content_rtf TEXT,
+    content_text TEXT,
+    author_id INTEGER,
+    status TEXT NOT NULL,
+    metadata TEXT,
+    import_batch_id TEXT,
+    imported_at TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+SQL
+        );
+        $connection->executeStatement(<<<'SQL'
+CREATE TABLE reviews (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    content_version_id INTEGER NOT NULL,
+    reviewer_id INTEGER,
+    title TEXT NOT NULL,
+    status TEXT NOT NULL,
+    details TEXT,
+    selected_excerpt TEXT,
+    anchor_start_offset INTEGER,
+    anchor_end_offset INTEGER,
+    anchor_container_path TEXT,
+    anchor_remap_state TEXT,
+    anchor_remap_confidence TEXT,
+    anchor_remap_reason TEXT,
+    anchor_remapped_from_review_id INTEGER,
+    anchor_remapped_from_content_version_id INTEGER,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    resolved_at TEXT,
+    resolution_decision TEXT,
+    resolution_actor_id INTEGER,
+    resolution_actor_role TEXT,
+    resolution_recorded_at TEXT
+);
+SQL
+        );
+
+        file_put_contents($project . '/Files/Data/' . $uuid . '/content.rtf', '{\\rtf1\\ansi\\deff0 Alpha beta gamma delta}');
+
+        $service = new ContentImportService($connection);
+        $firstImport = $service->importScrivenerDirectory($directory, 123, 'v1', false, 'Book Import');
+        $firstVersionId = (int) ($firstImport['imported']['Book Import/Scene One']['id'] ?? 0);
+        $this->assertGreaterThan(0, $firstVersionId);
+
+        $connection->executeStatement(
+            "INSERT INTO reviews (content_version_id, reviewer_id, title, status, details, selected_excerpt, anchor_start_offset, anchor_end_offset, anchor_container_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))",
+            [$firstVersionId, 11, 'Reviewer note', 'open', 'No longer matches exactly.', 'beta gamma', 6, 16, 'article[1]/p[1]']
+        );
+
+        file_put_contents($project . '/Files/Data/' . $uuid . '/content.rtf', '{\\rtf1\\ansi\\deff0 Entirely rewritten content with no overlap}');
+
+        $secondImport = $service->importScrivenerDirectory($directory, 123, 'v2', false, 'Book Import');
+        $secondVersionId = (int) ($secondImport['imported']['Book Import/Scene One']['id'] ?? 0);
+        $this->assertGreaterThan(0, $secondVersionId);
+
+        $remapped = $connection->fetchAssociative(
+            'SELECT status, anchor_start_offset, anchor_end_offset, anchor_container_path, anchor_remap_state, anchor_remap_confidence, anchor_remap_reason FROM reviews WHERE content_version_id = ? ORDER BY id DESC LIMIT 1',
+            [$secondVersionId]
+        );
+
+        $this->assertIsArray($remapped);
+        $this->assertSame('needs_author_review', (string) $remapped['status']);
+        $this->assertNull($remapped['anchor_start_offset']);
+        $this->assertNull($remapped['anchor_end_offset']);
+        $this->assertNull($remapped['anchor_container_path']);
+        $this->assertSame('failed', (string) $remapped['anchor_remap_state']);
+        $this->assertSame('failed', (string) $remapped['anchor_remap_confidence']);
+        $this->assertSame('no_match_in_new_content', (string) $remapped['anchor_remap_reason']);
+
+        $updatedMetadata = $connection->fetchOne('SELECT metadata FROM content_versions WHERE id = ?', [$secondVersionId]);
+        $this->assertIsString($updatedMetadata);
+        $metadata = json_decode($updatedMetadata, true, 512, JSON_THROW_ON_ERROR);
+        $this->assertSame(1, (int) ($metadata['anchor_remap']['copied_reviews'] ?? 0));
+        $this->assertSame(1, (int) ($metadata['anchor_remap']['failed'] ?? 0));
 
         $connection->close();
         unlink($dbPath);

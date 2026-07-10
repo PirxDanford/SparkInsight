@@ -72,6 +72,7 @@ CREATE TABLE content_versions (
     author_id INTEGER,
     status TEXT NOT NULL,
     metadata TEXT,
+    import_batch_id TEXT,
     imported_at TEXT NOT NULL,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
@@ -135,7 +136,7 @@ SQL
         $this->assertSame(2, $count);
 
         $versionLabel = (string) $pdo->query("SELECT version_label FROM content_versions WHERE title = 'Title page' LIMIT 1")->fetchColumn();
-        $this->assertStringContainsString('The Book/Front Matter/Title page', $versionLabel);
+        $this->assertStringContainsString('My Test Book/Front Matter/Title page', $versionLabel);
 
         $bookTitle = $pdo->query("SELECT book_title FROM content_versions LIMIT 1")->fetchColumn();
         $this->assertSame('My Test Book', $bookTitle);

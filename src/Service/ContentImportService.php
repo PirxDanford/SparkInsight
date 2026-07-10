@@ -50,7 +50,7 @@ final class ContentImportService
         return $errors;
     }
 
-    public function importFdxContent(string $fdxXml, string $versionLabel, int $authorId, ?string $source = null, ?string $bookTitle = null): int
+    public function importFdxContent(string $fdxXml, string $versionLabel, int $authorId, ?string $source = null, ?string $bookTitle = null, ?string $importBatchId = null): int
     {
         $errors = $this->validateFdxContent($fdxXml, $source, $versionLabel);
         if ($errors !== []) {
@@ -86,12 +86,13 @@ final class ContentImportService
         $contentText = $this->extractPlainTextFromXml($xml);
         $sectionCount = $this->countTextSections($xml);
         $status = $sectionCount > 0 ? 'ready' : 'placeholder';
+        $effectiveImportBatchId = $importBatchId ?? $this->generateImportBatchId();
 
         $this->connection->beginTransaction();
         try {
             $this->connection->executeStatement(
-                'INSERT INTO content_versions (title, book_title, version_label, source, content_rtf, content_text, author_id, status, metadata, imported_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                [$title, $bookTitle, $versionLabel, $source, null, $contentText !== '' ? $contentText : null, $authorId, $status, $metadata, $now, $now, $now]
+                'INSERT INTO content_versions (title, book_title, version_label, source, content_rtf, content_text, author_id, status, metadata, import_batch_id, imported_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [$title, $bookTitle, $versionLabel, $source, null, $contentText !== '' ? $contentText : null, $authorId, $status, $metadata, $effectiveImportBatchId, $now, $now, $now]
             );
 
             $contentVersionId = (int) $this->connection->lastInsertId();
@@ -154,6 +155,7 @@ final class ContentImportService
             'imported' => [],
             'failed' => [],
         ];
+        $importBatchId = $dryRun ? null : $this->generateImportBatchId();
 
         foreach ($projects as $projectPath) {
             $result['scanned_projects']++;
@@ -164,7 +166,7 @@ final class ContentImportService
             }
 
             try {
-                $items = $this->parseScrivenerProjectItems($projectPath, $scrivxPath, $labelPrefix);
+                $items = $this->parseScrivenerProjectItems($projectPath, $scrivxPath, $labelPrefix, $bookTitle);
             } catch (ImportValidationException $e) {
                 $result['failed'][$projectPath] = $e->getErrors();
                 continue;
@@ -187,9 +189,10 @@ final class ContentImportService
                         continue;
                     }
 
-                    $id = $this->insertScrivenerItem($item, $authorId, $bookTitle);
+                    $id = $this->insertScrivenerItem($item, $authorId, $bookTitle, $importBatchId);
                     $result['imported'][$entryKey] = [
                         'id' => $id,
+                        'import_batch_id' => $importBatchId,
                         'version_label' => $item['version_label'],
                         'order_path' => $item['order_path'],
                         'kind' => $item['kind'],
@@ -221,6 +224,7 @@ final class ContentImportService
             'imported' => [],
             'failed' => [],
         ];
+        $importBatchId = $dryRun ? null : $this->generateImportBatchId();
 
         foreach ($iterator as $file) {
             if (!$file->isFile() || strcasecmp($file->getExtension(), 'fdx') !== 0) {
@@ -252,9 +256,10 @@ final class ContentImportService
                     continue;
                 }
 
-                $contentVersionId = $this->importFdxContent($fdxXml, $versionLabel, $authorId, $source, $bookTitle);
+                $contentVersionId = $this->importFdxContent($fdxXml, $versionLabel, $authorId, $source, $bookTitle, $importBatchId);
                 $result['imported'][$relativePath] = [
                     'id' => $contentVersionId,
+                    'import_batch_id' => $importBatchId,
                     'version_label' => $versionLabel,
                 ];
             } catch (ImportValidationException $exception) {
@@ -267,7 +272,7 @@ final class ContentImportService
         return $result;
     }
 
-    private function insertScrivenerItem(array $item, int $authorId, ?string $bookTitle): int
+    private function insertScrivenerItem(array $item, int $authorId, ?string $bookTitle, ?string $importBatchId): int
     {
         $title = $item['title'];
         $versionLabel = $item['version_label'];
@@ -280,12 +285,13 @@ final class ContentImportService
         }
 
         $now = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
-        $metadata = json_encode($item['metadata'], JSON_THROW_ON_ERROR);
+        $metadata = is_array($item['metadata']) ? $item['metadata'] : [];
+        $effectiveImportBatchId = $importBatchId ?? $this->generateImportBatchId();
 
         $this->connection->beginTransaction();
         try {
             $this->connection->executeStatement(
-                'INSERT INTO content_versions (title, book_title, version_label, source, content_rtf, content_text, author_id, status, metadata, imported_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO content_versions (title, book_title, version_label, source, content_rtf, content_text, author_id, status, metadata, import_batch_id, imported_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 [
                     $title,
                     $bookTitle ?? $item['book_title'],
@@ -295,7 +301,8 @@ final class ContentImportService
                     $item['content_text'] !== '' ? $item['content_text'] : null,
                     $authorId,
                     $item['status'],
-                    $metadata,
+                    json_encode($metadata, JSON_THROW_ON_ERROR),
+                    $effectiveImportBatchId,
                     $now,
                     $now,
                     $now,
@@ -304,6 +311,21 @@ final class ContentImportService
 
             $contentVersionId = (int) $this->connection->lastInsertId();
             $this->assignImportedContentToReviewers($contentVersionId, $now);
+            $remapSummary = $this->remapReviewerAnchorsForUpdatedScrivenerVersion(
+                $contentVersionId,
+                $title,
+                (string) ($bookTitle ?? $item['book_title'] ?? ''),
+                $authorId,
+                (string) ($item['content_text'] ?? ''),
+                $now
+            );
+            if ($remapSummary !== null) {
+                $metadata['anchor_remap'] = $remapSummary;
+                $this->connection->executeStatement(
+                    'UPDATE content_versions SET metadata = ?, updated_at = ? WHERE id = ?',
+                    [json_encode($metadata, JSON_THROW_ON_ERROR), $now, $contentVersionId]
+                );
+            }
             $this->connection->commit();
 
             return $contentVersionId;
@@ -314,6 +336,11 @@ final class ContentImportService
 
             throw $e;
         }
+    }
+
+    private function generateImportBatchId(): string
+    {
+        return 'imp_' . bin2hex(random_bytes(8));
     }
 
     private function discoverScrivenerProjects(string $path): array
@@ -386,7 +413,7 @@ final class ContentImportService
         return null;
     }
 
-    private function parseScrivenerProjectItems(string $projectPath, string $scrivxPath, ?string $labelPrefix): array
+    private function parseScrivenerProjectItems(string $projectPath, string $scrivxPath, ?string $labelPrefix, ?string $bookTitleOverride = null): array
     {
         $rawXml = file_get_contents($scrivxPath);
         if ($rawXml === false) {
@@ -413,7 +440,10 @@ final class ContentImportService
             throw new ImportValidationException(['Could not find a binder root with importable children.']);
         }
 
-        $rootTitle = $this->readBinderTitle($rootNode) ?? 'Untitled Book';
+        $rootTitle = $this->resolveImportedBookTitle(
+            $this->readBinderTitle($rootNode),
+            $bookTitleOverride
+        );
         $rootUuid = (string) ($rootNode['UUID'] ?? '');
         $items = [];
 
@@ -556,6 +586,21 @@ final class ContentImportService
         }
 
         return null;
+    }
+
+    private function resolveImportedBookTitle(?string $binderTitle, ?string $bookTitleOverride = null): string
+    {
+        $override = trim((string) $bookTitleOverride);
+        if ($override !== '') {
+            return $override;
+        }
+
+        $title = trim((string) $binderTitle);
+        if ($title === '' || strcasecmp($title, 'The Book') === 0) {
+            return 'Enterprise Community Management';
+        }
+
+        return $title;
     }
 
     private function isDirectoryNodeType(string $type): bool
@@ -755,6 +800,292 @@ final class ContentImportService
         }
 
         return false;
+    }
+
+    private function remapReviewerAnchorsForUpdatedScrivenerVersion(
+        int $newContentVersionId,
+        string $title,
+        string $bookTitle,
+        int $authorId,
+        string $newContentText,
+        string $timestamp
+    ): ?array {
+        try {
+            $previous = $this->connection->executeQuery(
+                "SELECT id, content_text FROM content_versions WHERE author_id = ? AND title = ? AND COALESCE(book_title, '') = ? AND id <> ? ORDER BY imported_at DESC, id DESC LIMIT 1",
+                [$authorId, $title, $bookTitle, $newContentVersionId]
+            )->fetchAssociative();
+        } catch (\Throwable) {
+            return null;
+        }
+
+        if (!is_array($previous) || $previous === []) {
+            return null;
+        }
+
+        $previousVersionId = (int) ($previous['id'] ?? 0);
+        if ($previousVersionId <= 0) {
+            return null;
+        }
+
+        try {
+            $reviews = $this->connection->executeQuery(
+                "SELECT
+                    id,
+                    reviewer_id,
+                    title,
+                    status,
+                    details,
+                    selected_excerpt,
+                    anchor_start_offset,
+                    anchor_end_offset,
+                    anchor_container_path
+                FROM reviews
+                WHERE content_version_id = ?
+                  AND status IN ('open', 'needs_author_review')",
+                [$previousVersionId]
+            )->fetchAllAssociative();
+        } catch (\Throwable) {
+            return [
+                'previous_content_version_id' => $previousVersionId,
+                'copied_reviews' => 0,
+                'mapped_high' => 0,
+                'mapped_medium' => 0,
+                'mapped_low' => 0,
+                'not_applicable' => 0,
+                'failed' => 0,
+            ];
+        }
+
+        $previousContentText = (string) ($previous['content_text'] ?? '');
+        $summary = [
+            'previous_content_version_id' => $previousVersionId,
+            'copied_reviews' => 0,
+            'mapped_high' => 0,
+            'mapped_medium' => 0,
+            'mapped_low' => 0,
+            'not_applicable' => 0,
+            'failed' => 0,
+        ];
+
+        foreach ($reviews as $review) {
+            $remap = $this->remapReviewAnchor($review, $previousContentText, $newContentText);
+
+            try {
+                $this->connection->executeStatement(
+                    'INSERT INTO reviews (content_version_id, reviewer_id, title, status, details, selected_excerpt, anchor_start_offset, anchor_end_offset, anchor_container_path, anchor_remap_state, anchor_remap_confidence, anchor_remap_reason, anchor_remapped_from_review_id, anchor_remapped_from_content_version_id, created_at, updated_at, resolved_at, resolution_decision, resolution_actor_id, resolution_actor_role, resolution_recorded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    [
+                        $newContentVersionId,
+                        (int) ($review['reviewer_id'] ?? 0) > 0 ? (int) $review['reviewer_id'] : null,
+                        (string) ($review['title'] ?? 'Review note'),
+                        'needs_author_review',
+                        $review['details'] !== null ? (string) $review['details'] : null,
+                        $review['selected_excerpt'] !== null ? trim((string) $review['selected_excerpt']) : null,
+                        $remap['start_offset'],
+                        $remap['end_offset'],
+                        $remap['container_path'],
+                        $remap['state'],
+                        $remap['confidence'],
+                        $remap['reason'],
+                        (int) ($review['id'] ?? 0) > 0 ? (int) $review['id'] : null,
+                        $previousVersionId,
+                        $timestamp,
+                        $timestamp,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                    ]
+                );
+            } catch (\Throwable) {
+                continue;
+            }
+
+            $summary['copied_reviews']++;
+            if ($remap['state'] === 'not_applicable') {
+                $summary['not_applicable']++;
+                continue;
+            }
+
+            if ($remap['state'] === 'failed') {
+                $summary['failed']++;
+                continue;
+            }
+
+            if ($remap['confidence'] === 'high') {
+                $summary['mapped_high']++;
+                continue;
+            }
+
+            if ($remap['confidence'] === 'medium') {
+                $summary['mapped_medium']++;
+                continue;
+            }
+
+            $summary['mapped_low']++;
+        }
+
+        return $summary;
+    }
+
+    /**
+     * @param array<string, mixed> $review
+     *
+     * @return array{state: string, confidence: string, reason: string, start_offset: ?int, end_offset: ?int, container_path: ?string}
+     */
+    private function remapReviewAnchor(array $review, string $oldContentText, string $newContentText): array
+    {
+        $excerpt = trim((string) ($review['selected_excerpt'] ?? ''));
+        $start = array_key_exists('anchor_start_offset', $review) && $review['anchor_start_offset'] !== null
+            ? max(0, (int) $review['anchor_start_offset'])
+            : null;
+        $end = array_key_exists('anchor_end_offset', $review) && $review['anchor_end_offset'] !== null
+            ? max(0, (int) $review['anchor_end_offset'])
+            : null;
+
+        if ($excerpt === '' && $start === null && $end === null) {
+            return [
+                'state' => 'not_applicable',
+                'confidence' => 'none',
+                'reason' => 'whole_item_note',
+                'start_offset' => null,
+                'end_offset' => null,
+                'container_path' => null,
+            ];
+        }
+
+        $newLength = strlen($newContentText);
+        if ($newLength === 0) {
+            return [
+                'state' => 'failed',
+                'confidence' => 'failed',
+                'reason' => 'new_content_is_empty',
+                'start_offset' => null,
+                'end_offset' => null,
+                'container_path' => null,
+            ];
+        }
+
+        if ($excerpt !== '') {
+            $positions = $this->findAllOccurrences($newContentText, $excerpt);
+            if (count($positions) === 1) {
+                $matchStart = $positions[0];
+                return [
+                    'state' => 'mapped',
+                    'confidence' => 'high',
+                    'reason' => 'excerpt_unique_match',
+                    'start_offset' => $matchStart,
+                    'end_offset' => $matchStart + strlen($excerpt),
+                    'container_path' => null,
+                ];
+            }
+
+            if (count($positions) > 1) {
+                $bestStart = $this->pickClosestPositionByExpectedOffset($positions, $start, strlen($oldContentText), $newLength);
+                return [
+                    'state' => 'mapped',
+                    'confidence' => 'medium',
+                    'reason' => 'excerpt_ambiguous_match',
+                    'start_offset' => $bestStart,
+                    'end_offset' => $bestStart + strlen($excerpt),
+                    'container_path' => null,
+                ];
+            }
+        }
+
+        if ($start !== null && $end !== null && $end > $start && $oldContentText !== '') {
+            $spanLength = min(200, $end - $start);
+            $span = trim(substr($oldContentText, $start, $spanLength));
+            if ($span !== '') {
+                $positions = $this->findAllOccurrences($newContentText, $span);
+                if (count($positions) === 1) {
+                    $matchStart = $positions[0];
+                    return [
+                        'state' => 'mapped',
+                        'confidence' => 'medium',
+                        'reason' => 'old_span_unique_match',
+                        'start_offset' => $matchStart,
+                        'end_offset' => $matchStart + strlen($span),
+                        'container_path' => null,
+                    ];
+                }
+
+                if (count($positions) > 1) {
+                    $bestStart = $this->pickClosestPositionByExpectedOffset($positions, $start, strlen($oldContentText), $newLength);
+                    return [
+                        'state' => 'mapped',
+                        'confidence' => 'low',
+                        'reason' => 'old_span_ambiguous_match',
+                        'start_offset' => $bestStart,
+                        'end_offset' => $bestStart + strlen($span),
+                        'container_path' => null,
+                    ];
+                }
+            }
+        }
+
+        return [
+            'state' => 'failed',
+            'confidence' => 'failed',
+            'reason' => 'no_match_in_new_content',
+            'start_offset' => null,
+            'end_offset' => null,
+            'container_path' => null,
+        ];
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function findAllOccurrences(string $haystack, string $needle): array
+    {
+        if ($needle === '') {
+            return [];
+        }
+
+        $positions = [];
+        $offset = 0;
+        while (true) {
+            $position = strpos($haystack, $needle, $offset);
+            if ($position === false) {
+                break;
+            }
+
+            $positions[] = $position;
+            $offset = $position + 1;
+        }
+
+        return $positions;
+    }
+
+    /**
+     * @param list<int> $positions
+     */
+    private function pickClosestPositionByExpectedOffset(array $positions, ?int $oldStart, int $oldLength, int $newLength): int
+    {
+        if ($positions === []) {
+            return 0;
+        }
+
+        if ($oldStart === null || $oldLength <= 0) {
+            return $positions[0];
+        }
+
+        $ratio = min(1.0, max(0.0, $oldStart / max(1, $oldLength)));
+        $expected = (int) round($ratio * max(0, $newLength - 1));
+
+        $best = $positions[0];
+        $bestDistance = abs($best - $expected);
+        foreach ($positions as $position) {
+            $distance = abs($position - $expected);
+            if ($distance < $bestDistance) {
+                $best = $position;
+                $bestDistance = $distance;
+            }
+        }
+
+        return $best;
     }
 
     private function deriveTitleFromSourceOrLabel(?string $source, ?string $versionLabel): ?string

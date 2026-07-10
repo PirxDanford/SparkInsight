@@ -31,15 +31,12 @@ final class MigrationRunner
         $currentVersion = $this->getCurrentVersion();
         $executed = [];
 
-        $files = glob($migrationsDir . '/*.sql');
-        sort($files);
-
-        foreach ($files as $file) {
+        foreach ($this->getMigrationFiles($migrationsDir) as $file) {
             $filename = basename($file);
-            if (!preg_match('/^(\d+)_/', $filename, $matches)) {
+            $version = $this->getMigrationVersion($file);
+            if ($version === null) {
                 continue;
             }
-            $version = (int) $matches[1];
 
             if ($version <= $currentVersion) {
                 continue;
@@ -59,7 +56,29 @@ final class MigrationRunner
     public function getMigrationFiles(string $migrationsDir): array
     {
         $files = glob($migrationsDir . '/*.sql');
-        sort($files);
+
+        usort($files, function (string $left, string $right): int {
+            $leftVersion = $this->getMigrationVersion($left);
+            $rightVersion = $this->getMigrationVersion($right);
+
+            if ($leftVersion === null && $rightVersion === null) {
+                return strcmp(basename($left), basename($right));
+            }
+
+            if ($leftVersion === null) {
+                return 1;
+            }
+
+            if ($rightVersion === null) {
+                return -1;
+            }
+
+            if ($leftVersion === $rightVersion) {
+                return strcmp(basename($left), basename($right));
+            }
+
+            return $leftVersion <=> $rightVersion;
+        });
 
         return $files;
     }
@@ -70,11 +89,11 @@ final class MigrationRunner
         $pending = [];
 
         foreach ($this->getMigrationFiles($migrationsDir) as $file) {
-            $filename = basename($file);
-            if (!preg_match('/^(\d+)_/', $filename, $matches)) {
+            $version = $this->getMigrationVersion($file);
+            if ($version === null) {
                 continue;
             }
-            $version = (int) $matches[1];
+            $filename = basename($file);
 
             if ($version > $currentVersion) {
                 $pending[] = $filename;
@@ -93,11 +112,10 @@ final class MigrationRunner
 
         $rollbackFile = null;
         foreach ($this->getMigrationFiles($migrationsDir) as $file) {
-            $filename = basename($file);
-            if (!preg_match('/^(\d+)_/', $filename, $matches)) {
+            $version = $this->getMigrationVersion($file);
+            if ($version === null) {
                 continue;
             }
-            $version = (int) $matches[1];
 
             if ($version === $currentVersion) {
                 $rollbackFile = $file;
@@ -142,5 +160,30 @@ final class MigrationRunner
 
             $this->connection->executeStatement($statement);
         }
+    }
+
+    private function getMigrationVersion(string $file): ?int
+    {
+        $filename = basename($file);
+        if (preg_match('/^(\d+)_/', $filename, $matches) === 1) {
+            return (int) $matches[1];
+        }
+
+        if (preg_match('/^dev_only_.*\.sql$/', $filename) !== 1) {
+            return null;
+        }
+
+        $content = file_get_contents($file);
+        if ($content === false) {
+            return null;
+        }
+
+        if (
+            preg_match('/INSERT\s+INTO\s+schema_version\s*\(\s*version\s*,\s*applied_at\s*\)\s*VALUES\s*\(\s*(\d+)\s*,/i', $content, $matches) === 1
+        ) {
+            return (int) $matches[1];
+        }
+
+        return null;
     }
 }
