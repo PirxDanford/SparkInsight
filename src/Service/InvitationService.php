@@ -178,4 +178,11 @@ final class InvitationService
 
         return (int) ($result['count'] ?? 0);
     }
+
+    public function purgeExpiredInvitations(): int
+    {
+        return $this->connection->executeStatement(
+            'DELETE FROM invitations WHERE used_at IS NULL AND expires_at <= CURRENT_TIMESTAMP'
+        );
+    }
 }

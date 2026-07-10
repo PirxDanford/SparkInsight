@@ -2,6 +2,9 @@
 $title = $title ?? 'Review';
 $reviewer_queue_filters = isset($reviewer_queue_filters) && is_array($reviewer_queue_filters) ? $reviewer_queue_filters : [];
 $reviewer_queue_pagination = isset($reviewer_queue_pagination) && is_array($reviewer_queue_pagination) ? $reviewer_queue_pagination : [];
+$author_queue_filters = isset($author_queue_filters) && is_array($author_queue_filters) ? $author_queue_filters : [];
+$author_queue_pagination = isset($author_queue_pagination) && is_array($author_queue_pagination) ? $author_queue_pagination : [];
+$author_queue_context = isset($author_queue_context) && is_array($author_queue_context) ? $author_queue_context : [];
 $formatQueuePath = static function (string $path): string {
     $segments = array_values(array_filter(explode('/', str_replace('\\', '/', $path)), static fn (string $segment): bool => trim($segment) !== ''));
 
@@ -172,8 +175,14 @@ ob_start();
                                     <dl class="details-list review-note-meta">
                                         <dt>Submitted</dt>
                                         <dd><?= htmlspecialchars(date('Y-m-d H:i', strtotime((string) $review['created_at'])), ENT_QUOTES, 'UTF-8') ?></dd>
+                                        <dt>Decision</dt>
+                                        <dd><?= !empty($review['resolution_decision_label']) ? htmlspecialchars((string) $review['resolution_decision_label'], ENT_QUOTES, 'UTF-8') : 'Pending' ?></dd>
                                         <dt>Resolved</dt>
                                         <dd><?= !empty($review['resolved_at']) ? htmlspecialchars(date('Y-m-d H:i', strtotime((string) $review['resolved_at'])), ENT_QUOTES, 'UTF-8') : 'Not resolved yet' ?></dd>
+                                        <?php if (!empty($review['resolution_actor_name'])): ?>
+                                            <dt>Resolved by</dt>
+                                            <dd><?= htmlspecialchars((string) $review['resolution_actor_name'], ENT_QUOTES, 'UTF-8') ?></dd>
+                                        <?php endif; ?>
                                     </dl>
                                     <p><?= htmlspecialchars($review['details'] !== '' ? (string) $review['details'] : 'No comment provided.', ENT_QUOTES, 'UTF-8') ?></p>
                                 </article>
@@ -188,9 +197,37 @@ ob_start();
 
         <section class="dashboard-section">
             <div class="card-header">
-                <h2>Reviewer Snapshot</h2>
+                <div class="dashboard-title-row">
+                    <h2>Review Dashboard</h2>
+                    <button
+                        type="button"
+                        class="button small secondary dashboard-settings-toggle"
+                        data-reviewer-settings-toggle
+                        aria-expanded="false"
+                        aria-controls="reviewer-dashboard-settings"
+                        aria-label="Open review dashboard settings"
+                    >
+                        <span aria-hidden="true">⚙</span>
+                    </button>
+                </div>
                 <p>Reviewer-only context for items assigned to you.</p>
             </div>
+
+            <section class="reviewer-dashboard-settings" id="reviewer-dashboard-settings" data-reviewer-dashboard-settings hidden>
+                <div class="reviewer-dashboard-settings-header">
+                    <h3>Reader Settings</h3>
+                    <button type="button" class="button small secondary" data-reviewer-settings-close>Close</button>
+                </div>
+                <div class="reviewer-dashboard-settings-grid">
+                    <label>
+                        <span>Default item mode on open</span>
+                        <select data-reviewer-default-view>
+                            <option value="compact-hidden">Pure Content</option>
+                            <option value="compact-visible">Content + Panel</option>
+                        </select>
+                    </label>
+                </div>
+            </section>
 
             <div class="reviewer-metrics">
                 <?php foreach (($reviewer_metrics ?? []) as $metric): ?>
@@ -510,7 +547,7 @@ ob_start();
     <?php else: ?>
         <section class="dashboard-section">
             <div class="card-header">
-                <h2>Author Snapshot</h2>
+                <h2>Review Dashboard</h2>
                 <p>Author-only context focused on writing progress and reviewer feedback.</p>
             </div>
 
@@ -527,46 +564,219 @@ ob_start();
         <section class="card dashboard-section">
             <div class="card-header">
                 <h2>Your Author Queue</h2>
-                <p>Track feedback status and next actions for your submissions.</p>
+                <p>Resolve reviewer feedback, keep binder hierarchy visible, and export selected items.</p>
             </div>
 
-            <div class="queue-table-wrap">
-                <table class="queue-table">
-                    <thead>
-                        <tr>
-                            <th>Submission</th>
-                            <th>Reviewer</th>
-                            <th>Status</th>
-                            <th>Updated</th>
-                            <th>Next Step</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach (($author_queue ?? []) as $row): ?>
+            <form class="queue-filters" method="get" action="/dashboard/author">
+                <label class="queue-filter-search">
+                    <span>Search</span>
+                    <input type="text" name="q" value="<?= htmlspecialchars((string) (($author_queue_filters['q'] ?? '') ?: ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Title, book, source path...">
+                </label>
+
+                <label class="queue-filter-state">
+                    <span>Review State</span>
+                    <select name="state">
+                        <?php $currentAuthorState = (string) ($author_queue_filters['state'] ?? 'all'); ?>
+                        <option value="all" <?= $currentAuthorState === 'all' ? 'selected' : '' ?>>All states</option>
+                        <option value="placeholder" <?= $currentAuthorState === 'placeholder' ? 'selected' : '' ?>>Structure</option>
+                        <option value="ready_for_review" <?= $currentAuthorState === 'ready_for_review' ? 'selected' : '' ?>>Ready for review</option>
+                        <option value="in_review" <?= $currentAuthorState === 'in_review' ? 'selected' : '' ?>>In review</option>
+                        <option value="needs_author_reply" <?= $currentAuthorState === 'needs_author_reply' ? 'selected' : '' ?>>Needs author reply</option>
+                        <option value="resolved" <?= $currentAuthorState === 'resolved' ? 'selected' : '' ?>>Resolved</option>
+                    </select>
+                </label>
+
+                <label class="queue-filter-sort">
+                    <span>Sort</span>
+                    <select name="sort">
+                        <?php $currentAuthorSort = (string) ($author_queue_filters['sort'] ?? 'binder_asc'); ?>
+                        <option value="binder_asc" <?= $currentAuthorSort === 'binder_asc' ? 'selected' : '' ?>>Binder order</option>
+                        <option value="chapter_asc" <?= $currentAuthorSort === 'chapter_asc' ? 'selected' : '' ?>>Chapter title (A-Z)</option>
+                        <option value="chapter_desc" <?= $currentAuthorSort === 'chapter_desc' ? 'selected' : '' ?>>Chapter title (Z-A)</option>
+                        <option value="imported_desc" <?= $currentAuthorSort === 'imported_desc' ? 'selected' : '' ?>>Most recently imported</option>
+                    </select>
+                </label>
+
+                <label class="queue-filter-per-page">
+                    <span>Per page</span>
+                    <?php $currentAuthorPerPage = (int) ($author_queue_filters['per_page'] ?? 25); ?>
+                    <select name="per_page">
+                        <option value="10" <?= $currentAuthorPerPage === 10 ? 'selected' : '' ?>>10</option>
+                        <option value="25" <?= $currentAuthorPerPage === 25 ? 'selected' : '' ?>>25</option>
+                        <option value="50" <?= $currentAuthorPerPage === 50 ? 'selected' : '' ?>>50</option>
+                        <option value="100" <?= $currentAuthorPerPage === 100 ? 'selected' : '' ?>>100</option>
+                    </select>
+                </label>
+
+                <div class="queue-filter-actions">
+                    <button type="submit" class="button small">Apply</button>
+                    <a href="/dashboard/author" class="button small secondary">Reset</a>
+                </div>
+            </form>
+
+            <div class="queue-context">
+                <p>
+                    <strong>Book:</strong>
+                    <?= htmlspecialchars((string) (($author_queue_context['book_title'] ?? null) ?? 'Not set'), ENT_QUOTES, 'UTF-8') ?>
+                </p>
+            </div>
+
+            <div class="queue-tree-tools" aria-label="Queue tree controls">
+                <button type="button" class="button small secondary" data-tree-collapse-all data-tree-table-target="author-queue">Collapse all folders</button>
+                <button type="button" class="button small secondary" data-tree-expand-all data-tree-table-target="author-queue">Expand all folders</button>
+            </div>
+
+            <form method="post" action="/dashboard/author/export">
+                <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string) ($csrf_token ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+
+                <div class="queue-filters" style="margin-bottom: 1rem;">
+                    <label class="queue-filter-search" style="max-width: 28rem;">
+                        <span>Password (optional)</span>
+                        <input type="password" name="export_password" minlength="12" placeholder="Leave blank for a standard PDF">
+                    </label>
+
+                    <div class="queue-filter-actions">
+                        <button type="submit" class="button small">Export selected items</button>
+                    </div>
+                </div>
+
+                <p class="queue-context">
+                    <strong>Note:</strong>
+                    Leave the password blank for a standard PDF, or provide at least 12 characters to encrypt the export.
+                </p>
+
+                <div class="queue-table-wrap">
+                    <table class="queue-table">
+                        <thead>
                             <tr>
-                                <td><?= htmlspecialchars($row['title'], ENT_QUOTES, 'UTF-8') ?></td>
-                                <td><?= htmlspecialchars($row['reviewer'], ENT_QUOTES, 'UTF-8') ?></td>
-                                <td><?= htmlspecialchars($row['status'], ENT_QUOTES, 'UTF-8') ?></td>
-                                <td><?= htmlspecialchars($row['updated'], ENT_QUOTES, 'UTF-8') ?></td>
-                                <td><?= htmlspecialchars($row['next_step'], ENT_QUOTES, 'UTF-8') ?></td>
+                                <th>Select</th>
+                                <th>Submission</th>
+                                <th>Reviewers</th>
+                                <th>Status</th>
+                                <th>Updated</th>
+                                <th>Next Step</th>
                             </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody data-tree-table="author-queue">
+                            <?php if (!empty($author_queue) && is_array($author_queue)): ?>
+                                <?php $authorRows = array_values($author_queue ?? []); ?>
+                                <?php for ($index = 0, $authorRowCount = count($authorRows); $index < $authorRowCount; $index++): ?>
+                                    <?php
+                                        $row = $authorRows[$index];
+                                        $depth = max(0, (int) ($row['depth'] ?? 0));
+                                        $displayTitle = (string) (($row['display_title'] ?? '') !== '' ? $row['display_title'] : ($row['title'] ?? 'Untitled'));
+                                        $hasChildren = !empty($row['is_directory']) && !empty($row['has_children']);
+                                        $listPath = (string) ($row['list_path'] ?? '');
+                                        $parentPath = (string) ($row['parent_path'] ?? '');
+                                        $parentPathDisplay = $parentPath !== '' ? $formatQueuePath($parentPath) : '';
+                                        $pathDisplay = $listPath !== '' ? $formatQueuePath($listPath) : '';
+                                        $childFolderCount = max(0, (int) ($row['child_folder_count'] ?? 0));
+                                        $childItemCount = max(0, (int) ($row['child_item_count'] ?? 0));
+                                    ?>
+                                    <tr class="queue-row <?= !empty($row['is_directory']) ? 'queue-row-directory' : 'queue-row-content' ?>" data-tree-row="true" data-kind="<?= htmlspecialchars(!empty($row['is_directory']) ? 'directory' : 'item', ENT_QUOTES, 'UTF-8') ?>" data-depth="<?= $depth ?>" data-list-path="<?= htmlspecialchars((string) ($row['list_path'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" data-collapsed="false">
+                                        <td>
+                                            <?php if (empty($row['is_directory'])): ?>
+                                                <input
+                                                    type="checkbox"
+                                                    name="item_ids[]"
+                                                    value="<?= (int) ($row['id'] ?? 0) ?>"
+                                                    aria-label="Select <?= htmlspecialchars((string) ($row['title'] ?? 'item'), ENT_QUOTES, 'UTF-8') ?>"
+                                                >
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <div class="queue-tree-label <?= !empty($row['is_directory']) ? 'queue-tree-directory' : 'queue-tree-item' ?>" style="--queue-depth: <?= $depth ?>;">
+                                                <?php if (!empty($row['is_directory']) && $hasChildren): ?>
+                                                    <button class="queue-tree-toggle" type="button" data-tree-toggle aria-expanded="true" aria-label="Collapse folder">
+                                                        <span class="queue-tree-toggle-icon" data-tree-toggle-icon aria-hidden="true">▾</span>
+                                                        <span class="queue-tree-toggle-text" aria-hidden="true">📁</span>
+                                                    </button>
+                                                <?php else: ?>
+                                                    <span class="queue-tree-glyph" aria-hidden="true"><?= !empty($row['is_directory']) ? '▸' : '•' ?></span>
+                                                <?php endif; ?>
+                                                <?php if (!empty($row['is_openable']) && !empty($row['url'])): ?>
+                                                    <a class="queue-item-link <?= !empty($row['is_directory']) ? 'queue-item-link--directory' : 'queue-item-link--content' ?>" href="<?= htmlspecialchars((string) $row['url'], ENT_QUOTES, 'UTF-8') ?>">
+                                                        <?= htmlspecialchars($displayTitle, ENT_QUOTES, 'UTF-8') ?>
+                                                    </a>
+                                                <?php else: ?>
+                                                    <span class="queue-item-title-static <?= !empty($row['is_directory']) ? 'queue-item-title-directory' : 'queue-item-title-content' ?>"><?= htmlspecialchars($displayTitle, ENT_QUOTES, 'UTF-8') ?></span>
+                                                <?php endif; ?>
+                                                <?php if (!empty($row['is_directory'])): ?>
+                                                    <span class="queue-folder-count-badge" title="Direct children in this folder"><?= $childFolderCount ?> folders · <?= $childItemCount ?> items</span>
+                                                <?php endif; ?>
+                                            </div>
+                                            <?php if (!empty($row['is_directory'])): ?>
+                                                <span class="queue-item-meta">Folder</span>
+                                                <?php if ($pathDisplay !== ''): ?>
+                                                    <span class="queue-item-path">Path: <?= htmlspecialchars($pathDisplay, ENT_QUOTES, 'UTF-8') ?></span>
+                                                <?php endif; ?>
+                                            <?php else: ?>
+                                                <span class="queue-item-meta"><?= htmlspecialchars((string) ($row['book_title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                                <?php if ($parentPathDisplay !== ''): ?>
+                                                    <span class="queue-item-path">Parent: <?= htmlspecialchars($parentPathDisplay, ENT_QUOTES, 'UTF-8') ?></span>
+                                                <?php endif; ?>
+                                            <?php endif; ?>
+                                        </td>
+                                        <?php if (!empty($row['is_directory'])): ?>
+                                            <td colspan="4"></td>
+                                        <?php else: ?>
+                                            <td><?= (int) ($row['reviewer_count'] ?? 0) ?></td>
+                                            <td><span class="status-pill status-<?= htmlspecialchars((string) ($row['status_tone'] ?? 'neutral'), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) ($row['status'] ?? 'Ready for review'), ENT_QUOTES, 'UTF-8') ?></span></td>
+                                            <td><?= htmlspecialchars((string) ($row['updated'] ?? 'Unknown'), ENT_QUOTES, 'UTF-8') ?></td>
+                                            <td><?= htmlspecialchars((string) ($row['next_step'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                                        <?php endif; ?>
+                                    </tr>
+                                <?php endfor; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="6">No authored submissions are available yet.</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+
+            <?php
+                $authorPagination = is_array($author_queue_pagination ?? null) ? $author_queue_pagination : [];
+                $authorBaseFilters = is_array($author_queue_filters ?? null) ? $author_queue_filters : [];
+                $authorPrevFilters = $authorBaseFilters;
+                $authorNextFilters = $authorBaseFilters;
+                $authorPrevFilters['page'] = (int) (($authorPagination['prev_page'] ?? 1) ?: 1);
+                $authorNextFilters['page'] = (int) (($authorPagination['next_page'] ?? 1) ?: 1);
+            ?>
+            <div class="queue-pagination">
+                <p>
+                    Showing page <?= (int) ($authorPagination['page'] ?? 1) ?> of <?= (int) ($authorPagination['total_pages'] ?? 1) ?>
+                    (<?= (int) ($authorPagination['total'] ?? 0) ?> item(s))
+                </p>
+                <div class="queue-pagination-actions">
+                    <?php if (!empty($authorPagination['has_prev'])): ?>
+                        <a class="button small secondary" href="/dashboard/author?<?= htmlspecialchars((string) http_build_query($authorPrevFilters), ENT_QUOTES, 'UTF-8') ?>">Previous</a>
+                    <?php else: ?>
+                        <span class="button small secondary" aria-disabled="true">Previous</span>
+                    <?php endif; ?>
+
+                    <?php if (!empty($authorPagination['has_next'])): ?>
+                        <a class="button small secondary" href="/dashboard/author?<?= htmlspecialchars((string) http_build_query($authorNextFilters), ENT_QUOTES, 'UTF-8') ?>">Next</a>
+                    <?php else: ?>
+                        <span class="button small secondary" aria-disabled="true">Next</span>
+                    <?php endif; ?>
+                </div>
             </div>
         </section>
 
         <section class="card dashboard-section">
             <div class="card-header">
                 <h2>Author Actions</h2>
-                <p>Prototype action points for final author workflow implementation.</p>
+                <p>Author resolution workflow now runs through item drill-in screens.</p>
             </div>
 
             <ul class="action-checklist">
-                <li>Open reviewer comments and resolve each discussion thread</li>
-                <li>Update chapter drafts and mark sections as ready for re-review</li>
-                <li>Track reviewer assignment and turnaround time per chapter</li>
-                <li>Export approved sections once all reviewer checks are resolved</li>
+                <li>Open an authored item directly from the queue to review all notes</li>
+                <li>Resolve or re-open individual notes as writing changes are applied</li>
+                <li>Use status filters to focus only on items that still need author follow-up</li>
+                <li>Export selected items once note resolution is complete</li>
             </ul>
         </section>
     <?php endif; ?>
@@ -579,7 +789,44 @@ ob_start();
         const collapseAllButtons = document.querySelectorAll('[data-tree-collapse-all]');
         const expandAllButtons = document.querySelectorAll('[data-tree-expand-all]');
         const queueItemLinks = document.querySelectorAll('.queue-item-link--content');
+        const reviewerSettingsPanel = document.querySelector('[data-reviewer-dashboard-settings]');
+        const reviewerSettingsToggle = document.querySelector('[data-reviewer-settings-toggle]');
+        const reviewerSettingsClose = document.querySelector('[data-reviewer-settings-close]');
+        const reviewerDefaultViewSelect = document.querySelector('[data-reviewer-default-view]');
+        const reviewerPanelPreferenceKey = 'sparkinsight.reviewer.panel.mode';
         let suppressStateSave = false;
+
+        function readReviewerPanelPreference() {
+            try {
+                const stored = window.localStorage.getItem(reviewerPanelPreferenceKey);
+                if (stored === 'compact-hidden' || stored === 'compact-visible') {
+                    return stored;
+                }
+            } catch (error) {
+            }
+
+            return 'compact-hidden';
+        }
+
+        function writeReviewerPanelPreference(mode) {
+            if (mode !== 'compact-hidden' && mode !== 'compact-visible') {
+                return;
+            }
+
+            try {
+                window.localStorage.setItem(reviewerPanelPreferenceKey, mode);
+            } catch (error) {
+            }
+        }
+
+        function setReviewerSettingsPanelVisibility(visible) {
+            if (!reviewerSettingsPanel || !reviewerSettingsToggle) {
+                return;
+            }
+
+            reviewerSettingsPanel.hidden = !visible;
+            reviewerSettingsToggle.setAttribute('aria-expanded', visible ? 'true' : 'false');
+        }
 
         function readDashboardState() {
             try {
@@ -775,6 +1022,26 @@ ob_start();
                 if ((row.dataset.kind || '') === 'directory' && isCollapsed) {
                     collapsedAncestors.push(depth);
                 }
+            });
+        }
+
+        if (reviewerDefaultViewSelect) {
+            reviewerDefaultViewSelect.value = readReviewerPanelPreference();
+            reviewerDefaultViewSelect.addEventListener('change', () => {
+                writeReviewerPanelPreference(String(reviewerDefaultViewSelect.value || 'compact-hidden'));
+            });
+        }
+
+        if (reviewerSettingsToggle) {
+            reviewerSettingsToggle.addEventListener('click', () => {
+                const currentlyVisible = reviewerSettingsPanel ? !reviewerSettingsPanel.hidden : false;
+                setReviewerSettingsPanelVisibility(!currentlyVisible);
+            });
+        }
+
+        if (reviewerSettingsClose) {
+            reviewerSettingsClose.addEventListener('click', () => {
+                setReviewerSettingsPanelVisibility(false);
             });
         }
 

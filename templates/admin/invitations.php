@@ -70,7 +70,7 @@ ob_start();
 
             <div class="form-row">
                 <label for="expires-hours">Expires in (hours)</label>
-                <input id="expires-hours" name="hours" type="number" min="1" value="<?= htmlspecialchars($hours ?? 24, ENT_QUOTES, 'UTF-8') ?>">
+                <input id="expires-hours" name="hours" type="number" min="1" value="<?= htmlspecialchars($hours ?? 168, ENT_QUOTES, 'UTF-8') ?>">
             </div>
 
             <button type="submit" class="button">Create Invitation</button>

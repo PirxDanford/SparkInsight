@@ -160,6 +160,34 @@ final class DashboardReviewerFlowIntegrationTest extends TestCase
         $this->assertSame(1, $reviewCount);
     }
 
+    public function testSubmitReviewDeletesOwnedNote(): void
+    {
+        $this->connection->executeStatement(
+            "INSERT INTO reviews (id, content_version_id, reviewer_id, title, status, details, selected_excerpt, anchor_start_offset, anchor_end_offset, anchor_container_path, created_at, updated_at, resolved_at) VALUES (501, 101, 7, 'Existing note', 'open', 'To be deleted', 'selected phrase', 12, 24, 'article[1]/p[2]', datetime('now'), datetime('now'), NULL)"
+        );
+
+        $request = (new ServerRequestFactory())
+            ->createServerRequest('POST', '/dashboard/review/101')
+            ->withParsedBody([
+                '_csrf' => $this->session->getCsrfToken(),
+                'note_id' => '501',
+                'note_action' => 'delete',
+                'view' => 'compact-visible',
+                'return_queue_query' => 'q=Chapter+2&priority=all&state=all&sort=binder_asc&page=1&per_page=25',
+            ]);
+
+        $result = $this->controller->submitReview($request, new Response(), ['id' => 101]);
+
+        $this->assertSame(302, $result->getStatusCode());
+        $this->assertSame(
+            '/dashboard/review/101?q=Chapter+2&priority=all&state=all&sort=binder_asc&page=1&per_page=25&view=compact-visible',
+            $result->getHeaderLine('Location')
+        );
+
+        $remaining = (int) $this->connection->fetchOne('SELECT COUNT(*) FROM reviews WHERE id = 501');
+        $this->assertSame(0, $remaining);
+    }
+
     public function testReviewItemKeepsSanitizedQueueReturnStateInViewContext(): void
     {
         $request = (new ServerRequestFactory())
@@ -261,8 +289,13 @@ final class DashboardReviewerFlowIntegrationTest extends TestCase
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
                 resolved_at TEXT NULL,
+                resolution_decision TEXT NULL,
+                resolution_actor_id INTEGER NULL,
+                resolution_actor_role TEXT NULL,
+                resolution_recorded_at TEXT NULL,
                 FOREIGN KEY(content_version_id) REFERENCES content_versions(id) ON DELETE CASCADE,
-                FOREIGN KEY(reviewer_id) REFERENCES users(id) ON DELETE SET NULL
+                FOREIGN KEY(reviewer_id) REFERENCES users(id) ON DELETE SET NULL,
+                FOREIGN KEY(resolution_actor_id) REFERENCES users(id) ON DELETE SET NULL
             )'
         );
     }
