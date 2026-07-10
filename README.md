@@ -45,9 +45,29 @@ LinkedIn is intentionally hidden in the UI and reserved for future implementatio
 
 The project is designed to be installed and updated via Composer. Once published to GitHub, the repository can be used as a Composer repository target for webserver deployments.
 
+If your hosting environment does not provide Composer access and only allows FTP uploads:
+
+1. Prepare the project locally so the `vendor/` directory is included (for example from a release package or a local checkout where dependencies are already installed).
+   - Keep `composer.lock` in the deployment package so dependency versions stay pinned.
+2. Upload the complete project directory via FTP.
+3. Set your web root/document root to `public/`.
+4. Configure `.env` on the server (at minimum `APP_URL` and OAuth credentials).
+
+Optional deployment diagnosis (for FTP-only servers):
+
+1. Set `DIAG_ACCESS_TOKEN` in `.env` to a temporary random value.
+2. Open `/install_diagnose.php?token=<your-token>` in the browser.
+3. Review checks for PHP version, required extensions, `.env`, `vendor/`, and `composer.lock`.
+4. Remove `public/install_diagnose.php` or clear `DIAG_ACCESS_TOKEN` after validation.
+
+Without Composer on the server, package updates must be prepared locally first and then uploaded again via FTP.
+
+To reduce environment drift across hosting targets, use the production prep workflow in `deployment/production-prep/` before creating an upload package.
+
 ## Documentation
 
 See `docs/Setup.md` for more details on environment setup and running the app.
+Migration naming and `dev_only_*.sql` contributor workflow are documented in `docs/Setup.md` under "Database migrations (Contributor workflow)".
 
 ## License
 
