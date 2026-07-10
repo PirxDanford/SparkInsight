@@ -27,7 +27,8 @@ final class PurgeContentImportsCommand extends Command
     {
         $this->setName('content:purge-imports')
             ->setDescription('Delete previously imported content versions and their review data')
-            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Actually delete the imported content');
+            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Actually delete the imported content')
+            ->addOption('id', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Specific import batch ID(s) to purge');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -50,8 +51,20 @@ final class PurgeContentImportsCommand extends Command
             }
         }
 
+        $rawIds = $input->getOption('id');
+        $targetIds = $this->normalizeTargetIds(is_array($rawIds) ? $rawIds : []);
+        $hasTargetIds = $targetIds !== [];
+
         try {
-            $count = (int) $this->connection->fetchOne('SELECT COUNT(*) FROM content_versions');
+            if ($hasTargetIds) {
+                [$whereSql, $params] = $this->buildBatchWhereClause($targetIds);
+                $count = (int) $this->connection->executeQuery(
+                    'SELECT COUNT(*) FROM content_versions WHERE ' . $whereSql,
+                    $params
+                )->fetchOne();
+            } else {
+                $count = (int) $this->connection->fetchOne('SELECT COUNT(*) FROM content_versions');
+            }
         } catch (\Throwable $e) {
             $io->error('Failed to inspect imported content: ' . $e->getMessage());
             return Command::FAILURE;
@@ -65,9 +78,26 @@ final class PurgeContentImportsCommand extends Command
         $this->connection->beginTransaction();
 
         try {
-            $this->connection->executeStatement('DELETE FROM reviews');
-            $this->connection->executeStatement('DELETE FROM review_assignments');
-            $this->connection->executeStatement('DELETE FROM content_versions');
+            if ($hasTargetIds) {
+                [$whereSql, $params] = $this->buildBatchWhereClause($targetIds);
+
+                $this->connection->executeStatement(
+                    'DELETE FROM reviews WHERE content_version_id IN (SELECT id FROM content_versions WHERE ' . $whereSql . ')',
+                    $params
+                );
+                $this->connection->executeStatement(
+                    'DELETE FROM review_assignments WHERE content_version_id IN (SELECT id FROM content_versions WHERE ' . $whereSql . ')',
+                    $params
+                );
+                $this->connection->executeStatement(
+                    'DELETE FROM content_versions WHERE ' . $whereSql,
+                    $params
+                );
+            } else {
+                $this->connection->executeStatement('DELETE FROM reviews');
+                $this->connection->executeStatement('DELETE FROM review_assignments');
+                $this->connection->executeStatement('DELETE FROM content_versions');
+            }
             $this->connection->commit();
         } catch (\Throwable $e) {
             if ($this->connection->isTransactionActive()) {
@@ -78,8 +108,44 @@ final class PurgeContentImportsCommand extends Command
             return Command::FAILURE;
         }
 
-        $io->success(sprintf('Purged %d imported content version(s).', $count));
+        if ($hasTargetIds) {
+            $io->success(sprintf('Purged %d imported content version(s) from import batch(es): %s', $count, implode(', ', $targetIds)));
+        } else {
+            $io->success(sprintf('Purged %d imported content version(s).', $count));
+        }
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * @param array<int, mixed> $rawIds
+     * @return array<int, string>
+     */
+    private function normalizeTargetIds(array $rawIds): array
+    {
+        $ids = [];
+        foreach ($rawIds as $rawId) {
+            $id = trim((string) $rawId);
+            if ($id !== '') {
+                $ids[$id] = $id;
+            }
+        }
+
+        return array_values($ids);
+    }
+
+    /**
+     * @param array<int, string> $batchIds
+     * @return array{0: string, 1: array<int, string>}
+     */
+    private function buildBatchWhereClause(array $batchIds): array
+    {
+        if ($batchIds === []) {
+            return ['1 = 0', []];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($batchIds), '?'));
+
+        return ['import_batch_id IN (' . $placeholders . ')', $batchIds];
     }
 }

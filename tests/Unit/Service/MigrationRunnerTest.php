@@ -339,6 +339,126 @@ SQL;
             rmdir($tempDir);
         }
     }
+
+    public function testRunMigrationsIncludesDevOnlyFilesBySchemaVersionOrder(): void
+    {
+        $resultMock = $this->createMock(Result::class);
+        $resultMock->method('fetchOne')->willReturn(1);
+
+        $this->connection->expects($this->once())
+            ->method('executeQuery')
+            ->with('SELECT MAX(version) FROM schema_version')
+            ->willReturn($resultMock);
+
+        $this->connection->expects($this->exactly(4))
+            ->method('executeStatement')
+            ->willReturn(1);
+
+        $tempDir = sys_get_temp_dir() . '/sparkinsight_migrations_' . bin2hex(random_bytes(8));
+        mkdir($tempDir);
+        file_put_contents($tempDir . '/001_initial_schema.sql', "CREATE TABLE schema_version (version INT PRIMARY KEY);\nINSERT INTO schema_version (version, applied_at) VALUES (1, NOW());");
+        file_put_contents($tempDir . '/dev_only_add_user_tracking_fields.sql', "ALTER TABLE users ADD COLUMN last_login DATETIME NULL;\nINSERT INTO schema_version (version, applied_at) VALUES (2, NOW());");
+        file_put_contents($tempDir . '/dev_only_add_content_versions_and_reviews.sql', "CREATE TABLE content_versions (id INT PRIMARY KEY);\nINSERT INTO schema_version (version, applied_at) VALUES (3, NOW());");
+
+        try {
+            $executed = $this->runner->runMigrations($tempDir);
+            $this->assertSame([
+                'dev_only_add_user_tracking_fields.sql',
+                'dev_only_add_content_versions_and_reviews.sql',
+            ], $executed);
+        } finally {
+            unlink($tempDir . '/001_initial_schema.sql');
+            unlink($tempDir . '/dev_only_add_user_tracking_fields.sql');
+            unlink($tempDir . '/dev_only_add_content_versions_and_reviews.sql');
+            rmdir($tempDir);
+        }
+    }
+
+    public function testGetPendingMigrationsIncludesDevOnlyFiles(): void
+    {
+        $resultMock = $this->createMock(Result::class);
+        $resultMock->method('fetchOne')->willReturn('2');
+
+        $this->connection->expects($this->once())
+            ->method('executeQuery')
+            ->with('SELECT MAX(version) FROM schema_version')
+            ->willReturn($resultMock);
+
+        $tempDir = sys_get_temp_dir() . '/sparkinsight_migrations_' . bin2hex(random_bytes(8));
+        mkdir($tempDir);
+        file_put_contents($tempDir . '/001_initial_schema.sql', 'CREATE TABLE schema_version (version INT PRIMARY KEY);');
+        file_put_contents($tempDir . '/dev_only_add_content_versions_and_reviews.sql', "CREATE TABLE content_versions (id INT PRIMARY KEY);\nINSERT INTO schema_version (version, applied_at) VALUES (3, NOW());");
+
+        try {
+            $pending = $this->runner->getPendingMigrations($tempDir);
+            $this->assertSame(['dev_only_add_content_versions_and_reviews.sql'], $pending);
+        } finally {
+            unlink($tempDir . '/001_initial_schema.sql');
+            unlink($tempDir . '/dev_only_add_content_versions_and_reviews.sql');
+            rmdir($tempDir);
+        }
+    }
+
+    public function testGetPendingMigrationsIgnoresDevOnlyFileWithoutSchemaVersionMarker(): void
+    {
+        $resultMock = $this->createMock(Result::class);
+        $resultMock->method('fetchOne')->willReturn('2');
+
+        $this->connection->expects($this->once())
+            ->method('executeQuery')
+            ->with('SELECT MAX(version) FROM schema_version')
+            ->willReturn($resultMock);
+
+        $tempDir = sys_get_temp_dir() . '/sparkinsight_migrations_' . bin2hex(random_bytes(8));
+        mkdir($tempDir);
+        file_put_contents($tempDir . '/001_initial_schema.sql', 'CREATE TABLE schema_version (version INT PRIMARY KEY);');
+        file_put_contents($tempDir . '/dev_only_missing_schema_marker.sql', 'ALTER TABLE reviews ADD COLUMN demo_flag TINYINT(1) NOT NULL DEFAULT 0;');
+        file_put_contents($tempDir . '/dev_only_add_content_versions_and_reviews.sql', "CREATE TABLE content_versions (id INT PRIMARY KEY);\nINSERT INTO schema_version (version, applied_at) VALUES (3, NOW());");
+
+        try {
+            $pending = $this->runner->getPendingMigrations($tempDir);
+            $this->assertSame(['dev_only_add_content_versions_and_reviews.sql'], $pending);
+        } finally {
+            unlink($tempDir . '/001_initial_schema.sql');
+            unlink($tempDir . '/dev_only_missing_schema_marker.sql');
+            unlink($tempDir . '/dev_only_add_content_versions_and_reviews.sql');
+            rmdir($tempDir);
+        }
+    }
+
+    public function testRollbackLastMigrationSupportsDevOnlyFile(): void
+    {
+        $resultMock = $this->createMock(Result::class);
+        $resultMock->method('fetchOne')->willReturn('3');
+
+        $this->connection->expects($this->once())
+            ->method('executeQuery')
+            ->with('SELECT MAX(version) FROM schema_version')
+            ->willReturn($resultMock);
+
+        $executedSql = [];
+        $this->connection->expects($this->exactly(2))
+            ->method('executeStatement')
+            ->willReturnCallback(function (string $sql) use (&$executedSql) {
+                $executedSql[] = trim($sql);
+                return 1;
+            });
+
+        $tempDir = sys_get_temp_dir() . '/sparkinsight_migrations_' . bin2hex(random_bytes(8));
+        mkdir($tempDir);
+        file_put_contents($tempDir . '/001_initial_schema.sql', "CREATE TABLE schema_version (version INT PRIMARY KEY);\n-- DOWN\nDROP TABLE schema_version;");
+        file_put_contents($tempDir . '/dev_only_add_content_versions_and_reviews.sql', "CREATE TABLE content_versions (id INT PRIMARY KEY);\nINSERT INTO schema_version (version, applied_at) VALUES (3, NOW());\n-- DOWN\nDROP TABLE content_versions;");
+
+        try {
+            $rolledBack = $this->runner->rollbackLastMigration($tempDir);
+            $this->assertSame('dev_only_add_content_versions_and_reviews.sql', $rolledBack);
+            $this->assertSame(['DROP TABLE content_versions', 'DELETE FROM schema_version WHERE version = ?'], $executedSql);
+        } finally {
+            unlink($tempDir . '/001_initial_schema.sql');
+            unlink($tempDir . '/dev_only_add_content_versions_and_reviews.sql');
+            rmdir($tempDir);
+        }
+    }
 }
 
 
