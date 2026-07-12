@@ -55,8 +55,20 @@ ob_start();
                 </div>
                 <?php else: ?>
                 <?php foreach ($providers as $provider): ?>
+                <?php
+                $providerKey = strtolower((string) ($provider['key'] ?? ''));
+                $providerIconText = match ($providerKey) {
+                    'github' => 'GH',
+                    'google' => 'G',
+                    'linkedin' => 'in',
+                    default => strtoupper(substr($providerKey, 0, 1)),
+                };
+                $providerIconClass = in_array($providerKey, ['github', 'google', 'linkedin'], true)
+                    ? 'provider-icon--' . $providerKey
+                    : 'provider-icon--default';
+                ?>
                 <a class="button provider-button" href="/auth/<?= htmlspecialchars($provider['key'], ENT_QUOTES, 'UTF-8') ?>">
-                    <span class="provider-icon"><?= $provider['name'] === 'GitHub' ? '🐙' : '🔵' ?></span>
+                    <span class="provider-icon <?= htmlspecialchars($providerIconClass, ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"><?= htmlspecialchars($providerIconText, ENT_QUOTES, 'UTF-8') ?></span>
                     <span>Continue with <?= htmlspecialchars($provider['label'], ENT_QUOTES, 'UTF-8') ?></span>
                 </a>
                 <?php endforeach; ?>

@@ -181,6 +181,18 @@ class GenerateInvitationCommandIntegrationTest extends TestCase
         $this->assertStringContainsString('/auth/google', $output);
     }
 
+    public function testGenerateInvitationShowsLinkedInLink(): void
+    {
+        $command = new GenerateInvitationCommand($this->connection);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([]);
+
+        $this->assertSame(0, $exitCode);
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('/auth/linkedin', $output);
+    }
+
     public function testGenerateInvitationWithAllOptions(): void
     {
         $command = new GenerateInvitationCommand($this->connection);

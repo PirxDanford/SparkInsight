@@ -29,8 +29,6 @@ class ConfigTest extends TestCase
             'OAUTH_GOOGLE_CLIENT_SECRET',
             'OAUTH_LINKEDIN_CLIENT_ID',
             'OAUTH_LINKEDIN_CLIENT_SECRET',
-            'OAUTH_FACEBOOK_CLIENT_ID',
-            'OAUTH_FACEBOOK_CLIENT_SECRET',
             'DB_DRIVER',
             'DB_HOST',
             'DB_PORT',
@@ -72,8 +70,6 @@ class ConfigTest extends TestCase
             'OAUTH_GOOGLE_CLIENT_SECRET',
             'OAUTH_LINKEDIN_CLIENT_ID',
             'OAUTH_LINKEDIN_CLIENT_SECRET',
-            'OAUTH_FACEBOOK_CLIENT_ID',
-            'OAUTH_FACEBOOK_CLIENT_SECRET',
             'DB_DRIVER',
             'DB_HOST',
             'DB_PORT',
@@ -110,15 +106,13 @@ class ConfigTest extends TestCase
         $_ENV['OAUTH_GOOGLE_CLIENT_SECRET'] = 'secret';
         $_ENV['OAUTH_LINKEDIN_CLIENT_ID'] = '789';
         $_ENV['OAUTH_LINKEDIN_CLIENT_SECRET'] = 'secret';
-        $_ENV['OAUTH_FACEBOOK_CLIENT_ID'] = 'abc';
-        $_ENV['OAUTH_FACEBOOK_CLIENT_SECRET'] = 'secret';
         $_ENV['DB_HOST'] = 'db.example.com';
 
         $config = Config::fromEnvironment();
 
         $this->assertEquals('production', $config->get('app_env'));
         $this->assertEquals('https://example.com', $config->get('app_url'));
-        $this->assertEquals(['github', 'google', 'linkedin', 'facebook'], array_keys($config->getActiveProviders()));
+        $this->assertEquals(['github', 'google', 'linkedin'], array_keys($config->getActiveProviders()));
         $this->assertEquals('db.example.com', $config->getDatabaseConfig()['host']);
     }
 
@@ -141,6 +135,12 @@ class ConfigTest extends TestCase
         $_ENV['OAUTH_GITHUB_CLIENT_ID'] = '123';
         $_ENV['OAUTH_GITHUB_CLIENT_SECRET'] = 'secret';
         $_ENV['OAUTH_GOOGLE_CLIENT_ID'] = '456';
+        $_ENV['OAUTH_GOOGLE_CLIENT_SECRET'] = '';
+        $_ENV['OAUTH_LINKEDIN_CLIENT_ID'] = '';
+        $_ENV['OAUTH_LINKEDIN_CLIENT_SECRET'] = '';
+        $_SERVER['OAUTH_GOOGLE_CLIENT_SECRET'] = '';
+        $_SERVER['OAUTH_LINKEDIN_CLIENT_ID'] = '';
+        $_SERVER['OAUTH_LINKEDIN_CLIENT_SECRET'] = '';
 
         $config = Config::fromEnvironment();
 

@@ -21,8 +21,6 @@ class OAuthProviderFactoryTest extends TestCase
         $_ENV['OAUTH_GOOGLE_CLIENT_SECRET'] = 'secret';
         $_ENV['OAUTH_LINKEDIN_CLIENT_ID'] = '789';
         $_ENV['OAUTH_LINKEDIN_CLIENT_SECRET'] = 'secret';
-        $_ENV['OAUTH_FACEBOOK_CLIENT_ID'] = 'abc';
-        $_ENV['OAUTH_FACEBOOK_CLIENT_SECRET'] = 'secret';
 
         $this->config = Config::fromEnvironment();
         $this->factory = new OAuthProviderFactory($this->config);
@@ -36,19 +34,16 @@ class OAuthProviderFactoryTest extends TestCase
         unset($_ENV['OAUTH_GOOGLE_CLIENT_SECRET']);
         unset($_ENV['OAUTH_LINKEDIN_CLIENT_ID']);
         unset($_ENV['OAUTH_LINKEDIN_CLIENT_SECRET']);
-        unset($_ENV['OAUTH_FACEBOOK_CLIENT_ID']);
-        unset($_ENV['OAUTH_FACEBOOK_CLIENT_SECRET']);
     }
 
     public function testGetSupportedProviders(): void
     {
         $providers = $this->factory->getSupportedProviders();
 
-        $this->assertCount(4, $providers);
+        $this->assertCount(3, $providers);
         $this->assertArrayHasKey('github', $providers);
         $this->assertArrayHasKey('google', $providers);
         $this->assertArrayHasKey('linkedin', $providers);
-        $this->assertArrayHasKey('facebook', $providers);
     }
 
     public function testGetProviderScope(): void
@@ -136,14 +131,6 @@ class OAuthProviderFactoryTest extends TestCase
 
         $this->assertNotNull($provider);
         $this->assertEquals('https://www.linkedin.com/oauth/v2/authorization', $provider->getBaseAuthorizationUrl());
-    }
-
-    public function testCreateProviderForFacebook(): void
-    {
-        $provider = $this->factory->createProvider('facebook');
-
-        $this->assertNotNull($provider);
-        $this->assertEquals('https://www.facebook.com/v16.0/dialog/oauth', $provider->getBaseAuthorizationUrl());
     }
 
     public function testCreateProviderForGithub(): void
