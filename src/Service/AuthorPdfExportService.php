@@ -6,14 +6,19 @@ namespace SparkInsight\Service;
 
 use Com\Tecnick\Pdf\Encrypt\Encrypt;
 use Com\Tecnick\Pdf\Tcpdf;
+use InvalidArgumentException;
+use RuntimeException;
 use SparkInsight\Support\ReaderPresentationBuilder;
+use Throwable;
 
 class AuthorPdfExportService
 {
     private const MAX_KEEP_PARAGRAPH_LINES = 8;
+
     private const CHARS_PER_PDF_LINE_ESTIMATE = 95;
 
     private string $projectRoot;
+
     private ?ReaderPresentationBuilder $readerPresentationBuilder = null;
 
     public function __construct(?string $projectRoot = null)
@@ -29,12 +34,12 @@ class AuthorPdfExportService
     public function generate(array $items, string $profile, ?string $password): string
     {
         if ($items === []) {
-            throw new \InvalidArgumentException('At least one content item must be selected.');
+            throw new InvalidArgumentException('At least one content item must be selected.');
         }
 
-        $password = trim((string) $password);
-        if ($password !== '' && strlen($password) < 12) {
-            throw new \InvalidArgumentException('Password-protected export requires a password with at least 12 characters.');
+        $password = mb_trim((string) $password);
+        if ($password !== '' && mb_strlen($password) < 12) {
+            throw new InvalidArgumentException('Password-protected export requires a password with at least 12 characters.');
         }
 
         $this->ensureFontPath();
@@ -90,7 +95,7 @@ class AuthorPdfExportService
                     posy: 20,
                     width: 180,
                 );
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 $pdf->addHTMLCell(
                     html: $this->buildItemFallbackHtml($item),
                     posx: 15,
@@ -111,7 +116,7 @@ class AuthorPdfExportService
 
         $fontPath = $this->projectRoot . '/resources/pdf-fonts';
         if (!is_dir($fontPath)) {
-            throw new \RuntimeException('PDF font assets are missing at resources/pdf-fonts.');
+            throw new RuntimeException('PDF font assets are missing at resources/pdf-fonts.');
         }
 
         define('K_PATH_FONTS', $this->prepareRuntimeFontPath($fontPath));
@@ -120,8 +125,8 @@ class AuthorPdfExportService
     private function prepareRuntimeFontPath(string $sourceFontPath): string
     {
         $runtimeFontPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'sparkinsight-pdf-fonts';
-        if (!is_dir($runtimeFontPath) && !mkdir($runtimeFontPath, 0777, true) && !is_dir($runtimeFontPath)) {
-            throw new \RuntimeException('Unable to prepare a runtime font directory for PDF export.');
+        if (!is_dir($runtimeFontPath) && !mkdir($runtimeFontPath, 0o777, true) && !is_dir($runtimeFontPath)) {
+            throw new RuntimeException('Unable to prepare a runtime font directory for PDF export.');
         }
 
         $fontAliases = [
@@ -137,15 +142,15 @@ class AuthorPdfExportService
             $runtimeAliasPath = $runtimeFontPath . DIRECTORY_SEPARATOR . $aliasFile;
 
             if (!is_file($sourceFilePath)) {
-                throw new \RuntimeException('Missing required PDF font asset: ' . $sourceFile . '.');
+                throw new RuntimeException('Missing required PDF font asset: ' . $sourceFile . '.');
             }
 
             if (!is_file($runtimeSourcePath) && !copy($sourceFilePath, $runtimeSourcePath)) {
-                throw new \RuntimeException('Unable to stage PDF font asset: ' . $sourceFile . '.');
+                throw new RuntimeException('Unable to stage PDF font asset: ' . $sourceFile . '.');
             }
 
             if (!is_file($runtimeAliasPath) && !copy($runtimeSourcePath, $runtimeAliasPath)) {
-                throw new \RuntimeException('Unable to stage PDF/A font alias: ' . $aliasFile . '.');
+                throw new RuntimeException('Unable to stage PDF/A font alias: ' . $aliasFile . '.');
             }
         }
 
@@ -158,7 +163,7 @@ class AuthorPdfExportService
     private function buildItemHtml(array $item): string
     {
         $title = $this->escape((string) ($item['title'] ?? 'Untitled'));
-        $bookTitle = trim((string) ($item['book_title'] ?? ''));
+        $bookTitle = mb_trim((string) ($item['book_title'] ?? ''));
         if ($bookTitle === '') {
             $bookTitle = 'Enterprise Community Management';
         }
@@ -180,7 +185,7 @@ class AuthorPdfExportService
     private function buildItemFallbackHtml(array $item): string
     {
         $title = $this->escape((string) ($item['title'] ?? 'Untitled'));
-        $bookTitle = trim((string) ($item['book_title'] ?? ''));
+        $bookTitle = mb_trim((string) ($item['book_title'] ?? ''));
         if ($bookTitle === '') {
             $bookTitle = 'Enterprise Community Management';
         }
@@ -220,7 +225,7 @@ class AuthorPdfExportService
     private function buildPdfReaderContentHtml(array $reader, bool $preferRenderedHtml): string
     {
         $sections = is_array($reader['sections'] ?? null) ? $reader['sections'] : [];
-        $renderedHtml = trim((string) ($reader['html'] ?? ''));
+        $renderedHtml = mb_trim((string) ($reader['html'] ?? ''));
         $pdfSafeHtml = $renderedHtml !== '' ? $this->sanitizeReaderHtmlForPdf($renderedHtml) : '';
         if ($pdfSafeHtml !== '') {
             $pdfSafeHtml = $this->applyParagraphBreakHints($pdfSafeHtml);
@@ -288,7 +293,7 @@ class AuthorPdfExportService
             $value = html_entity_decode(strip_tags($value), ENT_QUOTES | ENT_HTML5, 'UTF-8');
         }
 
-        $value = trim($value);
+        $value = mb_trim($value);
         if ($value === '') {
             return false;
         }
@@ -299,14 +304,14 @@ class AuthorPdfExportService
     private function estimateParagraphLineCount(string $text): int
     {
         $normalized = preg_replace('/\s+/u', ' ', str_replace(["\r\n", "\r"], "\n", $text)) ?? $text;
-        $normalized = trim($normalized);
+        $normalized = mb_trim($normalized);
 
         if ($normalized === '') {
             return 0;
         }
 
-        $explicitLineCount = max(1, substr_count($normalized, "\n") + 1);
-        $wrappedLineCount = max(1, (int) ceil(strlen($normalized) / self::CHARS_PER_PDF_LINE_ESTIMATE));
+        $explicitLineCount = max(1, mb_substr_count($normalized, "\n") + 1);
+        $wrappedLineCount = max(1, (int) ceil(mb_strlen($normalized) / self::CHARS_PER_PDF_LINE_ESTIMATE));
 
         return max($explicitLineCount, $wrappedLineCount);
     }
@@ -314,13 +319,13 @@ class AuthorPdfExportService
     private function appendStyleAttribute(string $attributes, string $style): string
     {
         if (preg_match('/\sstyle="([^"]*)"/i', $attributes, $matches) === 1) {
-            $existingStyle = trim((string) ($matches[1] ?? ''));
-            $mergedStyle = trim($existingStyle . ' ' . $style);
+            $existingStyle = mb_trim((string) ($matches[1] ?? ''));
+            $mergedStyle = mb_trim($existingStyle . ' ' . $style);
 
             return preg_replace('/\sstyle="[^"]*"/i', ' style="' . $mergedStyle . '"', $attributes, 1) ?? $attributes;
         }
 
-        return $attributes . ' style="' . trim($style) . '"';
+        return $attributes . ' style="' . mb_trim($style) . '"';
     }
 
     private function sanitizeReaderHtmlForPdf(string $html): string
@@ -338,7 +343,7 @@ class AuthorPdfExportService
         $html = preg_replace('/<br\s*\/?\s*>/i', '<br />', $html) ?? $html;
         $html = preg_replace('/\n{3,}/', "\n\n", $html) ?? $html;
 
-        return trim($html);
+        return mb_trim($html);
     }
 
     private function readerPresentationBuilder(): ReaderPresentationBuilder

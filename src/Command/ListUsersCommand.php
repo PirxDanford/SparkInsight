@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace SparkInsight\Command;
 
 use Doctrine\DBAL\DriverManager;
+use Exception;
 use SparkInsight\Config\Config;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Throwable;
 
 final class ListUsersCommand extends Command
 {
@@ -29,26 +31,29 @@ final class ListUsersCommand extends Command
 
         try {
             $connection = DriverManager::getConnection($config->getDatabaseConfig());
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $io->error('Database connection failed: ' . $e->getMessage());
+
             return Command::FAILURE;
         }
 
         try {
             $rows = $connection->executeQuery(
-                'SELECT id, provider, name, email, roles, status FROM users ORDER BY id ASC'
+                'SELECT id, provider, name, email, roles, status FROM users ORDER BY id ASC',
             )->fetchAllAssociative();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $io->error('Failed to query users: ' . $e->getMessage());
+
             return Command::FAILURE;
         }
 
         $includeDisabled = (bool) $input->getOption('all');
         $roleFilter = $input->getOption('role');
         if ($roleFilter !== null) {
-            $roleFilter = strtolower(trim((string) $roleFilter));
+            $roleFilter = mb_strtolower(mb_trim((string) $roleFilter));
             if (!in_array($roleFilter, ['author', 'reviewer', 'admin'], true)) {
                 $io->error('Invalid role filter. Use author, reviewer, or admin.');
+
                 return Command::FAILURE;
             }
         }
@@ -87,21 +92,20 @@ final class ListUsersCommand extends Command
 
         if ($users === []) {
             $io->warning('No users found.');
+
             return Command::SUCCESS;
         }
 
         $io->table(
             ['ID', 'Provider', 'Name', 'Email', 'Roles', 'Status'],
-            array_map(static function (array $user): array {
-                return [
-                    $user['id'],
-                    $user['provider'],
-                    $user['name'],
-                    $user['email'],
-                    $user['roles'],
-                    $user['status'],
-                ];
-            }, $users)
+            array_map(static fn (array $user): array => [
+                $user['id'],
+                $user['provider'],
+                $user['name'],
+                $user['email'],
+                $user['roles'],
+                $user['status'],
+            ], $users),
         );
 
         $io->success(sprintf('%d user(s) found.', count($users)));

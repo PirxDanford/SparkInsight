@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace SparkInsight\Service;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\DriverManager;
+use Exception;
+use RuntimeException;
 
 final class MigrationRunner
 {
@@ -20,8 +21,9 @@ final class MigrationRunner
     {
         try {
             $result = $this->connection->executeQuery('SELECT MAX(version) FROM schema_version');
+
             return (int) $result->fetchOne();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return 0;
         }
     }
@@ -44,7 +46,7 @@ final class MigrationRunner
 
             $content = file_get_contents($file);
             $parts = explode('-- DOWN', $content);
-            $upSql = trim($parts[0]);
+            $upSql = mb_trim($parts[0]);
 
             $this->executeSqlStatements($upSql);
             $executed[] = $filename;
@@ -129,7 +131,7 @@ final class MigrationRunner
 
         [$upSql, $downSql] = $this->parseMigrationFile($rollbackFile);
         if ($downSql === '') {
-            throw new \RuntimeException('No rollback section found for migration ' . basename($rollbackFile));
+            throw new RuntimeException('No rollback section found for migration ' . basename($rollbackFile));
         }
 
         $this->executeSqlStatements($downSql);
@@ -143,8 +145,8 @@ final class MigrationRunner
         $content = file_get_contents($file);
         $parts = preg_split('/^--\s*DOWN\s*$/mi', $content, 2);
 
-        $upSql = trim($parts[0]);
-        $downSql = isset($parts[1]) ? trim($parts[1]) : '';
+        $upSql = mb_trim($parts[0]);
+        $downSql = isset($parts[1]) ? mb_trim($parts[1]) : '';
 
         return [$upSql, $downSql];
     }

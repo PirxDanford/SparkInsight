@@ -6,6 +6,7 @@ namespace SparkInsight\Service;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\ParameterType;
+use Throwable;
 
 final class UserService
 {
@@ -20,12 +21,12 @@ final class UserService
         string $name,
         ?string $avatar = null,
         array $roles = ['reviewer'],
-        ?string $invitationCode = null
+        ?string $invitationCode = null,
     ): array {
         // Check if user exists
         $existing = $this->connection->executeQuery(
             'SELECT * FROM users WHERE provider = ? AND provider_id = ?',
-            [$provider, $providerId]
+            [$provider, $providerId],
         )->fetchAssociative();
 
         if ($existing) {
@@ -33,7 +34,7 @@ final class UserService
             $now = date('Y-m-d H:i:s');
             $this->connection->executeStatement(
                 'UPDATE users SET last_login = ?, updated_at = ? WHERE id = ?',
-                [$now, $now, $existing['id']]
+                [$now, $now, $existing['id']],
             );
 
             return [
@@ -67,7 +68,7 @@ final class UserService
                 $now,
                 $now,
                 $now,
-            ]
+            ],
         );
 
         $userId = (int) $this->connection->lastInsertId();
@@ -92,7 +93,7 @@ final class UserService
         try {
             $identityResult = $this->connection->executeQuery(
                 'SELECT u.* FROM oauth_identities oi INNER JOIN users u ON u.id = oi.user_id WHERE oi.provider = ? AND oi.provider_user_id = ? LIMIT 1',
-                [$provider, $providerId]
+                [$provider, $providerId],
             )->fetchAssociative();
 
             if ($identityResult) {
@@ -112,13 +113,13 @@ final class UserService
                     'updated_at' => $identityResult['updated_at'],
                 ];
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             // Identity table may not exist in older environments; fall back to legacy lookup.
         }
 
         $result = $this->connection->executeQuery(
             'SELECT * FROM users WHERE provider = ? AND provider_id = ?',
-            [$provider, $providerId]
+            [$provider, $providerId],
         )->fetchAssociative();
 
         if (!$result) {
@@ -146,7 +147,7 @@ final class UserService
     {
         $result = $this->connection->executeQuery(
             'SELECT * FROM users WHERE email = ? LIMIT 1',
-            [$email]
+            [$email],
         )->fetchAssociative();
 
         if (!$result) {
@@ -175,9 +176,9 @@ final class UserService
         try {
             return $this->connection->executeQuery(
                 'SELECT provider, provider_user_id, provider_email, linked_at, last_used_at FROM oauth_identities WHERE user_id = ? ORDER BY linked_at ASC',
-                [$userId]
+                [$userId],
             )->fetchAllAssociative();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return [];
         }
     }
@@ -188,7 +189,7 @@ final class UserService
 
         $this->connection->executeStatement(
             'INSERT INTO oauth_identities (user_id, provider, provider_user_id, provider_email, linked_at, last_used_at) VALUES (?, ?, ?, ?, ?, ?)',
-            [$userId, $provider, $providerUserId, $providerEmail, $now, $now]
+            [$userId, $provider, $providerUserId, $providerEmail, $now, $now],
         );
 
         return true;
@@ -199,7 +200,7 @@ final class UserService
         $now = date('Y-m-d H:i:s');
         $result = $this->connection->executeStatement(
             'UPDATE users SET last_login = ?, updated_at = ? WHERE id = ?',
-            [$now, $now, $userId]
+            [$now, $now, $userId],
         );
 
         return $result > 0;
@@ -209,7 +210,7 @@ final class UserService
     {
         $result = $this->connection->executeQuery(
             'SELECT * FROM users WHERE id = ?',
-            [$id]
+            [$id],
         )->fetchAssociative();
 
         if (!$result) {
@@ -262,7 +263,7 @@ final class UserService
         foreach ($sort as $field => $direction) {
             $allowedFields = ['name', 'email', 'created_at', 'last_login', 'status'];
             if (in_array($field, $allowedFields)) {
-                $orderBy[] = "$field " . strtoupper($direction);
+                $orderBy[] = "$field " . mb_strtoupper($direction);
             }
         }
         $orderClause = !empty($orderBy) ? 'ORDER BY ' . implode(', ', $orderBy) : '';
@@ -276,23 +277,21 @@ final class UserService
 
         $results = $this->connection->executeQuery($sql, $params, $types)->fetchAllAssociative();
 
-        return array_map(function ($row) {
-            return [
-                'id' => $row['id'],
-                'provider' => $row['provider'],
-                'provider_id' => $row['provider_id'],
-                'email' => $row['email'],
-                'name' => $row['name'],
-                'display_name' => $row['display_name'] ?? null,
-                'avatar' => $row['avatar'],
-                'roles' => json_decode($row['roles'] ?? '[]', true),
-                'status' => $row['status'],
-                'invitation_used' => $row['invitation_used'],
-                'last_login' => $row['last_login'],
-                'created_at' => $row['created_at'],
-                'updated_at' => $row['updated_at'],
-            ];
-        }, $results);
+        return array_map(static fn ($row) => [
+            'id' => $row['id'],
+            'provider' => $row['provider'],
+            'provider_id' => $row['provider_id'],
+            'email' => $row['email'],
+            'name' => $row['name'],
+            'display_name' => $row['display_name'] ?? null,
+            'avatar' => $row['avatar'],
+            'roles' => json_decode($row['roles'] ?? '[]', true),
+            'status' => $row['status'],
+            'invitation_used' => $row['invitation_used'],
+            'last_login' => $row['last_login'],
+            'created_at' => $row['created_at'],
+            'updated_at' => $row['updated_at'],
+        ], $results);
     }
 
     public function updateUserStatus(int $userId, string $status): bool
@@ -304,7 +303,7 @@ final class UserService
         $now = date('Y-m-d H:i:s');
         $result = $this->connection->executeStatement(
             'UPDATE users SET status = ?, updated_at = ? WHERE id = ?',
-            [$status, $now, $userId]
+            [$status, $now, $userId],
         );
 
         return $result > 0;
@@ -315,7 +314,7 @@ final class UserService
         $now = date('Y-m-d H:i:s');
         $result = $this->connection->executeStatement(
             'UPDATE users SET roles = ?, updated_at = ? WHERE id = ?',
-            [json_encode($roles), $now, $userId]
+            [json_encode($roles), $now, $userId],
         );
 
         return $result > 0;
@@ -323,7 +322,7 @@ final class UserService
 
     public function updateUserDisplayName(int $userId, ?string $displayName): bool
     {
-        $normalizedDisplayName = $displayName !== null ? trim($displayName) : null;
+        $normalizedDisplayName = $displayName !== null ? mb_trim($displayName) : null;
         if ($normalizedDisplayName === '') {
             $normalizedDisplayName = null;
         }
@@ -335,7 +334,7 @@ final class UserService
         $now = date('Y-m-d H:i:s');
         $result = $this->connection->executeStatement(
             'UPDATE users SET display_name = ?, updated_at = ? WHERE id = ?',
-            [$normalizedDisplayName, $now, $userId]
+            [$normalizedDisplayName, $now, $userId],
         );
 
         return $result > 0;
@@ -368,6 +367,7 @@ final class UserService
         $sql = "SELECT COUNT(*) as count FROM users $whereClause";
 
         $result = $this->connection->executeQuery($sql, $params)->fetchAssociative();
+
         return (int) ($result['count'] ?? 0);
     }
 }

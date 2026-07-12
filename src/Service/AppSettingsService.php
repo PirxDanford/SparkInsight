@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace SparkInsight\Service;
 
 use Doctrine\DBAL\Connection;
+use Throwable;
 
 final class AppSettingsService
 {
-    /**
-     * @var array<string, array{value: mixed, type: string}>
-     */
+    /** @var array<string, array{value: mixed, type: string}> */
     private const DEFAULT_SETTINGS = [
         'invitation_default_hours' => ['value' => 168, 'type' => 'int'],
         'invitation_default_roles' => ['value' => ['reviewer'], 'type' => 'json'],
@@ -41,14 +40,14 @@ final class AppSettingsService
 
     public function getImportCronSchedule(): string
     {
-        $value = trim((string) $this->get('import_cron_schedule'));
+        $value = mb_trim((string) $this->get('import_cron_schedule'));
 
         return $value !== '' ? $value : (string) self::DEFAULT_SETTINGS['import_cron_schedule']['value'];
     }
 
     public function getInvitationCleanupCronSchedule(): string
     {
-        $value = trim((string) $this->get('invitation_cleanup_cron_schedule'));
+        $value = mb_trim((string) $this->get('invitation_cleanup_cron_schedule'));
 
         return $value !== '' ? $value : (string) self::DEFAULT_SETTINGS['invitation_cleanup_cron_schedule']['value'];
     }
@@ -65,9 +64,9 @@ final class AppSettingsService
 
         try {
             $rows = $this->connection->executeQuery(
-                'SELECT setting_key, setting_value, value_type FROM app_settings'
+                'SELECT setting_key, setting_value, value_type FROM app_settings',
             )->fetchAllAssociative();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return $settings;
         }
 
@@ -80,7 +79,7 @@ final class AppSettingsService
             $settings[$key] = $this->decodeValue(
                 (string) ($row['setting_value'] ?? ''),
                 (string) ($row['value_type'] ?? self::DEFAULT_SETTINGS[$key]['type']),
-                self::DEFAULT_SETTINGS[$key]['value']
+                self::DEFAULT_SETTINGS[$key]['value'],
             );
         }
 
@@ -101,9 +100,9 @@ final class AppSettingsService
         try {
             $row = $this->connection->executeQuery(
                 'SELECT setting_value, value_type FROM app_settings WHERE setting_key = ?',
-                [$settingKey]
+                [$settingKey],
             )->fetchAssociative();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return self::DEFAULT_SETTINGS[$settingKey]['value'];
         }
 
@@ -114,7 +113,7 @@ final class AppSettingsService
         return $this->decodeValue(
             (string) ($row['setting_value'] ?? ''),
             (string) ($row['value_type'] ?? self::DEFAULT_SETTINGS[$settingKey]['type']),
-            self::DEFAULT_SETTINGS[$settingKey]['value']
+            self::DEFAULT_SETTINGS[$settingKey]['value'],
         );
     }
 
@@ -139,7 +138,7 @@ final class AppSettingsService
         $this->connection->executeStatement(
             'INSERT INTO app_settings (setting_key, setting_value, value_type, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)
             ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), value_type = VALUES(value_type), updated_at = CURRENT_TIMESTAMP',
-            [$key, $value, $type]
+            [$key, $value, $type],
         );
     }
 
@@ -179,7 +178,7 @@ final class AppSettingsService
     {
         $roles = [];
         foreach ((array) $value as $role) {
-            $roleName = trim((string) $role);
+            $roleName = mb_trim((string) $role);
             if (in_array($roleName, ['reviewer', 'author', 'admin'], true)) {
                 $roles[$roleName] = $roleName;
             }
@@ -194,7 +193,7 @@ final class AppSettingsService
 
     private function sanitizeCron(string $value): string
     {
-        $trimmed = trim($value);
+        $trimmed = mb_trim($value);
 
         return $trimmed !== '' ? $trimmed : '* * * * *';
     }

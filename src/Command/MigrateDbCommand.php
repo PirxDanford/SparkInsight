@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace SparkInsight\Command;
 
+use Doctrine\DBAL\DriverManager;
+use Exception;
+use RuntimeException;
 use SparkInsight\Config\Config;
 use SparkInsight\Service\MigrationRunner;
-use Doctrine\DBAL\DriverManager;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -38,6 +40,7 @@ final class MigrateDbCommand extends Command
 
         if ($input->getOption('status') && $input->getOption('rollback')) {
             $io->error('Use only one of --status or --rollback.');
+
             return Command::FAILURE;
         }
 
@@ -45,8 +48,9 @@ final class MigrateDbCommand extends Command
 
         try {
             $connection = DriverManager::getConnection($config->getDatabaseConfig());
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $io->error('Cannot connect to database: ' . $e->getMessage());
+
             return Command::FAILURE;
         }
 
@@ -74,17 +78,20 @@ final class MigrateDbCommand extends Command
         if ($input->getOption('rollback')) {
             try {
                 $rolledBack = $runner->rollbackLastMigration($this->migrationsDir);
-            } catch (\RuntimeException $e) {
+            } catch (RuntimeException $e) {
                 $io->error($e->getMessage());
+
                 return Command::FAILURE;
             }
 
             if ($rolledBack === null) {
                 $io->info('No migration to rollback.');
+
                 return Command::SUCCESS;
             }
 
             $io->success('Rolled back migration: ' . $rolledBack);
+
             return Command::SUCCESS;
         }
 

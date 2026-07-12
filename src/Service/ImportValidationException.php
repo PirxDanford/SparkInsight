@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace SparkInsight\Service;
 
-final class ImportValidationException extends \RuntimeException
+use RuntimeException;
+
+final class ImportValidationException extends RuntimeException
 {
     private array $errors;
 

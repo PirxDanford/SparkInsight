@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SparkInsight\Service;
 
+use DateTime;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\ParameterType;
 
@@ -16,7 +17,7 @@ final class InvitationService
     public function generateInvitation(array $roles, ?string $email = null, int $expirationHours = 24): string
     {
         $code = bin2hex(random_bytes(32));
-        $expiresAt = new \DateTime("+{$expirationHours} hours");
+        $expiresAt = new DateTime("+{$expirationHours} hours");
 
         $this->connection->executeStatement(
             'INSERT INTO invitations (code, email, roles, created_at, expires_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?)',
@@ -25,7 +26,7 @@ final class InvitationService
                 $email,
                 json_encode($roles),
                 $expiresAt->format('Y-m-d H:i:s'),
-            ]
+            ],
         );
 
         return $code;
@@ -35,7 +36,7 @@ final class InvitationService
     {
         $result = $this->connection->executeQuery(
             'SELECT * FROM invitations WHERE code = ? AND used_at IS NULL AND expires_at > CURRENT_TIMESTAMP',
-            [$code]
+            [$code],
         )->fetchAssociative();
 
         if (!$result) {
@@ -54,7 +55,7 @@ final class InvitationService
     {
         $this->connection->executeStatement(
             'UPDATE invitations SET used_by = ?, used_at = CURRENT_TIMESTAMP WHERE code = ? AND used_at IS NULL',
-            [$userId, $code]
+            [$userId, $code],
         );
     }
 
@@ -62,7 +63,7 @@ final class InvitationService
     {
         $deleted = $this->connection->executeStatement(
             'DELETE FROM invitations WHERE code = ?',
-            [$code]
+            [$code],
         );
 
         return $deleted > 0;
@@ -113,19 +114,19 @@ final class InvitationService
         $results = $this->connection->executeQuery($sql, $params, $types)->fetchAllAssociative();
 
         return array_map(static function (array $row) {
-            $expiresAt = $row['expires_at'] ? new \DateTime($row['expires_at']) : null;
+            $expiresAt = $row['expires_at'] ? new DateTime($row['expires_at']) : null;
             $status = 'pending';
 
             if ($row['used_at'] !== null) {
                 $status = 'used';
-            } elseif ($expiresAt !== null && $expiresAt <= new \DateTime()) {
+            } elseif ($expiresAt !== null && $expiresAt <= new DateTime()) {
                 $status = 'expired';
             }
 
             $usedByLabel = null;
             if (!empty($row['used_by_name']) || !empty($row['used_by_email'])) {
-                $name = trim((string) ($row['used_by_name'] ?? ''));
-                $email = trim((string) ($row['used_by_email'] ?? ''));
+                $name = mb_trim((string) ($row['used_by_name'] ?? ''));
+                $email = mb_trim((string) ($row['used_by_email'] ?? ''));
 
                 if ($name !== '' && $email !== '') {
                     $usedByLabel = sprintf('%s <%s>', $name, $email);
@@ -196,7 +197,7 @@ final class InvitationService
     public function purgeExpiredInvitations(): int
     {
         return $this->connection->executeStatement(
-            'DELETE FROM invitations WHERE used_at IS NULL AND expires_at <= CURRENT_TIMESTAMP'
+            'DELETE FROM invitations WHERE used_at IS NULL AND expires_at <= CURRENT_TIMESTAMP',
         );
     }
 }

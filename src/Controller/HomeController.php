@@ -24,13 +24,11 @@ final class HomeController
     public function __invoke(Request $request, Response $response): Response
     {
         $providers = $this->providerFactory->getSupportedProviders();
-        $activeLinks = array_map(static function (array $provider, string $name): array {
-            return [
-                'name' => $provider['label'] ?? ucfirst($name),
-                'key' => $name,
-                'login_url' => '/auth/' . $name,
-            ];
-        }, $providers, array_keys($providers));
+        $activeLinks = array_map(static fn (array $provider, string $name): array => [
+            'name' => $provider['label'] ?? ucfirst($name),
+            'key' => $name,
+            'login_url' => '/auth/' . $name,
+        ], $providers, array_keys($providers));
 
         return $this->renderer->render($response, 'home.php', [
             'providers' => $activeLinks,

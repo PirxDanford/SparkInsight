@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use SparkInsight\Command\CheckEnvironmentCommand;
 use SparkInsight\Command\BootstrapAdminCommand;
+use SparkInsight\Command\CheckEnvironmentCommand;
 use SparkInsight\Command\GenerateInvitationCommand;
 use SparkInsight\Command\InitializeDbCommand;
 use SparkInsight\Command\ListContentImportsCommand;

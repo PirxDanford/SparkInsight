@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SparkInsight\Controller;
 
+use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Views\PhpRenderer;
@@ -41,7 +42,7 @@ final class AuthController
         }
 
         $queryParams = $request->getQueryParams();
-        $code = trim((string) ($queryParams['code'] ?? ''));
+        $code = mb_trim((string) ($queryParams['code'] ?? ''));
         $providers = [];
         $flashMessage = null;
 
@@ -85,10 +86,10 @@ final class AuthController
             }
 
             if (!is_string($provider)) {
-                throw new \InvalidArgumentException('Unsupported provider format');
+                throw new InvalidArgumentException('Unsupported provider format');
             }
 
-            $label = match (strtolower($provider)) {
+            $label = match (mb_strtolower($provider)) {
                 'github' => 'GitHub',
                 'google' => 'Google',
                 default => ucfirst($provider),
@@ -107,6 +108,7 @@ final class AuthController
     private function isProviderSupported(string $provider): bool
     {
         $supportedProviders = $this->providerFactory->getSupportedProviders();
+
         return array_key_exists($provider, $supportedProviders);
     }
 
@@ -127,7 +129,7 @@ final class AuthController
         }
 
         $queryParams = $request->getQueryParams();
-        $invitationCode = trim((string) ($queryParams['code'] ?? ''));
+        $invitationCode = mb_trim((string) ($queryParams['code'] ?? ''));
         $isSignup = $invitationCode !== '';
 
         if ($isSignup) {
@@ -171,12 +173,14 @@ final class AuthController
 
         if ($error !== null || $code === null || $state === null) {
             $this->clearAuthSession();
+
             return $this->renderError($response, 'Authentication failed.', 'Please try again from the homepage.');
         }
 
         $expectedState = $this->session->getState();
         if ($expectedState === null || !hash_equals($expectedState, (string) $state)) {
             $this->clearAuthSession();
+
             return $this->renderError($response, 'Invalid OAuth state.', 'The response did not match the expected login session.');
         }
 
@@ -191,12 +195,14 @@ final class AuthController
 
             if (!$invitationCode) {
                 $this->clearAuthSession();
+
                 return $this->renderError($response, 'Invitation Error', 'Invitation information was lost. Please try signing up again.');
             }
 
             $invitation = $this->invitationService->validateInvitation($invitationCode);
             if ($invitation === null) {
                 $this->clearAuthSession();
+
                 return $this->renderError($response, 'Invalid Invitation', 'The invitation code is invalid or has expired.');
             }
 
@@ -205,6 +211,7 @@ final class AuthController
 
             if ($invitationEmail && strcasecmp($invitationEmail, $profile['email'] ?? '') !== 0) {
                 $this->clearAuthSession();
+
                 return $this->renderError($response, 'Invitation Email Mismatch', 'The authenticated email address does not match the invitation email.');
             }
 
@@ -215,11 +222,12 @@ final class AuthController
                 $profile['name'],
                 $profile['avatar'],
                 $invitationRoles,
-                $invitationCode
+                $invitationCode,
             );
 
             if ($existingUser['invitation_used'] !== null && $existingUser['invitation_used'] !== $invitationCode) {
                 $this->clearAuthSession();
+
                 return $this->renderError($response, 'Account Exists', 'An account with this provider already exists. Please use the login option instead.');
             }
 
@@ -235,11 +243,13 @@ final class AuthController
 
         if (!$existingUser) {
             $this->clearAuthSession();
+
             return $this->renderError($response, 'Account Not Found', 'No account found for this provider. Please use the signup option with a valid invitation.');
         }
 
         if ($existingUser['status'] !== 'active') {
             $this->clearAuthSession();
+
             return $this->renderError($response, 'Account Disabled', 'Your account has been disabled. Please contact an administrator.');
         }
 
@@ -256,6 +266,7 @@ final class AuthController
     public function logout(Request $request, Response $response): Response
     {
         $this->session->clear();
+
         return $response->withHeader('Location', '/')->withStatus(302);
     }
 
@@ -287,30 +298,30 @@ final class AuthController
     private function renderError(Response $response, string $title, string $message): Response
     {
         $response->getBody()->write(<<<HTML
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{$title} · SparkInsight</title>
-    <link rel="stylesheet" href="/style.css" />
-</head>
-<body>
-    <div class="page-shell">
-        <div class="notification-box error" id="auth-error">
-            <div class="notification-content">
-                <strong>{$title}</strong>
-                <p>{$message}</p>
-                <button class="notification-close" onclick="document.getElementById('auth-error').style.display='none'">&times;</button>
-            </div>
-            <div class="notification-actions">
-                <a class="button" href="/">Back to home</a>
-            </div>
-        </div>
-    </div>
-</body>
-</html>
-HTML);
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8" />
+                <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                <title>{$title} · SparkInsight</title>
+                <link rel="stylesheet" href="/style.css" />
+            </head>
+            <body>
+                <div class="page-shell">
+                    <div class="notification-box error" id="auth-error">
+                        <div class="notification-content">
+                            <strong>{$title}</strong>
+                            <p>{$message}</p>
+                            <button class="notification-close" onclick="document.getElementById('auth-error').style.display='none'">&times;</button>
+                        </div>
+                        <div class="notification-actions">
+                            <a class="button" href="/">Back to home</a>
+                        </div>
+                    </div>
+                </div>
+            </body>
+            </html>
+            HTML);
 
         return $response->withStatus(400)->withHeader('Content-Type', 'text/html');
     }

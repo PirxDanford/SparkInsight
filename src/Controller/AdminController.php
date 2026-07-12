@@ -13,6 +13,7 @@ use SparkInsight\Service\AppSettingsService;
 use SparkInsight\Service\InvitationService;
 use SparkInsight\Service\UserService;
 use SparkInsight\Service\UserSession;
+use Throwable;
 
 final class AdminController
 {
@@ -73,21 +74,21 @@ final class AdminController
         }
 
         $data = (array) $request->getParsedBody();
-        $csrfToken = trim((string) ($data['_csrf'] ?? ''));
+        $csrfToken = mb_trim((string) ($data['_csrf'] ?? ''));
         if (!$this->session->validateCsrfToken($csrfToken)) {
             return $this->renderAdminDashboard($response, $user, ['section' => 'invitations'], [
                 'flash_message' => [
                     'type' => 'error',
                     'message' => 'Invalid form submission. Please try again.',
                 ],
-                'email' => trim((string) ($data['email'] ?? '')),
+                'email' => mb_trim((string) ($data['email'] ?? '')),
                 'roles' => array_values(array_filter((array) ($data['roles'] ?? $this->settingsService->getInvitationDefaultRoles()), static fn ($role) => in_array($role, ['reviewer', 'author', 'admin'], true))),
                 'hours' => max(1, (int) ($data['hours'] ?? $this->settingsService->getInvitationDefaultHours())),
                 'invitationCode' => null,
             ]);
         }
 
-        $email = trim((string) ($data['email'] ?? '')) ?: null;
+        $email = mb_trim((string) ($data['email'] ?? '')) ?: null;
         $roles = array_values(array_filter((array) ($data['roles'] ?? $this->settingsService->getInvitationDefaultRoles()), static fn ($role) => in_array($role, ['reviewer', 'author', 'admin'], true)));
         if (empty($roles)) {
             $roles = $this->settingsService->getInvitationDefaultRoles();
@@ -135,7 +136,7 @@ final class AdminController
             return $response->withHeader('Location', '/dashboard/admin?section=invitations')->withStatus(302);
         }
 
-        $code = trim((string) ($args['code'] ?? ''));
+        $code = mb_trim((string) ($args['code'] ?? ''));
         if ($code === '') {
             $this->session->setFlash('error', 'Invitation code is required.');
 
@@ -145,7 +146,7 @@ final class AdminController
         $deleted = $this->invitationService->deleteInvitation($code);
         $this->session->setFlash(
             $deleted ? 'success' : 'error',
-            $deleted ? 'Invitation deleted.' : 'Invitation could not be deleted.'
+            $deleted ? 'Invitation deleted.' : 'Invitation could not be deleted.',
         );
 
         return $response->withHeader('Location', '/dashboard/admin?section=invitations')->withStatus(302);
@@ -181,7 +182,7 @@ final class AdminController
         try {
             $this->settingsService->saveFromAdminInput((array) $data);
             $this->session->setFlash('success', 'Settings saved.');
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->session->setFlash('error', 'Settings could not be saved: ' . $e->getMessage());
         }
 
@@ -192,7 +193,7 @@ final class AdminController
         Response $response,
         array $user,
         array $queryParams = [],
-        array $invitationOverrides = []
+        array $invitationOverrides = [],
     ): Response {
         $section = $this->normalizeAdminSection((string) ($queryParams['section'] ?? 'users'));
         $flashMessage = $this->session->getFlash();
@@ -210,9 +211,9 @@ final class AdminController
             $this->buildInvitationsSectionData(
                 $queryParams,
                 $invitationOverrides,
-                $section === 'invitations' ? $flashMessage : null
+                $section === 'invitations' ? $flashMessage : null,
             ),
-            $this->buildSettingsSectionData($section === 'settings' ? $flashMessage : null)
+            $this->buildSettingsSectionData($section === 'settings' ? $flashMessage : null),
         ));
     }
 
@@ -262,9 +263,9 @@ final class AdminController
 
     private function buildInvitationsSectionData(array $queryParams, array $overrides = [], ?array $flashMessage = null): array
     {
-        $filterEmail = trim((string) ($queryParams['filter_email'] ?? ''));
-        $filterRole = trim((string) ($queryParams['filter_role'] ?? ''));
-        $filterStatus = trim((string) ($queryParams['filter_status'] ?? ''));
+        $filterEmail = mb_trim((string) ($queryParams['filter_email'] ?? ''));
+        $filterRole = mb_trim((string) ($queryParams['filter_role'] ?? ''));
+        $filterStatus = mb_trim((string) ($queryParams['filter_status'] ?? ''));
         $page = max(1, (int) ($queryParams['invitations_page'] ?? ($queryParams['page'] ?? 1)));
         $limit = 50;
 
@@ -343,13 +344,13 @@ final class AdminController
                 $settings['import_cron_schedule'] ?? '0 2 * * *',
                 $phpBinary,
                 $siPhpPath,
-                $importDirectory
+                $importDirectory,
             ),
             'invitation_cleanup' => sprintf(
                 '%s %s %s invite:purge-expired --force',
                 $settings['invitation_cleanup_cron_schedule'] ?? '30 2 * * *',
                 $phpBinary,
-                $siPhpPath
+                $siPhpPath,
             ),
         ];
 
@@ -401,7 +402,7 @@ final class AdminController
 
     private function validateCsrfData(array $data): bool
     {
-        $csrfToken = trim((string) ($data['_csrf'] ?? ''));
+        $csrfToken = mb_trim((string) ($data['_csrf'] ?? ''));
 
         return $this->session->validateCsrfToken($csrfToken);
     }
@@ -411,6 +412,7 @@ final class AdminController
         $user = $this->session->getUser();
         if (!$user || !in_array('admin', $user['roles'] ?? [], true)) {
             $response->getBody()->write('Forbidden');
+
             return $response->withStatus(403);
         }
 
@@ -429,6 +431,7 @@ final class AdminController
 
         if (!$userId || !in_array($status, ['active', 'disabled'], true)) {
             $response->getBody()->write('Invalid request');
+
             return $response->withStatus(400);
         }
 
@@ -443,6 +446,7 @@ final class AdminController
         $user = $this->session->getUser();
         if (!$user || !in_array('admin', $user['roles'] ?? [], true)) {
             $response->getBody()->write('Forbidden');
+
             return $response->withStatus(403);
         }
 
@@ -461,6 +465,7 @@ final class AdminController
 
         if (!$userId || !is_array($roles)) {
             $response->getBody()->write('Invalid request');
+
             return $response->withStatus(400);
         }
 
@@ -491,7 +496,7 @@ final class AdminController
             return $response->withHeader('Location', '/dashboard/admin?section=users')->withStatus(302);
         }
 
-        $displayName = array_key_exists('display_name', (array) $data) ? trim((string) $data['display_name']) : null;
+        $displayName = array_key_exists('display_name', (array) $data) ? mb_trim((string) $data['display_name']) : null;
         if ($displayName !== null && mb_strlen($displayName) > 255) {
             $this->session->setFlash('error', 'Display name is too long.');
 
@@ -507,7 +512,7 @@ final class AdminController
 
         $this->session->setFlash(
             $success ? 'success' : 'error',
-            $success ? 'Display name saved.' : 'Display name could not be saved.'
+            $success ? 'Display name saved.' : 'Display name could not be saved.',
         );
 
         return $response->withHeader('Location', '/dashboard/admin?section=users')->withStatus(302);

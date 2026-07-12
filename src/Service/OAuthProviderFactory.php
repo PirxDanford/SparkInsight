@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SparkInsight\Service;
 
 use GuzzleHttp\Client as GuzzleClient;
+use InvalidArgumentException;
 use League\OAuth2\Client\Provider\GenericProvider;
 use League\OAuth2\Client\Token\AccessToken;
 use SparkInsight\Config\Config;
@@ -22,7 +23,7 @@ final class OAuthProviderFactory implements OAuthProviderFactoryInterface
     {
         $providerConfig = $this->config->getProviderConfig($provider);
         if (empty($providerConfig['client_id']) || empty($providerConfig['client_secret'])) {
-            throw new \InvalidArgumentException(sprintf('OAuth provider "%s" is not configured.', $provider));
+            throw new InvalidArgumentException(sprintf('OAuth provider "%s" is not configured.', $provider));
         }
 
         $options = [
@@ -47,7 +48,7 @@ final class OAuthProviderFactory implements OAuthProviderFactoryInterface
 
     public function getUserProfile(string $provider, AccessToken $token): array
     {
-        $providerName = strtolower($provider);
+        $providerName = mb_strtolower($provider);
 
         if ($providerName === 'google') {
             $resourceOwner = $this->createProvider($providerName)->getResourceOwner($token);
@@ -56,7 +57,7 @@ final class OAuthProviderFactory implements OAuthProviderFactoryInterface
             return [
                 'provider' => 'google',
                 'provider_id' => $data['sub'] ?? $data['id'] ?? '',
-                'name' => trim($data['name'] ?? ($data['given_name'] . ' ' . ($data['family_name'] ?? ''))),
+                'name' => mb_trim($data['name'] ?? ($data['given_name'] . ' ' . ($data['family_name'] ?? ''))),
                 'email' => $data['email'] ?? '',
                 'avatar' => $data['picture'] ?? null,
             ];
@@ -74,7 +75,7 @@ final class OAuthProviderFactory implements OAuthProviderFactoryInterface
             return [
                 'provider' => 'github',
                 'provider_id' => (string) ($profile['id'] ?? ''),
-                'name' => trim((string) ($profile['name'] ?? $profile['login'] ?? 'GitHub user')),
+                'name' => mb_trim((string) ($profile['name'] ?? $profile['login'] ?? 'GitHub user')),
                 'email' => $email,
                 'avatar' => $profile['avatar_url'] ?? null,
             ];
@@ -88,13 +89,13 @@ final class OAuthProviderFactory implements OAuthProviderFactoryInterface
                 $email = $this->fetchLinkedInEmail($token);
             }
 
-            $name = trim((string) ($profile['name'] ?? ''));
+            $name = mb_trim((string) ($profile['name'] ?? ''));
             if ($name === '') {
-                $name = trim(sprintf('%s %s', $profile['localizedFirstName'] ?? '', $profile['localizedLastName'] ?? ''));
+                $name = mb_trim(sprintf('%s %s', $profile['localizedFirstName'] ?? '', $profile['localizedLastName'] ?? ''));
             }
 
             $avatar = $profile['picture'] ?? null;
-            if (!is_string($avatar) || trim($avatar) === '') {
+            if (!is_string($avatar) || mb_trim($avatar) === '') {
                 $avatar = null;
             }
 
@@ -107,12 +108,13 @@ final class OAuthProviderFactory implements OAuthProviderFactoryInterface
             ];
         }
 
-        throw new \InvalidArgumentException(sprintf('Provider "%s" is not supported for profile retrieval.', $provider));
+        throw new InvalidArgumentException(sprintf('Provider "%s" is not supported for profile retrieval.', $provider));
     }
 
     public function getSupportedProviders(): array
     {
         $providers = $this->config->getActiveProviders();
+
         return array_intersect_key($providers, array_flip(['github', 'google', 'linkedin']));
     }
 
@@ -123,31 +125,31 @@ final class OAuthProviderFactory implements OAuthProviderFactoryInterface
 
     private function getAuthorizeUrl(string $provider): string
     {
-        return match (strtolower($provider)) {
+        return match (mb_strtolower($provider)) {
             'github' => 'https://github.com/login/oauth/authorize',
             'google' => 'https://accounts.google.com/o/oauth2/v2/auth',
             'linkedin' => 'https://www.linkedin.com/oauth/v2/authorization',
-            default => throw new \InvalidArgumentException('Unsupported provider.'),
+            default => throw new InvalidArgumentException('Unsupported provider.'),
         };
     }
 
     private function getAccessTokenUrl(string $provider): string
     {
-        return match (strtolower($provider)) {
+        return match (mb_strtolower($provider)) {
             'github' => 'https://github.com/login/oauth/access_token',
             'google' => 'https://oauth2.googleapis.com/token',
             'linkedin' => 'https://www.linkedin.com/oauth/v2/accessToken',
-            default => throw new \InvalidArgumentException('Unsupported provider.'),
+            default => throw new InvalidArgumentException('Unsupported provider.'),
         };
     }
 
     private function getResourceOwnerUrl(string $provider): string
     {
-        return match (strtolower($provider)) {
+        return match (mb_strtolower($provider)) {
             'github' => 'https://api.github.com/user',
             'google' => 'https://openidconnect.googleapis.com/v1/userinfo',
             'linkedin' => 'https://api.linkedin.com/v2/userinfo',
-            default => throw new \InvalidArgumentException('Unsupported provider.'),
+            default => throw new InvalidArgumentException('Unsupported provider.'),
         };
     }
 

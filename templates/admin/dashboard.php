@@ -1,12 +1,12 @@
 <?php
 $title = 'Admin';
-$user = $user ?? null;
+$user ??= null;
 $adminSection = $admin_section ?? 'users';
-$users = $users ?? [];
+$users ??= [];
 $usersPage = (int) ($users_page ?? 1);
 $usersTotalPages = (float) ($users_total_pages ?? 1);
 $usersTotal = (int) ($users_total ?? 0);
-$invitations = $invitations ?? [];
+$invitations ??= [];
 $invitationFilters = $invitation_filters ?? ['email' => '', 'role' => '', 'status' => ''];
 $invitationPage = (int) ($invitations_page ?? 1);
 $invitationTotalPages = (int) ($invitations_total_pages ?? 1);
@@ -49,14 +49,14 @@ ob_start();
             <p>Manage user accounts, roles, and status from the admin dashboard.</p>
         </div>
 
-        <?php if (!empty($users_flash_message ?? null)): ?>
-            <div class="notification-box <?= htmlspecialchars((string) ($users_flash_message['type'] ?? 'info'), ENT_QUOTES, 'UTF-8') ?>">
+        <?php if (!empty($users_flash_message ?? null)) { ?>
+            <div class="notification-box <?php echo htmlspecialchars((string) ($users_flash_message['type'] ?? 'info'), ENT_QUOTES, 'UTF-8'); ?>">
                 <div class="notification-content">
-                    <span class="notification-icon"><?= (($users_flash_message['type'] ?? 'info') === 'success') ? '✅' : 'ℹ️' ?></span>
-                    <span class="notification-text"><?= htmlspecialchars((string) ($users_flash_message['message'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                    <span class="notification-icon"><?php echo (($users_flash_message['type'] ?? 'info') === 'success') ? '✅' : 'ℹ️'; ?></span>
+                    <span class="notification-text"><?php echo htmlspecialchars((string) ($users_flash_message['message'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span>
                 </div>
             </div>
-        <?php endif; ?>
+        <?php } ?>
 
         <div class="table-responsive">
             <table class="data-table">
@@ -73,43 +73,43 @@ ob_start();
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($users as $item): ?>
+                    <?php foreach ($users as $item) { ?>
                         <?php $itemRoles = is_array($item['roles'] ?? null) ? $item['roles'] : []; ?>
                         <tr>
-                            <td><?= htmlspecialchars((string) $item['id'], ENT_QUOTES, 'UTF-8') ?></td>
-                            <td><?= htmlspecialchars((string) ($item['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                            <td><?= htmlspecialchars((string) ($item['display_name'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></td>
-                            <td><?= htmlspecialchars((string) ($item['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                            <td><?= htmlspecialchars($formatRoles($item['roles'] ?? []), ENT_QUOTES, 'UTF-8') ?></td>
-                            <td><?= htmlspecialchars((string) ($item['status'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                            <td><?= htmlspecialchars((string) ($item['last_login'] ?? 'N/A'), ENT_QUOTES, 'UTF-8') ?></td>
+                            <td><?php echo htmlspecialchars((string) $item['id'], ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars((string) ($item['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars((string) ($item['display_name'] ?? '—'), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars((string) ($item['email'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars($formatRoles($item['roles'] ?? []), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars((string) ($item['status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars((string) ($item['last_login'] ?? 'N/A'), ENT_QUOTES, 'UTF-8'); ?></td>
                             <td>
-                                <form method="post" action="/dashboard/admin/users/<?= (int) $item['id'] ?>/status" class="inline-form">
-                                    <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string) ($csrf_token ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                                <form method="post" action="/dashboard/admin/users/<?php echo (int) $item['id']; ?>/status" class="inline-form">
+                                    <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars((string) ($csrf_token ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                                     <select name="status">
-                                        <option value="active" <?= ($item['status'] ?? '') === 'active' ? 'selected' : '' ?>>Active</option>
-                                        <option value="disabled" <?= ($item['status'] ?? '') === 'disabled' ? 'selected' : '' ?>>Disabled</option>
+                                        <option value="active" <?php echo ($item['status'] ?? '') === 'active' ? 'selected' : ''; ?>>Active</option>
+                                        <option value="disabled" <?php echo ($item['status'] ?? '') === 'disabled' ? 'selected' : ''; ?>>Disabled</option>
                                     </select>
                                     <button type="submit" class="button secondary small">Update</button>
                                 </form>
-                                <form method="post" action="/dashboard/admin/users/<?= (int) $item['id'] ?>/roles" class="inline-form">
-                                    <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string) ($csrf_token ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                                <form method="post" action="/dashboard/admin/users/<?php echo (int) $item['id']; ?>/roles" class="inline-form">
+                                    <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars((string) ($csrf_token ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                                     <div class="checkbox-group small">
-                                        <?php foreach (['reviewer', 'author', 'admin'] as $roleOption): ?>
+                                        <?php foreach (['reviewer', 'author', 'admin'] as $roleOption) { ?>
                                             <label>
-                                                <input type="checkbox" name="roles[]" value="<?= $roleOption ?>" <?= in_array($roleOption, $itemRoles, true) ? 'checked' : '' ?>>
-                                                <?= ucfirst($roleOption) ?>
+                                                <input type="checkbox" name="roles[]" value="<?php echo $roleOption; ?>" <?php echo in_array($roleOption, $itemRoles, true) ? 'checked' : ''; ?>>
+                                                <?php echo ucfirst($roleOption); ?>
                                             </label>
-                                        <?php endforeach; ?>
+                                        <?php } ?>
                                     </div>
                                     <button type="submit" class="button secondary small">Save roles</button>
                                 </form>
-                                <form method="post" action="/dashboard/admin/users/<?= (int) $item['id'] ?>/display-name" class="inline-form">
-                                    <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string) ($csrf_token ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                                <form method="post" action="/dashboard/admin/users/<?php echo (int) $item['id']; ?>/display-name" class="inline-form">
+                                    <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars((string) ($csrf_token ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                                     <input
                                         type="text"
                                         name="display_name"
-                                        value="<?= htmlspecialchars((string) ($item['display_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                                        value="<?php echo htmlspecialchars((string) ($item['display_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
                                         placeholder="Custom display name"
                                         maxlength="255"
                                     >
@@ -117,13 +117,13 @@ ob_start();
                                 </form>
                             </td>
                         </tr>
-                    <?php endforeach; ?>
+                    <?php } ?>
                 </tbody>
             </table>
         </div>
 
         <div class="pagination-info">
-            <p>Page <?= htmlspecialchars((string) $usersPage, ENT_QUOTES, 'UTF-8') ?> of <?= htmlspecialchars((string) $usersTotalPages, ENT_QUOTES, 'UTF-8') ?> (<?= htmlspecialchars((string) $usersTotal, ENT_QUOTES, 'UTF-8') ?> total users)</p>
+            <p>Page <?php echo htmlspecialchars((string) $usersPage, ENT_QUOTES, 'UTF-8'); ?> of <?php echo htmlspecialchars((string) $usersTotalPages, ENT_QUOTES, 'UTF-8'); ?> (<?php echo htmlspecialchars((string) $usersTotal, ENT_QUOTES, 'UTF-8'); ?> total users)</p>
         </div>
     </div>
 
@@ -131,40 +131,40 @@ ob_start();
         <div class="card-header">
             <h2>Invitation Management</h2>
             <p>Generate and review invitation codes for new users.</p>
-            <p class="meta">Total invitations: <?= htmlspecialchars((string) ((int) ($total_invitations ?? 0)), ENT_QUOTES, 'UTF-8') ?></p>
+            <p class="meta">Total invitations: <?php echo htmlspecialchars((string) ((int) ($total_invitations ?? 0)), ENT_QUOTES, 'UTF-8'); ?></p>
         </div>
 
-        <?php if (!empty($invitation_flash_message ?? null)): ?>
-            <div class="notification-box <?= htmlspecialchars((string) ($invitation_flash_message['type'] ?? 'info'), ENT_QUOTES, 'UTF-8') ?>">
+        <?php if (!empty($invitation_flash_message ?? null)) { ?>
+            <div class="notification-box <?php echo htmlspecialchars((string) ($invitation_flash_message['type'] ?? 'info'), ENT_QUOTES, 'UTF-8'); ?>">
                 <div class="notification-content">
-                    <span class="notification-icon"><?= (($invitation_flash_message['type'] ?? 'info') === 'success') ? '✅' : 'ℹ️' ?></span>
-                    <span class="notification-text"><?= htmlspecialchars((string) ($invitation_flash_message['message'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                    <span class="notification-icon"><?php echo (($invitation_flash_message['type'] ?? 'info') === 'success') ? '✅' : 'ℹ️'; ?></span>
+                    <span class="notification-text"><?php echo htmlspecialchars((string) ($invitation_flash_message['message'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span>
                 </div>
             </div>
-        <?php endif; ?>
+        <?php } ?>
 
         <form method="get" action="/dashboard/admin" class="form-card">
             <input type="hidden" name="section" value="invitations">
             <div class="form-row">
                 <label for="filter-email">Filter by email</label>
-                <input id="filter-email" name="filter_email" type="email" placeholder="Filter invitations by email" value="<?= htmlspecialchars((string) ($invitationFilters['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                <input id="filter-email" name="filter_email" type="email" placeholder="Filter invitations by email" value="<?php echo htmlspecialchars((string) ($invitationFilters['email'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
             </div>
             <div class="form-row">
                 <label for="filter-role">Filter by role</label>
                 <select id="filter-role" name="filter_role">
                     <option value="">Any role</option>
-                    <?php foreach (['reviewer', 'author', 'admin'] as $roleOption): ?>
-                        <option value="<?= $roleOption ?>" <?= (($invitationFilters['role'] ?? '') === $roleOption) ? 'selected' : '' ?>><?= ucfirst($roleOption) ?></option>
-                    <?php endforeach; ?>
+                    <?php foreach (['reviewer', 'author', 'admin'] as $roleOption) { ?>
+                        <option value="<?php echo $roleOption; ?>" <?php echo (($invitationFilters['role'] ?? '') === $roleOption) ? 'selected' : ''; ?>><?php echo ucfirst($roleOption); ?></option>
+                    <?php } ?>
                 </select>
             </div>
             <div class="form-row">
                 <label for="filter-status">Filter by status</label>
                 <select id="filter-status" name="filter_status">
                     <option value="">Any status</option>
-                    <?php foreach (['pending', 'used', 'expired'] as $statusOption): ?>
-                        <option value="<?= $statusOption ?>" <?= (($invitationFilters['status'] ?? '') === $statusOption) ? 'selected' : '' ?>><?= ucfirst($statusOption) ?></option>
-                    <?php endforeach; ?>
+                    <?php foreach (['pending', 'used', 'expired'] as $statusOption) { ?>
+                        <option value="<?php echo $statusOption; ?>" <?php echo (($invitationFilters['status'] ?? '') === $statusOption) ? 'selected' : ''; ?>><?php echo ucfirst($statusOption); ?></option>
+                    <?php } ?>
                 </select>
             </div>
             <div class="form-row form-actions">
@@ -174,45 +174,45 @@ ob_start();
         </form>
 
         <form method="post" action="/dashboard/admin/invitations" class="form-card">
-            <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string) ($csrf_token ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+            <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars((string) ($csrf_token ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
             <div class="form-row">
                 <label for="invitation-email">Email (optional)</label>
-                <input id="invitation-email" name="email" type="email" placeholder="Restrict invitation to a specific email" value="<?= htmlspecialchars((string) ($invitation_email ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                <input id="invitation-email" name="email" type="email" placeholder="Restrict invitation to a specific email" value="<?php echo htmlspecialchars((string) ($invitation_email ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
             </div>
 
             <div class="form-row">
                 <label>Roles</label>
                 <div class="checkbox-group">
-                    <?php foreach (['reviewer', 'author', 'admin'] as $roleOption): ?>
+                    <?php foreach (['reviewer', 'author', 'admin'] as $roleOption) { ?>
                         <label>
-                            <input type="checkbox" name="roles[]" value="<?= $roleOption ?>" <?= in_array($roleOption, $invitation_roles ?? ['reviewer'], true) ? 'checked' : '' ?>>
-                            <?= ucfirst($roleOption) ?>
+                            <input type="checkbox" name="roles[]" value="<?php echo $roleOption; ?>" <?php echo in_array($roleOption, $invitation_roles ?? ['reviewer'], true) ? 'checked' : ''; ?>>
+                            <?php echo ucfirst($roleOption); ?>
                         </label>
-                    <?php endforeach; ?>
+                    <?php } ?>
                 </div>
             </div>
 
             <div class="form-row">
                 <label for="expires-hours">Expires in (hours)</label>
-                <input id="expires-hours" name="hours" type="number" min="1" value="<?= htmlspecialchars((string) ($invitation_hours ?? 168), ENT_QUOTES, 'UTF-8') ?>">
+                <input id="expires-hours" name="hours" type="number" min="1" value="<?php echo htmlspecialchars((string) ($invitation_hours ?? 168), ENT_QUOTES, 'UTF-8'); ?>">
             </div>
 
             <button type="submit" class="button">Create Invitation</button>
         </form>
 
-        <?php if (!empty($invitation_code)): ?>
+        <?php if (!empty($invitation_code)) { ?>
             <div class="notification-box success">
                 <div class="notification-content">
                     <span class="notification-icon">🎉</span>
-                    <span class="notification-text">Invitation created: <strong><?= htmlspecialchars((string) $invitation_code, ENT_QUOTES, 'UTF-8') ?></strong></span>
+                    <span class="notification-text">Invitation created: <strong><?php echo htmlspecialchars((string) $invitation_code, ENT_QUOTES, 'UTF-8'); ?></strong></span>
                 </div>
             </div>
             <div class="invitation-links">
                 <p>Use these links to share the invitation:</p>
-                <p><a href="<?= htmlspecialchars((string) (($appUrl ?? '') . '/auth/github?code=' . $invitation_code), ENT_QUOTES, 'UTF-8') ?>">GitHub signup link</a></p>
-                <p><a href="<?= htmlspecialchars((string) (($appUrl ?? '') . '/auth/google?code=' . $invitation_code), ENT_QUOTES, 'UTF-8') ?>">Google signup link</a></p>
+                <p><a href="<?php echo htmlspecialchars((string) (($appUrl ?? '') . '/auth/github?code=' . $invitation_code), ENT_QUOTES, 'UTF-8'); ?>">GitHub signup link</a></p>
+                <p><a href="<?php echo htmlspecialchars((string) (($appUrl ?? '') . '/auth/google?code=' . $invitation_code), ENT_QUOTES, 'UTF-8'); ?>">Google signup link</a></p>
             </div>
-        <?php endif; ?>
+        <?php } ?>
 
         <div class="table-responsive">
             <table class="data-table">
@@ -230,25 +230,25 @@ ob_start();
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($invitations as $invitation): ?>
+                    <?php foreach ($invitations as $invitation) { ?>
                         <?php $invitationRoles = $invitation['roles'] ?? []; ?>
                         <tr>
-                            <td><?= htmlspecialchars((string) $invitation['code'], ENT_QUOTES, 'UTF-8') ?></td>
-                            <td><?= htmlspecialchars((string) ($invitation['email'] ?? 'Any'), ENT_QUOTES, 'UTF-8') ?></td>
-                            <td><?= htmlspecialchars($formatRoles($invitationRoles), ENT_QUOTES, 'UTF-8') ?></td>
-                            <td><?= htmlspecialchars((string) ucfirst($invitation['status'] ?? 'pending'), ENT_QUOTES, 'UTF-8') ?></td>
-                            <td><?= htmlspecialchars((string) ($invitation['created_at'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                            <td><?= htmlspecialchars((string) ($invitation['expires_at'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                            <td><?= htmlspecialchars((string) ($invitation['used_by_display'] ?? ($invitation['used_by'] ?? '—')), ENT_QUOTES, 'UTF-8') ?></td>
-                            <td><?= htmlspecialchars((string) ($invitation['used_at'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></td>
+                            <td><?php echo htmlspecialchars((string) $invitation['code'], ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars((string) ($invitation['email'] ?? 'Any'), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars($formatRoles($invitationRoles), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars((string) ucfirst($invitation['status'] ?? 'pending'), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars((string) ($invitation['created_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars((string) ($invitation['expires_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars((string) ($invitation['used_by_display'] ?? ($invitation['used_by'] ?? '—')), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars((string) ($invitation['used_at'] ?? '—'), ENT_QUOTES, 'UTF-8'); ?></td>
                             <td>
-                                <form method="post" action="/dashboard/admin/invitations/<?= htmlspecialchars((string) $invitation['code'], ENT_QUOTES, 'UTF-8') ?>/delete" class="inline-form">
-                                    <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string) ($csrf_token ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                                <form method="post" action="/dashboard/admin/invitations/<?php echo htmlspecialchars((string) $invitation['code'], ENT_QUOTES, 'UTF-8'); ?>/delete" class="inline-form">
+                                    <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars((string) ($csrf_token ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                                     <button type="submit" class="button secondary small">Delete</button>
                                 </form>
                             </td>
                         </tr>
-                    <?php endforeach; ?>
+                    <?php } ?>
                 </tbody>
             </table>
         </div>
@@ -260,21 +260,21 @@ ob_start();
             'filter_role' => $invitationFilters['role'] ?? '',
             'filter_status' => $invitationFilters['status'] ?? '',
         ], static fn ($value) => $value !== '');
-        $baseQuery = http_build_query($paginationParams);
-        $queryPrefix = $baseQuery !== '' ? '/dashboard/admin?' . $baseQuery . '&' : '/dashboard/admin?';
-        ?>
+$baseQuery = http_build_query($paginationParams);
+$queryPrefix = $baseQuery !== '' ? '/dashboard/admin?' . $baseQuery . '&' : '/dashboard/admin?';
+?>
 
-        <?php if ($invitationTotalPages > 1): ?>
+        <?php if ($invitationTotalPages > 1) { ?>
             <div class="pagination-controls">
-                <?php if ($invitationPage > 1): ?>
-                    <a class="button secondary" href="<?= htmlspecialchars($queryPrefix . 'invitations_page=' . ($invitationPage - 1), ENT_QUOTES, 'UTF-8') ?>">Previous</a>
-                <?php endif; ?>
-                <span>Page <?= htmlspecialchars((string) $invitationPage, ENT_QUOTES, 'UTF-8') ?> of <?= htmlspecialchars((string) $invitationTotalPages, ENT_QUOTES, 'UTF-8') ?></span>
-                <?php if ($invitationPage < $invitationTotalPages): ?>
-                    <a class="button secondary" href="<?= htmlspecialchars($queryPrefix . 'invitations_page=' . ($invitationPage + 1), ENT_QUOTES, 'UTF-8') ?>">Next</a>
-                <?php endif; ?>
+                <?php if ($invitationPage > 1) { ?>
+                    <a class="button secondary" href="<?php echo htmlspecialchars($queryPrefix . 'invitations_page=' . ($invitationPage - 1), ENT_QUOTES, 'UTF-8'); ?>">Previous</a>
+                <?php } ?>
+                <span>Page <?php echo htmlspecialchars((string) $invitationPage, ENT_QUOTES, 'UTF-8'); ?> of <?php echo htmlspecialchars((string) $invitationTotalPages, ENT_QUOTES, 'UTF-8'); ?></span>
+                <?php if ($invitationPage < $invitationTotalPages) { ?>
+                    <a class="button secondary" href="<?php echo htmlspecialchars($queryPrefix . 'invitations_page=' . ($invitationPage + 1), ENT_QUOTES, 'UTF-8'); ?>">Next</a>
+                <?php } ?>
             </div>
-        <?php endif; ?>
+        <?php } ?>
     </div>
 
     <div id="admin-settings" class="card">
@@ -283,17 +283,17 @@ ob_start();
             <p>Configure defaults used by invitation generation and automation snippets.</p>
         </div>
 
-        <?php if (!empty($settings_flash_message ?? null)): ?>
-            <div class="notification-box <?= htmlspecialchars((string) ($settings_flash_message['type'] ?? 'info'), ENT_QUOTES, 'UTF-8') ?>">
+        <?php if (!empty($settings_flash_message ?? null)) { ?>
+            <div class="notification-box <?php echo htmlspecialchars((string) ($settings_flash_message['type'] ?? 'info'), ENT_QUOTES, 'UTF-8'); ?>">
                 <div class="notification-content">
-                    <span class="notification-icon"><?= (($settings_flash_message['type'] ?? 'info') === 'success') ? '✅' : 'ℹ️' ?></span>
-                    <span class="notification-text"><?= htmlspecialchars((string) ($settings_flash_message['message'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                    <span class="notification-icon"><?php echo (($settings_flash_message['type'] ?? 'info') === 'success') ? '✅' : 'ℹ️'; ?></span>
+                    <span class="notification-text"><?php echo htmlspecialchars((string) ($settings_flash_message['message'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span>
                 </div>
             </div>
-        <?php endif; ?>
+        <?php } ?>
 
         <form method="post" action="/dashboard/admin/settings" class="form-card">
-            <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string) ($csrf_token ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+            <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars((string) ($csrf_token ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
 
             <div class="form-row">
                 <label for="invitation-default-hours">Default invitation validity (hours)</label>
@@ -303,7 +303,7 @@ ob_start();
                     type="number"
                     min="1"
                     max="720"
-                    value="<?= htmlspecialchars((string) ($settings['invitation_default_hours'] ?? 168), ENT_QUOTES, 'UTF-8') ?>"
+                    value="<?php echo htmlspecialchars((string) ($settings['invitation_default_hours'] ?? 168), ENT_QUOTES, 'UTF-8'); ?>"
                 >
                 <small>Recommended default is 168 hours (7 days).</small>
             </div>
@@ -311,17 +311,17 @@ ob_start();
             <div class="form-row">
                 <label>Default invitation roles</label>
                 <div class="checkbox-group">
-                    <?php foreach (['reviewer', 'author', 'admin'] as $roleOption): ?>
+                    <?php foreach (['reviewer', 'author', 'admin'] as $roleOption) { ?>
                         <label>
                             <input
                                 type="checkbox"
                                 name="invitation_default_roles[]"
-                                value="<?= $roleOption ?>"
-                                <?= in_array($roleOption, (array) ($settings['invitation_default_roles'] ?? ['reviewer']), true) ? 'checked' : '' ?>
+                                value="<?php echo $roleOption; ?>"
+                                <?php echo in_array($roleOption, (array) ($settings['invitation_default_roles'] ?? ['reviewer']), true) ? 'checked' : ''; ?>
                             >
-                            <?= ucfirst($roleOption) ?>
+                            <?php echo ucfirst($roleOption); ?>
                         </label>
-                    <?php endforeach; ?>
+                    <?php } ?>
                 </div>
             </div>
 
@@ -331,7 +331,7 @@ ob_start();
                     id="import-cron-schedule"
                     name="import_cron_schedule"
                     type="text"
-                    value="<?= htmlspecialchars((string) ($settings['import_cron_schedule'] ?? '0 2 * * *'), ENT_QUOTES, 'UTF-8') ?>"
+                    value="<?php echo htmlspecialchars((string) ($settings['import_cron_schedule'] ?? '0 2 * * *'), ENT_QUOTES, 'UTF-8'); ?>"
                 >
             </div>
 
@@ -341,7 +341,7 @@ ob_start();
                     id="invitation-cleanup-cron-schedule"
                     name="invitation_cleanup_cron_schedule"
                     type="text"
-                    value="<?= htmlspecialchars((string) ($settings['invitation_cleanup_cron_schedule'] ?? '30 2 * * *'), ENT_QUOTES, 'UTF-8') ?>"
+                    value="<?php echo htmlspecialchars((string) ($settings['invitation_cleanup_cron_schedule'] ?? '30 2 * * *'), ENT_QUOTES, 'UTF-8'); ?>"
                 >
             </div>
 
@@ -351,31 +351,31 @@ ob_start();
         <div class="form-card">
             <div class="form-row">
                 <label for="cron-import">Daily Scrivener import</label>
-                <textarea id="cron-import" rows="3" readonly><?= htmlspecialchars((string) (($cron_snippets ?? [])['import'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+                <textarea id="cron-import" rows="3" readonly><?php echo htmlspecialchars((string) (($cron_snippets ?? [])['import'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></textarea>
             </div>
             <div class="form-row">
                 <label for="cron-cleanup">Expired invitation cleanup</label>
-                <textarea id="cron-cleanup" rows="3" readonly><?= htmlspecialchars((string) (($cron_snippets ?? [])['invitation_cleanup'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+                <textarea id="cron-cleanup" rows="3" readonly><?php echo htmlspecialchars((string) (($cron_snippets ?? [])['invitation_cleanup'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></textarea>
             </div>
         </div>
 
         <?php $maintenanceCommands = isset($maintenance_once_cron_examples) && is_array($maintenance_once_cron_examples) ? $maintenance_once_cron_examples : []; ?>
-        <?php if (!empty($maintenanceCommands)): ?>
+        <?php if (!empty($maintenanceCommands)) { ?>
             <div class="form-card">
                 <div class="form-row">
                     <h3>One-time Cronjob Examples</h3>
                     <p>Use these examples in hosting cron panels for one-time maintenance runs, then remove the entries.</p>
                 </div>
 
-                <?php foreach ($maintenanceCommands as $index => $command): ?>
+                <?php foreach ($maintenanceCommands as $index => $command) { ?>
                     <div class="form-row">
-                        <label for="maintenance-command-<?= (int) $index ?>"><?= htmlspecialchars((string) ($command['label'] ?? 'Maintenance command'), ENT_QUOTES, 'UTF-8') ?></label>
-                        <small><?= htmlspecialchars((string) ($command['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></small>
-                        <textarea id="maintenance-command-<?= (int) $index ?>" rows="2" readonly><?= htmlspecialchars((string) ($command['command'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+                        <label for="maintenance-command-<?php echo (int) $index; ?>"><?php echo htmlspecialchars((string) ($command['label'] ?? 'Maintenance command'), ENT_QUOTES, 'UTF-8'); ?></label>
+                        <small><?php echo htmlspecialchars((string) ($command['description'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></small>
+                        <textarea id="maintenance-command-<?php echo (int) $index; ?>" rows="2" readonly><?php echo htmlspecialchars((string) ($command['command'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></textarea>
                     </div>
-                <?php endforeach; ?>
+                <?php } ?>
             </div>
-        <?php endif; ?>
+        <?php } ?>
     </div>
 </div>
 <?php

@@ -6,6 +6,7 @@ namespace SparkInsight\Command;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
+use Exception;
 use SparkInsight\Config\Config;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -17,7 +18,7 @@ final class CheckEnvironmentCommand extends Command
     protected function configure(): void
     {
         $this->setName('check-environment')
-             ->setDescription('Check if the development environment is set up properly');
+            ->setDescription('Check if the development environment is set up properly');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -46,9 +47,9 @@ final class CheckEnvironmentCommand extends Command
             $conn = DriverManager::getConnection($dbConfig);
             $conn->executeQuery('SELECT 1');
             $io->success('Database connection successful');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $errorMessage = $e->getMessage();
-            if (($dbConfig['driver'] ?? '') !== 'pdo_sqlite' && (stripos($errorMessage, 'unknown database') !== false || stripos($errorMessage, 'database') !== false)) {
+            if (($dbConfig['driver'] ?? '') !== 'pdo_sqlite' && (mb_stripos($errorMessage, 'unknown database') !== false || mb_stripos($errorMessage, 'database') !== false)) {
                 // Database doesn't exist, check if user can create it
                 try {
                     $connectionParamsWithoutDb = $dbConfig;
@@ -57,12 +58,14 @@ final class CheckEnvironmentCommand extends Command
                     $conn->executeStatement("CREATE DATABASE `{$dbConfig['dbname']}`");
                     $conn->executeStatement("DROP DATABASE `{$dbConfig['dbname']}`");
                     $io->warning("Database '{$dbConfig['dbname']}' does not exist, but user has create rights.");
-                } catch (\Exception $createException) {
+                } catch (Exception $createException) {
                     $io->error('Database connection failed: ' . $errorMessage . ' User does not have create rights: ' . $createException->getMessage());
+
                     return Command::FAILURE;
                 }
             } else {
                 $io->error('Database connection failed: ' . $errorMessage);
+
                 return Command::FAILURE;
             }
         }

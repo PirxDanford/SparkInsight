@@ -1,6 +1,6 @@
 <?php
 $title = 'Home';
-$user = $user ?? null; // Make user available in template
+$user ??= null; // Make user available in template
 ob_start();
 ?>
 <div class="hero-panel">
@@ -20,37 +20,37 @@ ob_start();
 
         <div class="card home-cta-card">
             <div class="card-header">
-                <h2><?= ($user ?? null) ? 'Continue Your Review Work' : 'Get Started' ?></h2>
+                <h2><?php echo ($user ?? null) ? 'Continue Your Review Work' : 'Get Started'; ?></h2>
                 <p>
-                    <?= ($user ?? null)
+                    <?php echo ($user ?? null)
                         ? 'Go straight to your dashboard and switch into reviewer view as needed.'
-                        : 'Sign in to access reviewer, author, and admin experiences.' ?>
+                        : 'Sign in to access reviewer, author, and admin experiences.'; ?>
                 </p>
             </div>
 
             <div class="action-group home-cta-actions">
-                <?php if ($user ?? null): ?>
+                <?php if ($user ?? null) { ?>
                     <a class="button" href="/dashboard">Open Dashboard</a>
-                <?php else: ?>
+                <?php } else { ?>
                     <a class="button" href="/login">Start with Login</a>
                     <a class="button secondary" href="/signup">Use Invitation Signup</a>
-                <?php endif; ?>
+                <?php } ?>
             </div>
         </div>
     </div>
 </div>
 
-<?php if (is_array($flash_message ?? null) && !empty($flash_message)): ?>
+<?php if (is_array($flash_message ?? null) && !empty($flash_message)) { ?>
 <div class="notification-box" id="flash-message">
     <div class="notification-content">
         <span class="notification-icon">
-            <?php if (($flash_message['type'] ?? 'info') === 'error'): ?>❌<?php elseif (($flash_message['type'] ?? 'info') === 'success'): ?>✅<?php else: ?>ℹ️<?php endif; ?>
+            <?php if (($flash_message['type'] ?? 'info') === 'error') { ?>❌<?php } elseif (($flash_message['type'] ?? 'info') === 'success') { ?>✅<?php } else { ?>ℹ️<?php } ?>
         </span>
-        <span class="notification-text"><?= htmlspecialchars($flash_message['message'] ?? '', ENT_QUOTES, 'UTF-8') ?></span>
+        <span class="notification-text"><?php echo htmlspecialchars($flash_message['message'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
         <button class="notification-close" onclick="dismissNotification('flash-message')">&times;</button>
     </div>
 </div>
-<?php endif; ?>
+<?php } ?>
 
 <script>
 function dismissNotification(id) {

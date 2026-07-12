@@ -1,6 +1,6 @@
 <?php
 $title = 'Review';
-$review_item = $review_item ?? [];
+$review_item ??= [];
 $reader = is_array($review_item['reader'] ?? null) ? $review_item['reader'] : [
     'available' => false,
     'html' => null,
@@ -19,37 +19,35 @@ $draftAnchorStartOffset = isset($review_draft['anchor_start_offset']) && $review
 $draftAnchorEndOffset = isset($review_draft['anchor_end_offset']) && $review_draft['anchor_end_offset'] !== null
     ? max(0, (int) $review_draft['anchor_end_offset'])
     : null;
-$draftAnchorContainerPath = trim((string) ($review_draft['anchor_container_path'] ?? ''));
+$draftAnchorContainerPath = mb_trim((string) ($review_draft['anchor_container_path'] ?? ''));
 $draftNoteId = 0;
 $viewMode = (string) ($view_mode ?? 'compact-hidden');
 $viewModeExplicit = !empty($view_mode_explicit);
 $revisionNumber = max(1, (int) ($review_item['revision_number'] ?? 1));
 $queueBackUrl = (string) ($queue_back_url ?? '/dashboard/review');
 $queueQueryString = (string) ($queue_query_string ?? '');
-$notes = array_values(array_filter(array_map(static function (array $review): array {
-    return [
-        'id' => (int) ($review['id'] ?? 0),
-        'reviewer' => (string) ($review['reviewer'] ?? 'Anonymous reviewer'),
-        'status_label' => (string) ($review['status_label'] ?? 'Open'),
-        'status_tone' => (string) ($review['status_tone'] ?? 'warning'),
-        'details' => trim((string) ($review['details'] ?? '')),
-        'selected_excerpt' => trim((string) ($review['selected_excerpt'] ?? '')),
-        'anchor_start_offset' => isset($review['anchor_start_offset']) && $review['anchor_start_offset'] !== null ? max(0, (int) $review['anchor_start_offset']) : null,
-        'anchor_end_offset' => isset($review['anchor_end_offset']) && $review['anchor_end_offset'] !== null ? max(0, (int) $review['anchor_end_offset']) : null,
-        'anchor_container_path' => trim((string) ($review['anchor_container_path'] ?? '')),
-        'requires_action' => (bool) ($review['requires_action'] ?? false),
-        'created_at' => (string) ($review['created_at'] ?? ''),
-        'resolved_at' => (string) ($review['resolved_at'] ?? ''),
-        'resolution_decision_label' => (string) ($review['resolution_decision_label'] ?? ''),
-        'resolution_actor_name' => (string) ($review['resolution_actor_name'] ?? ''),
-        'resolution_actor_role' => (string) ($review['resolution_actor_role'] ?? ''),
-        'resolution_recorded_at' => (string) ($review['resolution_recorded_at'] ?? ''),
-    ];
-}, is_array($review_item['reviews'] ?? null) ? $review_item['reviews'] : []), static fn (array $note): bool => $note['id'] > 0));
+$notes = array_values(array_filter(array_map(static fn (array $review): array => [
+    'id' => (int) ($review['id'] ?? 0),
+    'reviewer' => (string) ($review['reviewer'] ?? 'Anonymous reviewer'),
+    'status_label' => (string) ($review['status_label'] ?? 'Open'),
+    'status_tone' => (string) ($review['status_tone'] ?? 'warning'),
+    'details' => mb_trim((string) ($review['details'] ?? '')),
+    'selected_excerpt' => mb_trim((string) ($review['selected_excerpt'] ?? '')),
+    'anchor_start_offset' => isset($review['anchor_start_offset']) && $review['anchor_start_offset'] !== null ? max(0, (int) $review['anchor_start_offset']) : null,
+    'anchor_end_offset' => isset($review['anchor_end_offset']) && $review['anchor_end_offset'] !== null ? max(0, (int) $review['anchor_end_offset']) : null,
+    'anchor_container_path' => mb_trim((string) ($review['anchor_container_path'] ?? '')),
+    'requires_action' => (bool) ($review['requires_action'] ?? false),
+    'created_at' => (string) ($review['created_at'] ?? ''),
+    'resolved_at' => (string) ($review['resolved_at'] ?? ''),
+    'resolution_decision_label' => (string) ($review['resolution_decision_label'] ?? ''),
+    'resolution_actor_name' => (string) ($review['resolution_actor_name'] ?? ''),
+    'resolution_actor_role' => (string) ($review['resolution_actor_role'] ?? ''),
+    'resolution_recorded_at' => (string) ($review['resolution_recorded_at'] ?? ''),
+], is_array($review_item['reviews'] ?? null) ? $review_item['reviews'] : []), static fn (array $note): bool => $note['id'] > 0));
 $chapterNoteIds = array_values(array_map(static fn (array $note): int => (int) $note['id'], array_filter(
     $notes,
     static fn (array $note): bool => $note['selected_excerpt'] === ''
-        && ($note['anchor_start_offset'] === null || $note['anchor_end_offset'] === null)
+        && ($note['anchor_start_offset'] === null || $note['anchor_end_offset'] === null),
 )));
 $chapterNoteCount = count($chapterNoteIds);
 $chapterNoteIdList = implode(',', $chapterNoteIds);
@@ -57,14 +55,14 @@ $encodedNotes = json_encode($notes, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT
 ob_start();
 ?>
 <div class="hero-panel">
-    <?php if (!empty($flash_message) && is_array($flash_message)): ?>
-        <div class="notice <?= htmlspecialchars($flash_message['type'] ?? 'info', ENT_QUOTES, 'UTF-8') ?>">
-            <strong><?= htmlspecialchars(ucfirst((string) ($flash_message['type'] ?? 'Notice')), ENT_QUOTES, 'UTF-8') ?>:</strong>
-            <span><?= htmlspecialchars((string) ($flash_message['message'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+    <?php if (!empty($flash_message) && is_array($flash_message)) { ?>
+        <div class="notice <?php echo htmlspecialchars($flash_message['type'] ?? 'info', ENT_QUOTES, 'UTF-8'); ?>">
+            <strong><?php echo htmlspecialchars(ucfirst((string) ($flash_message['type'] ?? 'Notice')), ENT_QUOTES, 'UTF-8'); ?>:</strong>
+            <span><?php echo htmlspecialchars((string) ($flash_message['message'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span>
         </div>
-    <?php endif; ?>
+    <?php } ?>
 
-    <section class="immersive-reader-shell" data-view-mode="<?= htmlspecialchars($viewMode, ENT_QUOTES, 'UTF-8') ?>">
+    <section class="immersive-reader-shell" data-view-mode="<?php echo htmlspecialchars($viewMode, ENT_QUOTES, 'UTF-8'); ?>">
         <!-- Reader Toolbar -->
         <div class="reader-toolbar">
             <div class="reader-toolbar-left">
@@ -73,18 +71,18 @@ ob_start();
                     <span>Fullscreen Display</span>
                 </button>
                 <div class="reader-title-wrap">
-                    <h1><?= htmlspecialchars((string) $review_item['title'], ENT_QUOTES, 'UTF-8') ?></h1>
-                    <?php if ($chapterNoteCount > 0): ?>
+                    <h1><?php echo htmlspecialchars((string) $review_item['title'], ENT_QUOTES, 'UTF-8'); ?></h1>
+                    <?php if ($chapterNoteCount > 0) { ?>
                         <button
                             class="reader-title-note-anchor"
                             type="button"
                             data-note-anchor
-                            data-note-ids="<?= htmlspecialchars($chapterNoteIdList, ENT_QUOTES, 'UTF-8') ?>"
-                            aria-label="<?= htmlspecialchars((string) ($chapterNoteCount . ' chapter note' . ($chapterNoteCount === 1 ? '' : 's')), ENT_QUOTES, 'UTF-8') ?>"
+                            data-note-ids="<?php echo htmlspecialchars($chapterNoteIdList, ENT_QUOTES, 'UTF-8'); ?>"
+                            aria-label="<?php echo htmlspecialchars((string) ($chapterNoteCount . ' chapter note' . ($chapterNoteCount === 1 ? '' : 's')), ENT_QUOTES, 'UTF-8'); ?>"
                         >
-                            <span class="reader-title-note-badge"><?= $chapterNoteCount ?> note<?= $chapterNoteCount === 1 ? '' : 's' ?></span>
+                            <span class="reader-title-note-badge"><?php echo $chapterNoteCount; ?> note<?php echo $chapterNoteCount === 1 ? '' : 's'; ?></span>
                         </button>
-                    <?php endif; ?>
+                    <?php } ?>
                 </div>
             </div>
             <div class="reader-toolbar-right">
@@ -92,7 +90,7 @@ ob_start();
                     <button class="view-toggle" data-view="compact-hidden" title="Pure Content" aria-label="Pure Content">📖</button>
                     <button class="view-toggle" data-view="compact-visible" title="Content + Panel" aria-label="Content + Panel">📋</button>
                 </div>
-                <a href="<?= htmlspecialchars($queueBackUrl, ENT_QUOTES, 'UTF-8') ?>" class="button small secondary">← Back to queue</a>
+                <a href="<?php echo htmlspecialchars($queueBackUrl, ENT_QUOTES, 'UTF-8'); ?>" class="button small secondary">← Back to queue</a>
             </div>
         </div>
 
@@ -102,19 +100,19 @@ ob_start();
             <div class="reader-fullscreen-text">
                 <header class="reader-fullscreen-header">
                     <div class="reader-title-wrap reader-title-wrap-fullscreen">
-                        <h1><?= htmlspecialchars((string) $review_item['title'], ENT_QUOTES, 'UTF-8') ?></h1>
+                        <h1><?php echo htmlspecialchars((string) $review_item['title'], ENT_QUOTES, 'UTF-8'); ?></h1>
                     </div>
                 </header>
                 <article class="reader-text-content">
-                    <?php if (!empty($reader['available']) && !empty($reader['html'])): ?>
-                        <div class="reader-rendered-html"><?= $reader['html'] ?></div>
-                    <?php elseif (!empty($reader['available']) && !empty($reader['sections'])): ?>
-                        <?php foreach ($reader['sections'] as $section): ?>
-                            <p><?= nl2br(htmlspecialchars((string) ($section['text'] ?? ''), ENT_QUOTES, 'UTF-8')) ?></p>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <p class="empty-state"><?= htmlspecialchars((string) ($reader['notice'] ?? 'No content available.'), ENT_QUOTES, 'UTF-8') ?></p>
-                    <?php endif; ?>
+                    <?php if (!empty($reader['available']) && !empty($reader['html'])) { ?>
+                        <div class="reader-rendered-html"><?php echo $reader['html']; ?></div>
+                    <?php } elseif (!empty($reader['available']) && !empty($reader['sections'])) { ?>
+                        <?php foreach ($reader['sections'] as $section) { ?>
+                            <p><?php echo nl2br(htmlspecialchars((string) ($section['text'] ?? ''), ENT_QUOTES, 'UTF-8')); ?></p>
+                        <?php } ?>
+                    <?php } else { ?>
+                        <p class="empty-state"><?php echo htmlspecialchars((string) ($reader['notice'] ?? 'No content available.'), ENT_QUOTES, 'UTF-8'); ?></p>
+                    <?php } ?>
                 </article>
             </div>
         </div>
@@ -124,67 +122,67 @@ ob_start();
             <div class="reader-main-grid" data-grid-mode="normal">
                 <!-- Content Column -->
                 <article class="reader-content-col" data-reader-content>
-                    <?php if (!empty($reader['available']) && (!empty($reader['sections']) || !empty($reader['html']))): ?>
+                    <?php if (!empty($reader['available']) && (!empty($reader['sections']) || !empty($reader['html']))) { ?>
                         <div class="reader-flow-text">
-                            <?php if (!empty($reader['html'])): ?>
-                                <div class="reader-rendered-html"><?= $reader['html'] ?></div>
-                            <?php else: ?>
-                                <?php foreach ($reader['sections'] as $section): ?>
-                                    <p><?= nl2br(htmlspecialchars((string) ($section['text'] ?? ''), ENT_QUOTES, 'UTF-8')) ?></p>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
+                            <?php if (!empty($reader['html'])) { ?>
+                                <div class="reader-rendered-html"><?php echo $reader['html']; ?></div>
+                            <?php } else { ?>
+                                <?php foreach ($reader['sections'] as $section) { ?>
+                                    <p><?php echo nl2br(htmlspecialchars((string) ($section['text'] ?? ''), ENT_QUOTES, 'UTF-8')); ?></p>
+                                <?php } ?>
+                            <?php } ?>
                         </div>
 
-                        <?php if (!empty($reader['sections'])): ?>
+                        <?php if (!empty($reader['sections'])) { ?>
                         <div class="reader-sections-view">
-                            <?php foreach ($reader['sections'] as $index => $section): ?>
-                                <section class="reader-section" id="<?= htmlspecialchars((string) ($section['anchor'] ?? ('section-' . ($index + 1))), ENT_QUOTES, 'UTF-8') ?>">
+                            <?php foreach ($reader['sections'] as $index => $section) { ?>
+                                <section class="reader-section" id="<?php echo htmlspecialchars((string) ($section['anchor'] ?? ('section-' . ($index + 1))), ENT_QUOTES, 'UTF-8'); ?>">
                                     <header class="reader-section-header">
-                                        <span class="reader-section-number">§<?= (int) $index + 1 ?></span>
-                                        <?php if (!empty($section['type'])): ?>
-                                            <span class="status-pill status-neutral"><?= htmlspecialchars((string) $section['type'], ENT_QUOTES, 'UTF-8') ?></span>
-                                        <?php endif; ?>
+                                        <span class="reader-section-number">§<?php echo (int) $index + 1; ?></span>
+                                        <?php if (!empty($section['type'])) { ?>
+                                            <span class="status-pill status-neutral"><?php echo htmlspecialchars((string) $section['type'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                        <?php } ?>
                                     </header>
-                                    <p><?= nl2br(htmlspecialchars((string) ($section['text'] ?? ''), ENT_QUOTES, 'UTF-8')) ?></p>
+                                    <p><?php echo nl2br(htmlspecialchars((string) ($section['text'] ?? ''), ENT_QUOTES, 'UTF-8')); ?></p>
                                 </section>
-                            <?php endforeach; ?>
+                            <?php } ?>
                         </div>
 
-                        <?php endif; ?>
-                    <?php else: ?>
-                        <p class="empty-state"><?= htmlspecialchars((string) ($reader['notice'] ?? 'No content available.'), ENT_QUOTES, 'UTF-8') ?></p>
-                    <?php endif; ?>
+                        <?php } ?>
+                    <?php } else { ?>
+                        <p class="empty-state"><?php echo htmlspecialchars((string) ($reader['notice'] ?? 'No content available.'), ENT_QUOTES, 'UTF-8'); ?></p>
+                    <?php } ?>
                 </article>
 
                 <!-- Options Column -->
-                <aside class="reader-options-col" data-visible="<?= $viewMode === 'fullscreen' ? 'false' : ($viewMode === 'compact-hidden' ? 'false' : 'true') ?>">
+                <aside class="reader-options-col" data-visible="<?php echo $viewMode === 'fullscreen' ? 'false' : ($viewMode === 'compact-hidden' ? 'false' : 'true'); ?>">
                     <div class="reader-options-panel">
                         <!-- Item Metadata -->
                         <div class="option-group">
                             <h4>Item Details</h4>
                             <dl class="details-list">
                                 <dt>Status</dt>
-                                <dd><span class="status-pill status-<?= htmlspecialchars((string) $review_item['status_tone'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $review_item['status_label'], ENT_QUOTES, 'UTF-8') ?></span></dd>
+                                <dd><span class="status-pill status-<?php echo htmlspecialchars((string) $review_item['status_tone'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) $review_item['status_label'], ENT_QUOTES, 'UTF-8'); ?></span></dd>
                                 <dt>Author</dt>
-                                <dd><?= htmlspecialchars((string) $review_item['author_name'], ENT_QUOTES, 'UTF-8') ?></dd>
+                                <dd><?php echo htmlspecialchars((string) $review_item['author_name'], ENT_QUOTES, 'UTF-8'); ?></dd>
                                 <dt>Version</dt>
-                                <dd><?= $revisionNumber ?></dd>
+                                <dd><?php echo $revisionNumber; ?></dd>
                                 <dt>Length</dt>
-                                <dd><?= (int) ($reader['paragraph_count'] ?? 0) ?> sections · <?= (int) ($reader['word_count'] ?? 0) ?> words</dd>
+                                <dd><?php echo (int) ($reader['paragraph_count'] ?? 0); ?> sections · <?php echo (int) ($reader['word_count'] ?? 0); ?> words</dd>
                             </dl>
                         </div>
 
                         <!-- Review Form -->
                         <div class="option-group">
                             <h4>Leave a Note</h4>
-                            <form class="review-note-form" method="post" action="/dashboard/review/<?= (int) $review_item['id'] ?>">
-                                <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string) ($csrf_token ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-                                <input type="hidden" name="return_queue_query" value="<?= htmlspecialchars($queueQueryString, ENT_QUOTES, 'UTF-8') ?>">
-                                <input type="hidden" name="view" value="<?= htmlspecialchars($viewMode, ENT_QUOTES, 'UTF-8') ?>" data-reader-view-input>
-                                <input type="hidden" name="selected_excerpt" value="<?= htmlspecialchars($draftSelectedExcerpt, ENT_QUOTES, 'UTF-8') ?>" data-selected-excerpt-input>
-                                <input type="hidden" name="anchor_start_offset" value="<?= $draftAnchorStartOffset !== null ? (int) $draftAnchorStartOffset : '' ?>" data-anchor-start-offset-input>
-                                <input type="hidden" name="anchor_end_offset" value="<?= $draftAnchorEndOffset !== null ? (int) $draftAnchorEndOffset : '' ?>" data-anchor-end-offset-input>
-                                <input type="hidden" name="anchor_container_path" value="<?= htmlspecialchars($draftAnchorContainerPath, ENT_QUOTES, 'UTF-8') ?>" data-anchor-container-path-input>
+                            <form class="review-note-form" method="post" action="/dashboard/review/<?php echo (int) $review_item['id']; ?>">
+                                <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars((string) ($csrf_token ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
+                                <input type="hidden" name="return_queue_query" value="<?php echo htmlspecialchars($queueQueryString, ENT_QUOTES, 'UTF-8'); ?>">
+                                <input type="hidden" name="view" value="<?php echo htmlspecialchars($viewMode, ENT_QUOTES, 'UTF-8'); ?>" data-reader-view-input>
+                                <input type="hidden" name="selected_excerpt" value="<?php echo htmlspecialchars($draftSelectedExcerpt, ENT_QUOTES, 'UTF-8'); ?>" data-selected-excerpt-input>
+                                <input type="hidden" name="anchor_start_offset" value="<?php echo $draftAnchorStartOffset !== null ? (int) $draftAnchorStartOffset : ''; ?>" data-anchor-start-offset-input>
+                                <input type="hidden" name="anchor_end_offset" value="<?php echo $draftAnchorEndOffset !== null ? (int) $draftAnchorEndOffset : ''; ?>" data-anchor-end-offset-input>
+                                <input type="hidden" name="anchor_container_path" value="<?php echo htmlspecialchars($draftAnchorContainerPath, ENT_QUOTES, 'UTF-8'); ?>" data-anchor-container-path-input>
                                 <input type="hidden" name="note_id" value="0" data-note-id-input>
                                 <input type="hidden" name="note_action" value="save" data-note-action-input>
 
@@ -203,11 +201,11 @@ ob_start();
 
                                 <label>
                                     <span>Comment</span>
-                                    <textarea name="details" rows="5" placeholder="Your observations..."><?= htmlspecialchars($draftDetails, ENT_QUOTES, 'UTF-8') ?></textarea>
+                                    <textarea name="details" rows="5" placeholder="Your observations..."><?php echo htmlspecialchars($draftDetails, ENT_QUOTES, 'UTF-8'); ?></textarea>
                                 </label>
 
                                 <label class="checkbox-row">
-                                    <input type="checkbox" name="requires_action" value="1" <?= $draftRequiresAction ? 'checked' : '' ?>>
+                                    <input type="checkbox" name="requires_action" value="1" <?php echo $draftRequiresAction ? 'checked' : ''; ?>>
                                     <span>Requires Action</span>
                                 </label>
 
@@ -225,11 +223,11 @@ ob_start();
                         <div class="option-group">
                             <h4>Review History</h4>
                             <div class="review-history">
-                                <?php if (!empty($notes)): ?>
+                                <?php if (!empty($notes)) { ?>
                                     <p class="reader-history-hint">Notes are shown inline on the title or highlighted text. Hover or focus them to view details and edit.</p>
-                                <?php else: ?>
+                                <?php } else { ?>
                                     <p class="empty-state">No comments yet.</p>
-                                <?php endif; ?>
+                                <?php } ?>
                             </div>
                         </div>
                     </div>
@@ -271,10 +269,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const detailsTextarea = document.querySelector('textarea[name="details"]');
     const requiresActionCheckbox = document.querySelector('input[name="requires_action"]');
     const panelPreferenceKey = 'sparkinsight.reviewer.panel.mode';
-    const initialViewMode = <?= json_encode((string) $viewMode) ?>;
-    const isViewModeExplicit = <?= $viewModeExplicit ? 'true' : 'false' ?>;
+    const initialViewMode = <?php echo json_encode((string) $viewMode); ?>;
+    const isViewModeExplicit = <?php echo $viewModeExplicit ? 'true' : 'false'; ?>;
     const allowedModes = new Set(['fullscreen', 'compact-hidden', 'compact-visible']);
-    const noteRecords = Array.isArray(<?= $encodedNotes ?: '[]' ?>) ? <?= $encodedNotes ?: '[]' ?> : [];
+    const noteRecords = Array.isArray(<?php echo $encodedNotes ?: '[]'; ?>) ? <?php echo $encodedNotes ?: '[]'; ?> : [];
     const noteLookup = new Map(noteRecords.map((note) => [Number(note.id), note]).filter((entry) => Number.isInteger(entry[0]) && entry[0] > 0));
     let currentSelectionText = '';
     let currentSelectionAnchor = { start: null, end: null, path: '' };
@@ -338,7 +336,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (readerViewInput) {
             readerViewInput.value = mode;
         }
-        
+
         if (mode === 'fullscreen') {
             fullscreenView.hidden = false;
             compactView.hidden = true;
@@ -349,7 +347,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fullscreenView.hidden = true;
             compactView.hidden = false;
             toolbar.hidden = false;
-            
+
             if (mode === 'compact-hidden') {
                 mainGrid.setAttribute('data-panel-visible', 'false');
                 optionsCol.setAttribute('data-visible', 'false');
@@ -359,7 +357,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         mainGrid.setAttribute('data-grid-mode', 'normal');
-        
+
         viewToggles.forEach(btn => {
             const btnMode = btn.getAttribute('data-view');
             btn.classList.toggle('active', btnMode === mode);

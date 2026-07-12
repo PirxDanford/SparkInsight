@@ -4,17 +4,21 @@ declare(strict_types=1);
 
 namespace SparkInsight\Controller;
 
+use DateTimeImmutable;
 use Doctrine\DBAL\Connection;
+use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Views\PhpRenderer;
 use SparkInsight\Service\AuthorPdfExportService;
-use SparkInsight\Support\ReaderPresentationBuilder;
 use SparkInsight\Service\UserSession;
+use SparkInsight\Support\ReaderPresentationBuilder;
+use Throwable;
 
 final class DashboardController
 {
     private const REVIEW_STATUSES = ['open', 'resolved', 'needs_author_review'];
+
     private const REVIEW_RESOLUTION_DECISIONS = ['resolved', 'ignored', 'still_relevant'];
 
     public function __construct(
@@ -27,7 +31,7 @@ final class DashboardController
 
     public function __invoke(Request $request, Response $response): Response
     {
-        if (! $this->session->isLoggedIn()) {
+        if (!$this->session->isLoggedIn()) {
             return $response->withHeader('Location', '/login')->withStatus(302);
         }
 
@@ -47,7 +51,7 @@ final class DashboardController
 
     public function review(Request $request, Response $response): Response
     {
-        if (! $this->session->isLoggedIn()) {
+        if (!$this->session->isLoggedIn()) {
             return $response->withHeader('Location', '/login')->withStatus(302);
         }
 
@@ -71,7 +75,7 @@ final class DashboardController
 
     public function reviewItem(Request $request, Response $response, array $args): Response
     {
-        if (! $this->session->isLoggedIn()) {
+        if (!$this->session->isLoggedIn()) {
             return $response->withHeader('Location', '/login')->withStatus(302);
         }
 
@@ -102,7 +106,7 @@ final class DashboardController
 
         $viewModeExplicit = array_key_exists('view', $queryParams);
         $viewMode = $this->normalizeReaderViewMode((string) ($queryParams['view'] ?? 'compact-hidden'));
-        
+
         return $this->renderer->render($response, 'reader-item.php', [
             'title' => 'Review',
             'dashboard_mode' => 'review',
@@ -118,7 +122,7 @@ final class DashboardController
 
     public function submitReview(Request $request, Response $response, array $args): Response
     {
-        if (! $this->session->isLoggedIn()) {
+        if (!$this->session->isLoggedIn()) {
             return $response->withHeader('Location', '/login')->withStatus(302);
         }
 
@@ -165,8 +169,8 @@ final class DashboardController
                     'message' => 'Please refresh the item and submit again.',
                 ],
                 'review_draft' => [
-                    'details' => is_array($data) ? trim((string) ($data['details'] ?? '')) : '',
-                    'selected_excerpt' => is_array($data) ? trim((string) ($data['selected_excerpt'] ?? '')) : '',
+                    'details' => is_array($data) ? mb_trim((string) ($data['details'] ?? '')) : '',
+                    'selected_excerpt' => is_array($data) ? mb_trim((string) ($data['selected_excerpt'] ?? '')) : '',
                     'anchor_start_offset' => is_array($data) ? $this->normalizeAnchorOffset($data['anchor_start_offset'] ?? null) : null,
                     'anchor_end_offset' => is_array($data) ? $this->normalizeAnchorOffset($data['anchor_end_offset'] ?? null) : null,
                     'anchor_container_path' => is_array($data) ? $this->normalizeAnchorContainerPath($data['anchor_container_path'] ?? null) : null,
@@ -175,8 +179,8 @@ final class DashboardController
             ]);
         }
 
-        $details = trim((string) ($data['details'] ?? ''));
-        $selectedExcerpt = is_array($data) ? trim((string) ($data['selected_excerpt'] ?? '')) : '';
+        $details = mb_trim((string) ($data['details'] ?? ''));
+        $selectedExcerpt = is_array($data) ? mb_trim((string) ($data['selected_excerpt'] ?? '')) : '';
         $anchorStartOffset = $this->normalizeAnchorOffset($data['anchor_start_offset'] ?? null);
         $anchorEndOffset = $this->normalizeAnchorOffset($data['anchor_end_offset'] ?? null);
         if ($anchorStartOffset === null || $anchorEndOffset === null || $anchorEndOffset < $anchorStartOffset) {
@@ -188,19 +192,19 @@ final class DashboardController
             $anchorContainerPath = null;
         }
         $noteId = is_array($data) ? max(0, (int) ($data['note_id'] ?? 0)) : 0;
-        $noteAction = is_array($data) ? strtolower(trim((string) ($data['note_action'] ?? 'save'))) : 'save';
+        $noteAction = is_array($data) ? mb_strtolower(mb_trim((string) ($data['note_action'] ?? 'save'))) : 'save';
         if ($noteAction !== 'delete') {
             $noteAction = 'save';
         }
         $requiresAction = $this->normalizeRequiresAction($data);
         $status = $requiresAction ? 'needs_author_review' : 'open';
-        $now = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
+        $now = (new DateTimeImmutable())->format('Y-m-d H:i:s');
 
         $existingNoteId = 0;
         if ($noteId > 0) {
             $existingNoteId = (int) $this->connection->fetchOne(
                 'SELECT id FROM reviews WHERE id = ? AND content_version_id = ? AND reviewer_id = ?',
-                [$noteId, $contentVersionId, (int) ($user['id'] ?? 0)]
+                [$noteId, $contentVersionId, (int) ($user['id'] ?? 0)],
             );
         }
 
@@ -212,7 +216,7 @@ final class DashboardController
                         $existingNoteId,
                         $contentVersionId,
                         (int) ($user['id'] ?? 0),
-                    ]
+                    ],
                 );
                 $this->session->setFlash('success', 'Review note deleted.');
 
@@ -238,7 +242,7 @@ final class DashboardController
                     $existingNoteId,
                     $contentVersionId,
                     (int) ($user['id'] ?? 0),
-                ]
+                ],
             );
             $this->session->setFlash('success', 'Review note updated.');
 
@@ -270,7 +274,7 @@ final class DashboardController
                 null,
                 null,
                 null,
-            ]
+            ],
         );
 
         $this->session->setFlash('success', 'Review update saved.');
@@ -280,7 +284,7 @@ final class DashboardController
 
     public function author(Request $request, Response $response): Response
     {
-        if (! $this->session->isLoggedIn()) {
+        if (!$this->session->isLoggedIn()) {
             return $response->withHeader('Location', '/login')->withStatus(302);
         }
 
@@ -308,7 +312,7 @@ final class DashboardController
 
     public function authorItem(Request $request, Response $response, array $args): Response
     {
-        if (! $this->session->isLoggedIn()) {
+        if (!$this->session->isLoggedIn()) {
             return $response->withHeader('Location', '/login')->withStatus(302);
         }
 
@@ -355,7 +359,7 @@ final class DashboardController
 
     public function resolveAuthorReview(Request $request, Response $response, array $args): Response
     {
-        if (! $this->session->isLoggedIn()) {
+        if (!$this->session->isLoggedIn()) {
             return $response->withHeader('Location', '/login')->withStatus(302);
         }
 
@@ -399,17 +403,17 @@ final class DashboardController
             return $response->withHeader('Location', '/dashboard/author')->withStatus(302);
         }
 
-        $action = is_array($data) ? strtolower(trim((string) ($data['resolution_action'] ?? 'resolve'))) : 'resolve';
+        $action = is_array($data) ? mb_strtolower(mb_trim((string) ($data['resolution_action'] ?? 'resolve'))) : 'resolve';
         $resolutionDecision = $this->normalizeReviewResolutionDecision($action);
         $targetStatus = in_array($resolutionDecision, ['resolved', 'ignored'], true) ? 'resolved' : 'needs_author_review';
-        $now = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
+        $now = (new DateTimeImmutable())->format('Y-m-d H:i:s');
 
         try {
             $existing = $this->connection->fetchAssociative(
                 'SELECT r.id, r.status, r.content_version_id, r.anchor_remap_state, r.anchor_remap_reason, r.anchor_remapped_from_content_version_id FROM reviews r INNER JOIN content_versions cv ON cv.id = r.content_version_id WHERE r.id = ? AND r.content_version_id = ? AND cv.author_id = ?',
-                [$reviewId, $contentVersionId, $authorId]
+                [$reviewId, $contentVersionId, $authorId],
             );
-        } catch (\Throwable) {
+        } catch (Throwable) {
             $existing = false;
         }
 
@@ -424,7 +428,7 @@ final class DashboardController
         $parentContentVersionId = is_array($data) ? max(0, (int) ($data['parent_content_version_id'] ?? 0)) : 0;
         $resolvedContentVersionId = $contentVersionId;
         $sourceContentVersionId = (int) ($existing['content_version_id'] ?? $contentVersionId);
-        $previousStatus = trim((string) ($existing['status'] ?? ''));
+        $previousStatus = mb_trim((string) ($existing['status'] ?? ''));
 
         if ($requiresParentSelection) {
             if ($parentContentVersionId <= 0) {
@@ -436,9 +440,9 @@ final class DashboardController
             try {
                 $parentExists = (int) $this->connection->fetchOne(
                     'SELECT id FROM content_versions WHERE id = ? AND author_id = ?',
-                    [$parentContentVersionId, $authorId]
+                    [$parentContentVersionId, $authorId],
                 );
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 $parentExists = 0;
             }
 
@@ -466,13 +470,13 @@ final class DashboardController
                     $now,
                     $reviewId,
                     $contentVersionId,
-                ]
+                ],
             );
 
             if ($resolvedContentVersionId !== $contentVersionId) {
                 $this->connection->executeStatement(
                     'UPDATE reviews SET content_version_id = ? WHERE id = ? AND content_version_id = ?',
-                    [$resolvedContentVersionId, $reviewId, $contentVersionId]
+                    [$resolvedContentVersionId, $reviewId, $contentVersionId],
                 );
             }
 
@@ -485,11 +489,11 @@ final class DashboardController
                 resolutionDecision: $resolutionDecision,
                 actorId: $authorId,
                 actorRole: 'author',
-                recordedAt: $now
+                recordedAt: $now,
             );
 
             $this->connection->commit();
-        } catch (\Throwable) {
+        } catch (Throwable) {
             if ($this->connection->isTransactionActive()) {
                 $this->connection->rollBack();
             }
@@ -510,7 +514,7 @@ final class DashboardController
                 'ignored' => 'Review note marked as ignored.',
                 'still_relevant' => 'Review note marked as still relevant.',
                 default => 'Review note marked as resolved.',
-            }
+            },
         );
 
         return $response->withHeader('Location', $itemUrl)->withStatus(302);
@@ -518,7 +522,7 @@ final class DashboardController
 
     public function exportAuthorPdf(Request $request, Response $response): Response
     {
-        if (! $this->session->isLoggedIn()) {
+        if (!$this->session->isLoggedIn()) {
             return $response->withHeader('Location', '/login')->withStatus(302);
         }
 
@@ -551,8 +555,8 @@ final class DashboardController
             return $response->withHeader('Location', '/dashboard/author')->withStatus(302);
         }
 
-        $password = trim((string) ($data['export_password'] ?? ''));
-        if ($password !== '' && strlen($password) < 12) {
+        $password = mb_trim((string) ($data['export_password'] ?? ''));
+        if ($password !== '' && mb_strlen($password) < 12) {
             $this->session->setFlash('error', 'Password-protected export requires a password with at least 12 characters.');
 
             return $response->withHeader('Location', '/dashboard/author')->withStatus(302);
@@ -574,12 +578,12 @@ final class DashboardController
 
         try {
             $rawPdf = $pdfExportService->generate($items, 'standard', $password !== '' ? $password : null);
-        } catch (\InvalidArgumentException $exception) {
+        } catch (InvalidArgumentException $exception) {
             $this->session->setFlash('error', $exception->getMessage());
 
             return $response->withHeader('Location', '/dashboard/author')->withStatus(302);
-        } catch (\Throwable $exception) {
-            $message = trim($exception->getMessage());
+        } catch (Throwable $exception) {
+            $message = mb_trim($exception->getMessage());
             $this->session->setFlash('error', 'PDF export failed: ' . ($message !== '' ? $message : 'unexpected error'));
 
             return $response->withHeader('Location', '/dashboard/author')->withStatus(302);
@@ -594,13 +598,13 @@ final class DashboardController
             profile: 'standard',
             passwordProtected: $password !== '',
             ipAddress: $this->extractClientIp($request),
-            userAgent: trim((string) ($request->getHeaderLine('User-Agent') ?: '')),
+            userAgent: mb_trim((string) ($request->getHeaderLine('User-Agent') ?: '')),
         );
 
         return $response
             ->withHeader('Content-Type', 'application/pdf')
             ->withHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
-            ->withHeader('Content-Length', (string) strlen($rawPdf))
+            ->withHeader('Content-Length', (string) mb_strlen($rawPdf))
             ->withHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
             ->withHeader('Pragma', 'no-cache')
             ->withHeader('X-Content-Type-Options', 'nosniff')
@@ -696,7 +700,7 @@ final class DashboardController
             $needsAuthorReply = (int) $this->connection
                 ->executeQuery("SELECT COUNT(*) FROM reviews r INNER JOIN review_assignments ra ON ra.content_version_id = r.content_version_id WHERE ra.reviewer_id = ? AND r.status = 'needs_author_review'", [$reviewerId])
                 ->fetchOne();
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return [
                 ['label' => 'Assigned Reviews', 'value' => '0', 'tone' => 'neutral'],
                 ['label' => 'Open Review Threads', 'value' => '0', 'tone' => 'warning'],
@@ -749,9 +753,9 @@ final class DashboardController
                     GROUP BY cv.id, cv.title, cv.book_title, cv.version_label, cv.source, cv.metadata, cv.imported_at, cv.status, u.name, ra.priority, ra.due_at
                 ORDER BY (ra.due_at IS NULL) ASC, ra.due_at ASC, cv.imported_at DESC, cv.id ASC
                 LIMIT 500",
-                [$reviewerId]
+                [$reviewerId],
             )->fetchAllAssociative();
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return [
                 'items' => [],
                 'pagination' => $this->buildEmptyQueuePagination($filters),
@@ -772,7 +776,7 @@ final class DashboardController
             $scrivenerMeta = $this->extractScrivenerQueueMetadata($row['metadata'] ?? null);
             $listPath = (string) ($scrivenerMeta['list_path'] ?? '');
             $orderPath = (string) ($scrivenerMeta['order_path'] ?? '');
-            $source = trim((string) ($row['source'] ?? ''));
+            $source = mb_trim((string) ($row['source'] ?? ''));
             $kind = (string) ($scrivenerMeta['kind'] ?? 'text');
             $isDirectory = $kind === 'directory';
             $resolvedSource = $source !== '' ? $this->resolveReadableSourcePath($source) : null;
@@ -783,7 +787,7 @@ final class DashboardController
                 'id' => (int) $row['id'],
                 'title' => (string) $row['title'],
                 'display_title' => $displayTitle,
-                'book_title' => trim((string) ($row['book_title'] ?? '')),
+                'book_title' => mb_trim((string) ($row['book_title'] ?? '')),
                 'source' => (string) ($row['source'] ?? ''),
                 'author' => (string) ($row['author_name'] ?? 'Unknown author'),
                 'status' => $status,
@@ -833,27 +837,27 @@ final class DashboardController
 
     private function normalizeReviewerQueueFilters(array $queryParams): array
     {
-        $priority = strtolower(trim((string) ($queryParams['priority'] ?? 'all')));
+        $priority = mb_strtolower(mb_trim((string) ($queryParams['priority'] ?? 'all')));
         $allowedPriorities = ['all', 'lowest', 'low', 'normal', 'high', 'highest'];
         if (!in_array($priority, $allowedPriorities, true)) {
             $priority = 'all';
         }
 
-        $state = strtolower(trim((string) ($queryParams['state'] ?? 'all')));
+        $state = mb_strtolower(mb_trim((string) ($queryParams['state'] ?? 'all')));
         $allowedStates = ['all', 'in_review', 'needs_author_reply', 'resolved', 'ready_for_review', 'placeholder'];
         if (!in_array($state, $allowedStates, true)) {
             $state = 'all';
         }
 
-        $sort = strtolower(trim((string) ($queryParams['sort'] ?? 'binder_asc')));
+        $sort = mb_strtolower(mb_trim((string) ($queryParams['sort'] ?? 'binder_asc')));
         $allowedSorts = ['binder_asc', 'due_asc', 'due_desc', 'chapter_asc', 'chapter_desc', 'imported_desc'];
         if (!in_array($sort, $allowedSorts, true)) {
             $sort = 'binder_asc';
         }
 
-        $search = trim((string) ($queryParams['q'] ?? ''));
-        if (strlen($search) > 120) {
-            $search = substr($search, 0, 120);
+        $search = mb_trim((string) ($queryParams['q'] ?? ''));
+        if (mb_strlen($search) > 120) {
+            $search = mb_substr($search, 0, 120);
         }
 
         $perPage = (int) ($queryParams['per_page'] ?? 10);
@@ -893,7 +897,7 @@ final class DashboardController
 
     private function sanitizeReviewerQueueQueryString(string $queryString): string
     {
-        $queryString = trim($queryString);
+        $queryString = mb_trim($queryString);
         if ($queryString === '') {
             return '';
         }
@@ -922,7 +926,7 @@ final class DashboardController
 
     private function applyReviewerQueueFilters(array $queue, array $filters): array
     {
-        $search = strtolower(trim((string) ($filters['q'] ?? '')));
+        $search = mb_strtolower(mb_trim((string) ($filters['q'] ?? '')));
         $priority = (string) ($filters['priority'] ?? 'all');
         $state = (string) ($filters['state'] ?? 'all');
 
@@ -939,13 +943,13 @@ final class DashboardController
                 return true;
             }
 
-            $haystack = strtolower(
+            $haystack = mb_strtolower(
                 implode(' ', [
                     (string) ($item['title'] ?? ''),
                     (string) ($item['book_title'] ?? ''),
                     (string) ($item['author'] ?? ''),
                     (string) ($item['source'] ?? ''),
-                ])
+                ]),
             );
 
             return str_contains($haystack, $search);
@@ -958,8 +962,8 @@ final class DashboardController
 
         usort($sorted, function (array $a, array $b) use ($sort): int {
             if ($sort === 'binder_asc') {
-                $leftOrder = trim((string) ($a['order_path'] ?? ''));
-                $rightOrder = trim((string) ($b['order_path'] ?? ''));
+                $leftOrder = mb_trim((string) ($a['order_path'] ?? ''));
+                $rightOrder = mb_trim((string) ($b['order_path'] ?? ''));
 
                 if ($leftOrder !== '' && $rightOrder !== '' && $leftOrder !== $rightOrder) {
                     return strnatcasecmp($leftOrder, $rightOrder);
@@ -979,8 +983,8 @@ final class DashboardController
                     return $leftIsDirectory ? -1 : 1;
                 }
 
-                $leftPath = trim((string) ($a['list_path'] ?? ''));
-                $rightPath = trim((string) ($b['list_path'] ?? ''));
+                $leftPath = mb_trim((string) ($a['list_path'] ?? ''));
+                $rightPath = mb_trim((string) ($b['list_path'] ?? ''));
                 if ($leftPath !== '' && $rightPath !== '' && $leftPath !== $rightPath) {
                     return strnatcasecmp($leftPath, $rightPath);
                 }
@@ -989,8 +993,8 @@ final class DashboardController
             }
 
             if ($sort === 'chapter_asc' || $sort === 'chapter_desc') {
-                $left = trim((string) (($a['display_title'] ?? '') !== '' ? $a['display_title'] : ($a['title'] ?? '')));
-                $right = trim((string) (($b['display_title'] ?? '') !== '' ? $b['display_title'] : ($b['title'] ?? '')));
+                $left = mb_trim((string) (($a['display_title'] ?? '') !== '' ? $a['display_title'] : ($a['title'] ?? '')));
+                $right = mb_trim((string) (($b['display_title'] ?? '') !== '' ? $b['display_title'] : ($b['title'] ?? '')));
                 $compare = strnatcasecmp($left, $right);
                 if ($compare === 0) {
                     $compare = ((int) ($a['id'] ?? 0)) <=> ((int) ($b['id'] ?? 0));
@@ -1035,7 +1039,7 @@ final class DashboardController
 
     private function safeTimestamp(string $value): ?int
     {
-        if ($value === '' || strtolower($value) === 'no due date') {
+        if ($value === '' || mb_strtolower($value) === 'no due date') {
             return null;
         }
 
@@ -1062,16 +1066,17 @@ final class DashboardController
     {
         if (is_array($rawMetadata)) {
             $scrivener = $rawMetadata['scrivener'] ?? null;
+
             return is_array($scrivener) ? $scrivener : [];
         }
 
-        if (!is_string($rawMetadata) || trim($rawMetadata) === '') {
+        if (!is_string($rawMetadata) || mb_trim($rawMetadata) === '') {
             return [];
         }
 
         try {
             $decoded = json_decode($rawMetadata, true, 512, JSON_THROW_ON_ERROR);
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return [];
         }
 
@@ -1080,6 +1085,7 @@ final class DashboardController
         }
 
         $scrivener = $decoded['scrivener'] ?? null;
+
         return is_array($scrivener) ? $scrivener : [];
     }
 
@@ -1097,15 +1103,15 @@ final class DashboardController
                 continue;
             }
 
-            $listPath = trim((string) ($item['list_path'] ?? ''));
+            $listPath = mb_trim((string) ($item['list_path'] ?? ''));
             if ($listPath !== '') {
                 $seenDirectories[$listPath] = true;
             }
         }
 
         foreach ($queue as $item) {
-            $listPath = trim((string) ($item['list_path'] ?? ''));
-            $orderPath = trim((string) ($item['order_path'] ?? ''));
+            $listPath = mb_trim((string) ($item['list_path'] ?? ''));
+            $orderPath = mb_trim((string) ($item['order_path'] ?? ''));
             if ($listPath !== '') {
                 $parts = array_values(array_filter(explode('/', $listPath), static fn (string $part): bool => $part !== ''));
                 $orderParts = $orderPath !== '' ? explode('.', $orderPath) : [];
@@ -1155,7 +1161,7 @@ final class DashboardController
         $directoryPaths = [];
         foreach ($structured as $item) {
             if (!empty($item['is_directory'])) {
-                $listPath = trim((string) ($item['list_path'] ?? ''));
+                $listPath = mb_trim((string) ($item['list_path'] ?? ''));
                 if ($listPath !== '') {
                     $directoryPaths[] = $listPath;
                 }
@@ -1167,7 +1173,7 @@ final class DashboardController
                 continue;
             }
 
-            $listPath = trim((string) ($item['list_path'] ?? ''));
+            $listPath = mb_trim((string) ($item['list_path'] ?? ''));
             $hasChildren = false;
             if ($listPath !== '') {
                 $prefix = $listPath . '/';
@@ -1180,7 +1186,7 @@ final class DashboardController
 
                 if (!$hasChildren) {
                     foreach ($structured as $candidate) {
-                        $candidatePath = trim((string) ($candidate['list_path'] ?? ''));
+                        $candidatePath = mb_trim((string) ($candidate['list_path'] ?? ''));
                         if ($candidatePath !== $listPath && str_starts_with($candidatePath, $prefix)) {
                             $hasChildren = true;
                             break;
@@ -1194,7 +1200,7 @@ final class DashboardController
 
         $directoryChildStats = [];
         foreach ($structured as $item) {
-            $listPath = trim((string) ($item['list_path'] ?? ''));
+            $listPath = mb_trim((string) ($item['list_path'] ?? ''));
             if ($listPath === '') {
                 continue;
             }
@@ -1225,7 +1231,7 @@ final class DashboardController
         }
 
         foreach ($structured as $index => $item) {
-            $listPath = trim((string) ($item['list_path'] ?? ''));
+            $listPath = mb_trim((string) ($item['list_path'] ?? ''));
             if ($listPath !== '') {
                 $normalizedPath = str_replace('\\', '/', $listPath);
                 $parts = array_values(array_filter(explode('/', $normalizedPath), static fn (string $part): bool => $part !== ''));
@@ -1236,7 +1242,7 @@ final class DashboardController
             }
 
             if (!empty($item['is_directory'])) {
-                $pathKey = trim((string) ($item['list_path'] ?? ''));
+                $pathKey = mb_trim((string) ($item['list_path'] ?? ''));
                 $stats = $directoryChildStats[$pathKey] ?? [
                     'child_item_count' => 0,
                     'child_folder_count' => 0,
@@ -1282,9 +1288,9 @@ final class DashboardController
                 GROUP BY cv.id, cv.title, cv.book_title, cv.metadata, cv.status, cv.imported_at, ra.priority, ra.due_at
                 ORDER BY cv.status ASC, ra.due_at ASC, cv.imported_at DESC
                 LIMIT 200",
-                [$reviewerId]
+                [$reviewerId],
             )->fetchAllAssociative();
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return [];
         }
 
@@ -1319,7 +1325,7 @@ final class DashboardController
                 'id' => (int) ($row['id'] ?? 0),
                 'title' => (string) ($row['title'] ?? 'Untitled'),
                 'display_title' => $displayTitle,
-                'book_title' => trim((string) ($row['book_title'] ?? '')),
+                'book_title' => mb_trim((string) ($row['book_title'] ?? '')),
                 'content_status' => $statusKey,
                 'status' => $isDirectory ? 'Structure' : $reviewState,
                 'status_tone' => $isDirectory ? 'neutral' : $reviewStateTone,
@@ -1367,7 +1373,7 @@ final class DashboardController
         if ($first === null) {
             $first = $queue[0];
         }
-        $bookTitle = trim((string) ($first['book_title'] ?? ''));
+        $bookTitle = mb_trim((string) ($first['book_title'] ?? ''));
 
         return [
             'author' => (string) ($first['author'] ?? 'Unknown author'),
@@ -1417,7 +1423,7 @@ final class DashboardController
                 LEFT JOIN reviews r ON r.content_version_id = cv.id
                 WHERE cv.status = 'ready' AND cv.id = ?
                     GROUP BY cv.id, cv.title, cv.book_title, cv.version_label, cv.source, cv.content_rtf, cv.content_text, cv.imported_at, cv.status, u.name, ra.priority, ra.due_at",
-                [$reviewerId, $contentVersionId]
+                [$reviewerId, $contentVersionId],
             )->fetchAssociative();
 
             if (!is_array($item) || $item === []) {
@@ -1425,7 +1431,7 @@ final class DashboardController
             }
 
             $history = $this->fetchReviewHistory($contentVersionId);
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return null;
         }
 
@@ -1439,7 +1445,7 @@ final class DashboardController
             $openCount,
             $resolvedCount,
             $needsAuthorReplyCount,
-            $reviewCount
+            $reviewCount,
         );
 
         $reviews = array_map(static function (array $row): array {
@@ -1454,19 +1460,19 @@ final class DashboardController
                 'status_label' => self::labelForReviewStatus($status),
                 'status_tone' => self::toneForReviewStatus($status),
                 'requires_action' => $status === 'needs_author_review',
-                'details' => trim((string) ($row['details'] ?? '')),
-                'selected_excerpt' => trim((string) ($row['selected_excerpt'] ?? '')),
+                'details' => mb_trim((string) ($row['details'] ?? '')),
+                'selected_excerpt' => mb_trim((string) ($row['selected_excerpt'] ?? '')),
                 'anchor_start_offset' => array_key_exists('anchor_start_offset', $row) && $row['anchor_start_offset'] !== null ? max(0, (int) $row['anchor_start_offset']) : null,
                 'anchor_end_offset' => array_key_exists('anchor_end_offset', $row) && $row['anchor_end_offset'] !== null ? max(0, (int) $row['anchor_end_offset']) : null,
-                'anchor_container_path' => array_key_exists('anchor_container_path', $row) && $row['anchor_container_path'] !== null ? trim((string) $row['anchor_container_path']) : null,
+                'anchor_container_path' => array_key_exists('anchor_container_path', $row) && $row['anchor_container_path'] !== null ? mb_trim((string) $row['anchor_container_path']) : null,
                 'created_at' => (string) ($row['created_at'] ?? ''),
                 'updated_at' => (string) ($row['updated_at'] ?? ''),
                 'resolved_at' => (string) ($row['resolved_at'] ?? ''),
                 'resolution_decision' => self::normalizeResolutionDecisionValue($row['resolution_decision'] ?? null),
                 'resolution_decision_label' => self::labelForResolutionDecision(self::normalizeResolutionDecisionValue($row['resolution_decision'] ?? null)),
                 'resolution_actor_id' => array_key_exists('resolution_actor_id', $row) && $row['resolution_actor_id'] !== null ? (int) $row['resolution_actor_id'] : null,
-                'resolution_actor_role' => trim((string) ($row['resolution_actor_role'] ?? '')),
-                'resolution_actor_name' => trim((string) ($row['resolution_actor_name'] ?? '')),
+                'resolution_actor_role' => mb_trim((string) ($row['resolution_actor_role'] ?? '')),
+                'resolution_actor_name' => mb_trim((string) ($row['resolution_actor_name'] ?? '')),
                 'resolution_recorded_at' => (string) ($row['resolution_recorded_at'] ?? ''),
             ];
         }, $history);
@@ -1474,7 +1480,7 @@ final class DashboardController
         return [
             'id' => (int) $item['id'],
             'title' => (string) $item['title'],
-            'book_title' => trim((string) ($item['book_title'] ?? '')),
+            'book_title' => mb_trim((string) ($item['book_title'] ?? '')),
             'version_label' => (string) $item['version_label'],
             'revision_number' => max(1, (int) ($item['revision_number'] ?? 1)),
             'source' => (string) ($item['source'] ?? ''),
@@ -1510,7 +1516,7 @@ final class DashboardController
     {
         try {
             return $this->connection->executeQuery(
-                "SELECT
+                'SELECT
                     r.id,
                     r.reviewer_id,
                     r.title,
@@ -1543,12 +1549,12 @@ final class DashboardController
                 LEFT JOIN content_versions source_version ON source_version.id = r.anchor_remapped_from_content_version_id
                 LEFT JOIN reviews source_review ON source_review.id = r.anchor_remapped_from_review_id
                 WHERE r.content_version_id = ?
-                ORDER BY r.created_at DESC, r.id DESC",
-                [$contentVersionId]
+                ORDER BY r.created_at DESC, r.id DESC',
+                [$contentVersionId],
             )->fetchAllAssociative();
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return $this->connection->executeQuery(
-                "SELECT
+                'SELECT
                     r.id,
                     r.reviewer_id,
                     r.title,
@@ -1579,23 +1585,23 @@ final class DashboardController
                 LEFT JOIN users u ON u.id = r.reviewer_id
                 LEFT JOIN users resolver ON resolver.id = r.resolution_actor_id
                 WHERE r.content_version_id = ?
-                ORDER BY r.created_at DESC, r.id DESC",
-                [$contentVersionId]
+                ORDER BY r.created_at DESC, r.id DESC',
+                [$contentVersionId],
             )->fetchAllAssociative();
         }
     }
 
     private function normalizeReaderViewMode(string $mode): string
     {
-        $mode = trim($mode);
+        $mode = mb_trim($mode);
 
         return in_array($mode, ['fullscreen', 'compact-hidden', 'compact-visible'], true) ? $mode : 'compact-hidden';
     }
 
     private function resolveReadableSourcePath(string $source): ?string
     {
-        $normalized = trim(str_replace('\\', '/', $source));
-        $normalized = ltrim($normalized, '/');
+        $normalized = mb_trim(str_replace('\\', '/', $source));
+        $normalized = mb_ltrim($normalized, '/');
 
         if ($normalized === '' || str_contains($normalized, '..')) {
             return null;
@@ -1701,7 +1707,7 @@ final class DashboardController
 
     private static function normalizeResolutionDecisionValue(mixed $decision): ?string
     {
-        $value = strtolower(trim((string) $decision));
+        $value = mb_strtolower(mb_trim((string) $decision));
 
         return in_array($value, self::REVIEW_RESOLUTION_DECISIONS, true) ? $value : null;
     }
@@ -1729,7 +1735,7 @@ final class DashboardController
                 $actorId,
                 $actorRole,
                 $recordedAt,
-            ]
+            ],
         );
     }
 
@@ -1741,7 +1747,7 @@ final class DashboardController
                 return $value;
             }
 
-            return !in_array(strtolower(trim((string) $value)), ['0', 'false', 'off', 'no', ''], true);
+            return !in_array(mb_strtolower(mb_trim((string) $value)), ['0', 'false', 'off', 'no', ''], true);
         }
 
         if (array_key_exists('status', $data)) {
@@ -1757,7 +1763,7 @@ final class DashboardController
             return null;
         }
 
-        $raw = trim((string) $value);
+        $raw = mb_trim((string) $value);
         if ($raw === '' || !preg_match('/^\d+$/', $raw)) {
             return null;
         }
@@ -1771,13 +1777,13 @@ final class DashboardController
             return null;
         }
 
-        $path = trim((string) $value);
+        $path = mb_trim((string) $value);
         if ($path === '') {
             return null;
         }
 
-        if (strlen($path) > 255) {
-            $path = substr($path, 0, 255);
+        if (mb_strlen($path) > 255) {
+            $path = mb_substr($path, 0, 255);
         }
 
         return $path === '' ? null : $path;
@@ -1793,7 +1799,7 @@ final class DashboardController
 
     private function formatContentStatusLabel(string $status): string
     {
-        $normalized = trim(str_replace('_', ' ', $status));
+        $normalized = mb_trim(str_replace('_', ' ', $status));
         if ($normalized === '') {
             return 'Unknown';
         }
@@ -1814,7 +1820,7 @@ final class DashboardController
 
     private function validateReviewSubmissionCsrf(array $data): bool
     {
-        $csrfToken = trim((string) ($data['_csrf'] ?? ''));
+        $csrfToken = mb_trim((string) ($data['_csrf'] ?? ''));
 
         return $this->session->validateCsrfToken($csrfToken);
     }
@@ -1860,21 +1866,21 @@ final class DashboardController
 
     private function normalizeAuthorQueueFilters(array $queryParams): array
     {
-        $state = strtolower(trim((string) ($queryParams['state'] ?? 'all')));
+        $state = mb_strtolower(mb_trim((string) ($queryParams['state'] ?? 'all')));
         $allowedStates = ['all', 'in_review', 'needs_author_reply', 'resolved', 'ready_for_review', 'placeholder'];
         if (!in_array($state, $allowedStates, true)) {
             $state = 'all';
         }
 
-        $sort = strtolower(trim((string) ($queryParams['sort'] ?? 'binder_asc')));
+        $sort = mb_strtolower(mb_trim((string) ($queryParams['sort'] ?? 'binder_asc')));
         $allowedSorts = ['binder_asc', 'chapter_asc', 'chapter_desc', 'imported_desc'];
         if (!in_array($sort, $allowedSorts, true)) {
             $sort = 'binder_asc';
         }
 
-        $search = trim((string) ($queryParams['q'] ?? ''));
-        if (strlen($search) > 120) {
-            $search = substr($search, 0, 120);
+        $search = mb_trim((string) ($queryParams['q'] ?? ''));
+        if (mb_strlen($search) > 120) {
+            $search = mb_substr($search, 0, 120);
         }
 
         $perPage = (int) ($queryParams['per_page'] ?? 25);
@@ -1912,7 +1918,7 @@ final class DashboardController
 
     private function sanitizeAuthorQueueQueryString(string $queryString): string
     {
-        $queryString = trim($queryString);
+        $queryString = mb_trim($queryString);
         if ($queryString === '') {
             return '';
         }
@@ -1927,7 +1933,7 @@ final class DashboardController
 
     private function applyAuthorQueueFilters(array $queue, array $filters): array
     {
-        $search = strtolower(trim((string) ($filters['q'] ?? '')));
+        $search = mb_strtolower(mb_trim((string) ($filters['q'] ?? '')));
         $state = (string) ($filters['state'] ?? 'all');
 
         return array_values(array_filter($queue, static function (array $item) use ($search, $state): bool {
@@ -1939,13 +1945,13 @@ final class DashboardController
                 return true;
             }
 
-            $haystack = strtolower(
+            $haystack = mb_strtolower(
                 implode(' ', [
                     (string) ($item['title'] ?? ''),
                     (string) ($item['book_title'] ?? ''),
                     (string) ($item['source'] ?? ''),
                     (string) ($item['list_path'] ?? ''),
-                ])
+                ]),
             );
 
             return str_contains($haystack, $search);
@@ -1956,10 +1962,10 @@ final class DashboardController
     {
         $sorted = array_values($queue);
 
-        usort($sorted, function (array $a, array $b) use ($sort): int {
+        usort($sorted, static function (array $a, array $b) use ($sort): int {
             if ($sort === 'binder_asc') {
-                $leftOrder = trim((string) ($a['order_path'] ?? ''));
-                $rightOrder = trim((string) ($b['order_path'] ?? ''));
+                $leftOrder = mb_trim((string) ($a['order_path'] ?? ''));
+                $rightOrder = mb_trim((string) ($b['order_path'] ?? ''));
 
                 if ($leftOrder !== '' && $rightOrder !== '' && $leftOrder !== $rightOrder) {
                     return strnatcasecmp($leftOrder, $rightOrder);
@@ -1973,8 +1979,8 @@ final class DashboardController
                     return 1;
                 }
 
-                $leftPath = trim((string) ($a['list_path'] ?? ''));
-                $rightPath = trim((string) ($b['list_path'] ?? ''));
+                $leftPath = mb_trim((string) ($a['list_path'] ?? ''));
+                $rightPath = mb_trim((string) ($b['list_path'] ?? ''));
                 if ($leftPath !== '' && $rightPath !== '' && $leftPath !== $rightPath) {
                     return strnatcasecmp($leftPath, $rightPath);
                 }
@@ -1983,8 +1989,8 @@ final class DashboardController
             }
 
             if ($sort === 'chapter_asc' || $sort === 'chapter_desc') {
-                $left = trim((string) (($a['display_title'] ?? '') !== '' ? $a['display_title'] : ($a['title'] ?? '')));
-                $right = trim((string) (($b['display_title'] ?? '') !== '' ? $b['display_title'] : ($b['title'] ?? '')));
+                $left = mb_trim((string) (($a['display_title'] ?? '') !== '' ? $a['display_title'] : ($a['title'] ?? '')));
+                $right = mb_trim((string) (($b['display_title'] ?? '') !== '' ? $b['display_title'] : ($b['title'] ?? '')));
                 $compare = strnatcasecmp($left, $right);
                 if ($compare === 0) {
                     $compare = ((int) ($a['id'] ?? 0)) <=> ((int) ($b['id'] ?? 0));
@@ -2028,7 +2034,7 @@ final class DashboardController
             $first = $queue[0];
         }
 
-        $bookTitle = trim((string) ($first['book_title'] ?? ''));
+        $bookTitle = mb_trim((string) ($first['book_title'] ?? ''));
 
         return [
             'book_title' => $bookTitle !== '' ? $bookTitle : null,
@@ -2068,9 +2074,9 @@ final class DashboardController
                 GROUP BY cv.id, cv.title, cv.book_title, cv.metadata, cv.version_label, cv.source, cv.status, cv.imported_at
                 ORDER BY cv.imported_at DESC, cv.id DESC
                 LIMIT 500",
-                [$authorId]
+                [$authorId],
             )->fetchAllAssociative();
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return [
                 'items' => [],
                 'pagination' => $this->buildEmptyQueuePagination($filters),
@@ -2090,7 +2096,7 @@ final class DashboardController
                 $openCount,
                 $resolvedCount,
                 $needsAuthorReplyCount,
-                $reviewCount
+                $reviewCount,
             );
 
             $statusKey = $this->reviewStateKeyForLabel($statusLabel);
@@ -2112,7 +2118,7 @@ final class DashboardController
                 'id' => (int) ($row['id'] ?? 0),
                 'title' => (string) ($row['title'] ?? 'Untitled'),
                 'display_title' => $displayTitle,
-                'book_title' => trim((string) ($row['book_title'] ?? '')),
+                'book_title' => mb_trim((string) ($row['book_title'] ?? '')),
                 'version_label' => (string) ($row['version_label'] ?? 'n/a'),
                 'source' => (string) ($row['source'] ?? ''),
                 'status' => $statusLabel,
@@ -2192,7 +2198,7 @@ final class DashboardController
                 LEFT JOIN reviews r ON r.content_version_id = cv.id
                 WHERE cv.author_id = ? AND cv.id = ?
                 GROUP BY cv.id, cv.title, cv.book_title, cv.version_label, cv.source, cv.content_rtf, cv.content_text, cv.metadata, cv.imported_at, cv.status",
-                [$authorId, $contentVersionId]
+                [$authorId, $contentVersionId],
             )->fetchAssociative();
 
             if (!is_array($item) || $item === []) {
@@ -2200,7 +2206,7 @@ final class DashboardController
             }
 
             $history = $this->connection->executeQuery(
-                "SELECT
+                'SELECT
                     r.id,
                     r.reviewer_id,
                     r.title,
@@ -2236,10 +2242,10 @@ final class DashboardController
                 LEFT JOIN content_versions source_version ON source_version.id = r.anchor_remapped_from_content_version_id AND source_version.author_id = current_version.author_id
                 LEFT JOIN reviews source_review ON source_review.id = r.anchor_remapped_from_review_id AND source_review.content_version_id = source_version.id
                 WHERE r.content_version_id = ? AND current_version.author_id = ?
-                ORDER BY r.created_at DESC, r.id DESC",
-                [$contentVersionId, $authorId]
+                ORDER BY r.created_at DESC, r.id DESC',
+                [$contentVersionId, $authorId],
             )->fetchAllAssociative();
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return null;
         }
 
@@ -2253,11 +2259,11 @@ final class DashboardController
             $openCount,
             $resolvedCount,
             $needsAuthorReplyCount,
-            $reviewCount
+            $reviewCount,
         );
 
-        $currentVersionTitle = trim((string) ($item['title'] ?? ''));
-        $currentVersionLabel = trim((string) ($item['version_label'] ?? ''));
+        $currentVersionTitle = mb_trim((string) ($item['title'] ?? ''));
+        $currentVersionLabel = mb_trim((string) ($item['version_label'] ?? ''));
 
         $reviews = array_map(static function (array $row) use ($currentVersionTitle, $currentVersionLabel): array {
             $status = (string) ($row['status'] ?? 'open');
@@ -2287,27 +2293,27 @@ final class DashboardController
                 'current_changed_context' => $currentChangedContext,
                 'version_linkage_label' => $versionLinkageLabel,
                 'version_linkage_detail' => $versionLinkageDetail,
-                'details' => trim((string) ($row['details'] ?? '')),
-                'selected_excerpt' => trim((string) ($row['selected_excerpt'] ?? '')),
+                'details' => mb_trim((string) ($row['details'] ?? '')),
+                'selected_excerpt' => mb_trim((string) ($row['selected_excerpt'] ?? '')),
                 'anchor_start_offset' => array_key_exists('anchor_start_offset', $row) && $row['anchor_start_offset'] !== null ? max(0, (int) $row['anchor_start_offset']) : null,
                 'anchor_end_offset' => array_key_exists('anchor_end_offset', $row) && $row['anchor_end_offset'] !== null ? max(0, (int) $row['anchor_end_offset']) : null,
-                'anchor_container_path' => array_key_exists('anchor_container_path', $row) && $row['anchor_container_path'] !== null ? trim((string) $row['anchor_container_path']) : null,
-                'anchor_remap_state' => trim((string) ($row['anchor_remap_state'] ?? '')),
-                'anchor_remap_confidence' => trim((string) ($row['anchor_remap_confidence'] ?? '')),
-                'anchor_remap_reason' => trim((string) ($row['anchor_remap_reason'] ?? '')),
+                'anchor_container_path' => array_key_exists('anchor_container_path', $row) && $row['anchor_container_path'] !== null ? mb_trim((string) $row['anchor_container_path']) : null,
+                'anchor_remap_state' => mb_trim((string) ($row['anchor_remap_state'] ?? '')),
+                'anchor_remap_confidence' => mb_trim((string) ($row['anchor_remap_confidence'] ?? '')),
+                'anchor_remap_reason' => mb_trim((string) ($row['anchor_remap_reason'] ?? '')),
                 'anchor_remapped_from_review_id' => array_key_exists('anchor_remapped_from_review_id', $row) && $row['anchor_remapped_from_review_id'] !== null ? (int) $row['anchor_remapped_from_review_id'] : null,
                 'anchor_remapped_from_content_version_id' => array_key_exists('anchor_remapped_from_content_version_id', $row) && $row['anchor_remapped_from_content_version_id'] !== null ? (int) $row['anchor_remapped_from_content_version_id'] : null,
-                'anchor_remapped_from_content_version_title' => trim((string) ($row['anchor_remapped_from_content_version_title'] ?? '')),
-                'anchor_remapped_from_content_version_label' => trim((string) ($row['anchor_remapped_from_content_version_label'] ?? '')),
-                'anchor_remapped_from_review_title' => trim((string) ($row['anchor_remapped_from_review_title'] ?? '')),
+                'anchor_remapped_from_content_version_title' => mb_trim((string) ($row['anchor_remapped_from_content_version_title'] ?? '')),
+                'anchor_remapped_from_content_version_label' => mb_trim((string) ($row['anchor_remapped_from_content_version_label'] ?? '')),
+                'anchor_remapped_from_review_title' => mb_trim((string) ($row['anchor_remapped_from_review_title'] ?? '')),
                 'created_at' => (string) ($row['created_at'] ?? ''),
                 'updated_at' => (string) ($row['updated_at'] ?? ''),
                 'resolved_at' => (string) ($row['resolved_at'] ?? ''),
                 'resolution_decision' => $resolutionDecision,
                 'resolution_decision_label' => self::labelForResolutionDecision($resolutionDecision),
                 'resolution_actor_id' => array_key_exists('resolution_actor_id', $row) && $row['resolution_actor_id'] !== null ? (int) $row['resolution_actor_id'] : null,
-                'resolution_actor_role' => trim((string) ($row['resolution_actor_role'] ?? '')),
-                'resolution_actor_name' => trim((string) ($row['resolution_actor_name'] ?? '')),
+                'resolution_actor_role' => mb_trim((string) ($row['resolution_actor_role'] ?? '')),
+                'resolution_actor_name' => mb_trim((string) ($row['resolution_actor_name'] ?? '')),
                 'resolution_recorded_at' => (string) ($row['resolution_recorded_at'] ?? ''),
             ];
         }, $history);
@@ -2315,7 +2321,7 @@ final class DashboardController
         return [
             'id' => (int) $item['id'],
             'title' => (string) $item['title'],
-            'book_title' => trim((string) ($item['book_title'] ?? '')),
+            'book_title' => mb_trim((string) ($item['book_title'] ?? '')),
             'version_label' => (string) $item['version_label'],
             'source' => (string) ($item['source'] ?? ''),
             'imported_at' => (string) $item['imported_at'],
@@ -2338,31 +2344,31 @@ final class DashboardController
      */
     private static function authorLocationStatusForReview(array $row): array
     {
-        $remapState = strtolower(trim((string) ($row['anchor_remap_state'] ?? '')));
-        $remapReason = strtolower(trim((string) ($row['anchor_remap_reason'] ?? '')));
-        $remapConfidence = strtolower(trim((string) ($row['anchor_remap_confidence'] ?? '')));
-        $reviewTitle = strtolower(trim((string) ($row['title'] ?? '')));
-        $selectedExcerpt = trim((string) ($row['selected_excerpt'] ?? ''));
-        $details = trim((string) ($row['details'] ?? ''));
+        $remapState = mb_strtolower(mb_trim((string) ($row['anchor_remap_state'] ?? '')));
+        $remapReason = mb_strtolower(mb_trim((string) ($row['anchor_remap_reason'] ?? '')));
+        $remapConfidence = mb_strtolower(mb_trim((string) ($row['anchor_remap_confidence'] ?? '')));
+        $reviewTitle = mb_strtolower(mb_trim((string) ($row['title'] ?? '')));
+        $selectedExcerpt = mb_trim((string) ($row['selected_excerpt'] ?? ''));
+        $details = mb_trim((string) ($row['details'] ?? ''));
         $anchorStart = array_key_exists('anchor_start_offset', $row) && $row['anchor_start_offset'] !== null ? (int) $row['anchor_start_offset'] : null;
         $anchorEnd = array_key_exists('anchor_end_offset', $row) && $row['anchor_end_offset'] !== null ? (int) $row['anchor_end_offset'] : null;
-        $anchorContainerPath = trim((string) ($row['anchor_container_path'] ?? ''));
-        $parentVersionTitle = trim((string) ($row['anchor_remapped_from_content_version_title'] ?? ''));
-        $parentVersionLabel = trim((string) ($row['anchor_remapped_from_content_version_label'] ?? ''));
-        $parentReviewTitle = trim((string) ($row['anchor_remapped_from_review_title'] ?? ''));
+        $anchorContainerPath = mb_trim((string) ($row['anchor_container_path'] ?? ''));
+        $parentVersionTitle = mb_trim((string) ($row['anchor_remapped_from_content_version_title'] ?? ''));
+        $parentVersionLabel = mb_trim((string) ($row['anchor_remapped_from_content_version_label'] ?? ''));
+        $parentReviewTitle = mb_trim((string) ($row['anchor_remapped_from_review_title'] ?? ''));
 
         $fallbackContext = $selectedExcerpt !== ''
             ? $selectedExcerpt
             : ($details !== '' ? $details : 'No fallback context available.');
 
         $hasOrphanedHint = str_contains($reviewTitle, 'orphaned')
-            || str_contains(strtolower($details), 'no longer resolves')
-            || str_contains(strtolower($details), 'moved with the draft');
+            || str_contains(mb_strtolower($details), 'no longer resolves')
+            || str_contains(mb_strtolower($details), 'moved with the draft');
 
         if ($remapState === 'failed' || $remapReason === 'no_match_in_new_content' || $hasOrphanedHint) {
             $detail = 'Could not find a matching location in the current content. Reassign a parent item before resolving this note.';
             $parentContext = $parentVersionTitle !== ''
-                ? trim($parentVersionTitle . ($parentVersionLabel !== '' ? ' ' . $parentVersionLabel : ''))
+                ? mb_trim($parentVersionTitle . ($parentVersionLabel !== '' ? ' ' . $parentVersionLabel : ''))
                 : $parentReviewTitle;
 
             if ($parentContext !== '') {
@@ -2397,10 +2403,10 @@ final class DashboardController
      */
     private static function authorResolutionContextsForReview(array $row): array
     {
-        $sourceExcerpt = trim((string) ($row['anchor_remapped_from_selected_excerpt'] ?? ''));
-        $sourceDetails = trim((string) ($row['anchor_remapped_from_details'] ?? ''));
-        $currentExcerpt = trim((string) ($row['selected_excerpt'] ?? ''));
-        $currentDetails = trim((string) ($row['details'] ?? ''));
+        $sourceExcerpt = mb_trim((string) ($row['anchor_remapped_from_selected_excerpt'] ?? ''));
+        $sourceDetails = mb_trim((string) ($row['anchor_remapped_from_details'] ?? ''));
+        $currentExcerpt = mb_trim((string) ($row['selected_excerpt'] ?? ''));
+        $currentDetails = mb_trim((string) ($row['details'] ?? ''));
         $anchorStart = array_key_exists('anchor_start_offset', $row) && $row['anchor_start_offset'] !== null ? max(0, (int) $row['anchor_start_offset']) : null;
         $anchorEnd = array_key_exists('anchor_end_offset', $row) && $row['anchor_end_offset'] !== null ? max(0, (int) $row['anchor_end_offset']) : null;
 
@@ -2426,8 +2432,8 @@ final class DashboardController
      */
     private static function authorVersionLinkageForReview(array $row, string $currentVersionTitle, string $currentVersionLabel): array
     {
-        $sourceVersionTitle = trim((string) ($row['anchor_remapped_from_content_version_title'] ?? ''));
-        $sourceVersionLabel = trim((string) ($row['anchor_remapped_from_content_version_label'] ?? ''));
+        $sourceVersionTitle = mb_trim((string) ($row['anchor_remapped_from_content_version_title'] ?? ''));
+        $sourceVersionLabel = mb_trim((string) ($row['anchor_remapped_from_content_version_label'] ?? ''));
 
         $sourceVersion = $sourceVersionTitle !== ''
             ? $sourceVersionTitle . ($sourceVersionLabel !== '' ? ' (' . $sourceVersionLabel . ')' : '')
@@ -2468,9 +2474,9 @@ final class DashboardController
                 continue;
             }
 
-            $bookTitle = trim((string) ($item['book_title'] ?? ''));
-            $displayTitle = trim((string) ($item['display_title'] ?? ($item['title'] ?? 'Untitled')));
-            $versionLabel = trim((string) ($item['version_label'] ?? ''));
+            $bookTitle = mb_trim((string) ($item['book_title'] ?? ''));
+            $displayTitle = mb_trim((string) ($item['display_title'] ?? ($item['title'] ?? 'Untitled')));
+            $versionLabel = mb_trim((string) ($item['version_label'] ?? ''));
             $labelParts = array_filter([
                 $bookTitle !== '' ? $bookTitle : null,
                 $displayTitle !== '' ? $displayTitle : null,
@@ -2516,12 +2522,12 @@ final class DashboardController
                     SUM(CASE WHEN r.status = 'needs_author_review' THEN 1 ELSE 0 END) AS needs_author_reply_count
                 FROM content_versions cv
                 LEFT JOIN reviews r ON r.content_version_id = cv.id
-                WHERE cv.author_id = ? AND cv.id IN (" . $placeholders . ")
+                WHERE cv.author_id = ? AND cv.id IN (" . $placeholders . ')
                 GROUP BY cv.id, cv.title, cv.book_title, cv.metadata, cv.version_label, cv.source, cv.content_text, cv.content_rtf, cv.imported_at, cv.status
-                ORDER BY cv.imported_at DESC, cv.id DESC",
-                $params
+                ORDER BY cv.imported_at DESC, cv.id DESC',
+                $params,
             )->fetchAllAssociative();
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return [];
         }
 
@@ -2549,13 +2555,13 @@ final class DashboardController
                 $openCount,
                 $resolvedCount,
                 $needsAuthorReplyCount,
-                $reviewCount
+                $reviewCount,
             );
 
             $items[] = [
                 'id' => (int) ($row['id'] ?? 0),
                 'title' => (string) ($row['title'] ?? 'Untitled'),
-                'book_title' => trim((string) ($row['book_title'] ?? '')),
+                'book_title' => mb_trim((string) ($row['book_title'] ?? '')),
                 'metadata' => $row['metadata'] ?? null,
                 'version_label' => (string) ($row['version_label'] ?? 'n/a'),
                 'source' => (string) ($row['source'] ?? ''),
@@ -2605,7 +2611,7 @@ final class DashboardController
         $timestamp = date('Ymd_His');
         $bookTitle = '';
         foreach ($items as $item) {
-            $bookTitle = trim((string) ($item['book_title'] ?? ''));
+            $bookTitle = mb_trim((string) ($item['book_title'] ?? ''));
             if ($bookTitle !== '') {
                 break;
             }
@@ -2613,7 +2619,7 @@ final class DashboardController
         $bookSlug = $this->slugifyFilenameSegment($bookTitle, 'book');
 
         if (count($items) === 1) {
-            $title = $this->slugifyFilenameSegment(trim((string) ($items[0]['title'] ?? '')), 'item');
+            $title = $this->slugifyFilenameSegment(mb_trim((string) ($items[0]['title'] ?? '')), 'item');
 
             return $bookSlug . '-' . $title . '-' . $timestamp . '.pdf';
         }
@@ -2623,8 +2629,8 @@ final class DashboardController
 
     private function slugifyFilenameSegment(string $value, string $fallback): string
     {
-        $slug = preg_replace('/[^A-Za-z0-9_-]+/', '-', strtolower(trim($value))) ?? '';
-        $slug = trim($slug, '-');
+        $slug = preg_replace('/[^A-Za-z0-9_-]+/', '-', mb_strtolower(mb_trim($value))) ?? '';
+        $slug = mb_trim($slug, '-');
 
         return $slug !== '' ? $slug : $fallback;
     }
@@ -2648,28 +2654,28 @@ final class DashboardController
                     $passwordProtected ? 'PDF 1.7 (encrypted)' : 'PDF 1.7',
                     $passwordProtected ? 1 : 0,
                     $ipAddress !== '' ? $ipAddress : null,
-                    $userAgent !== '' ? substr($userAgent, 0, 512) : null,
-                    (new \DateTimeImmutable())->format('Y-m-d H:i:s'),
-                ]
+                    $userAgent !== '' ? mb_substr($userAgent, 0, 512) : null,
+                    (new DateTimeImmutable())->format('Y-m-d H:i:s'),
+                ],
             );
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // Export should still succeed when audit persistence is unavailable.
         }
     }
 
     private function extractClientIp(Request $request): string
     {
-        $headerIp = trim((string) $request->getHeaderLine('X-Forwarded-For'));
+        $headerIp = mb_trim((string) $request->getHeaderLine('X-Forwarded-For'));
         if ($headerIp !== '') {
-            $first = trim((string) explode(',', $headerIp)[0]);
+            $first = mb_trim((string) explode(',', $headerIp)[0]);
             if ($first !== '') {
-                return substr($first, 0, 64);
+                return mb_substr($first, 0, 64);
             }
         }
 
         $serverParams = $request->getServerParams();
-        $remoteAddr = trim((string) ($serverParams['REMOTE_ADDR'] ?? ''));
+        $remoteAddr = mb_trim((string) ($serverParams['REMOTE_ADDR'] ?? ''));
 
-        return $remoteAddr !== '' ? substr($remoteAddr, 0, 64) : '';
+        return $remoteAddr !== '' ? mb_substr($remoteAddr, 0, 64) : '';
     }
 }
