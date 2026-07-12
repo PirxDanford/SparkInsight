@@ -1,0 +1,208 @@
+<?php
+/**
+ * TEMPLATE: Controller Unit Test
+ * 
+ * Copy this template and replace:
+ * - [NAMESPACE] → Your namespace (e.g., SparkInsightTest\Unit\Controller)
+ * - [CLASS_NAME] → Your controller class name (e.g., AuthController)
+ * - [SERVICE_CLASS] → Service dependency (e.g., UserService)
+ * 
+ * Controllers handle HTTP requests/responses.
+ * Unit tests mock services and verify correct responses.
+ */
+
+declare(strict_types=1);
+
+namespace [NAMESPACE];
+
+use [YOUR_NAMESPACE]\[CLASS_NAME];
+use [SERVICE_NAMESPACE]\[SERVICE_CLASS];
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+use PHPUnit\Framework\TestCase;
+
+class [CLASS_NAME]Test extends TestCase
+{
+    private [SERVICE_CLASS] $serviceMock;
+    private [CLASS_NAME] $controller;
+    private ResponseInterface $responseMock;
+
+    protected function setUp(): void
+    {
+        // Mock services
+        $this->serviceMock = $this->createMock([SERVICE_CLASS]::class);
+        $this->responseMock = $this->createMock(ResponseInterface::class);
+        
+        // Inject mocked dependencies into controller
+        $this->controller = new [CLASS_NAME]($this->serviceMock);
+    }
+
+    /**
+     * Test successful HTTP request handling
+     */
+    public function testHandleRequestWithValidDataReturnsSuccessResponse(): void
+    {
+        // Arrange
+        $request = $this->createMock(RequestInterface::class);
+        $request->method('getParsedBody')->willReturn([
+            'email' => 'user@example.com',
+            'password' => 'password123',
+        ]);
+        
+        // Mock service to return expected data
+        $this->serviceMock
+            ->expects($this->once())
+            ->method('authenticate')
+            ->with('user@example.com', 'password123')
+            ->willReturn(['id' => 1, 'email' => 'user@example.com']);
+        
+        // Act
+        $response = $this->controller->handleRequest($request, $this->responseMock);
+        
+        // Assert
+        $this->assertInstanceOf(ResponseInterface::class, $response);
+        $this->assertEquals(200, $response->getStatusCode());
+    }
+
+    /**
+     * Test request validation - controller should reject invalid data
+     */
+    public function testHandleRequestWithMissingEmailReturnsBadRequest(): void
+    {
+        // Arrange
+        $request = $this->createMock(RequestInterface::class);
+        $request->method('getParsedBody')->willReturn([
+            'password' => 'password123',
+            // Missing 'email'
+        ]);
+        
+        // Act
+        $response = $this->controller->handleRequest($request, $this->responseMock);
+        
+        // Assert - should return 400 Bad Request
+        $this->assertEquals(400, $response->getStatusCode());
+    }
+
+    /**
+     * Test error handling - service throws exception
+     */
+    public function testHandleRequestWhenServiceThrowsExceptionReturnsErrorResponse(): void
+    {
+        // Arrange
+        $request = $this->createMock(RequestInterface::class);
+        $request->method('getParsedBody')->willReturn([
+            'email' => 'user@example.com',
+            'password' => 'password123',
+        ]);
+        
+        // Mock service to throw exception
+        $this->serviceMock
+            ->expects($this->once())
+            ->method('authenticate')
+            ->willThrowException(new \Exception('Authentication failed'));
+        
+        // Act
+        $response = $this->controller->handleRequest($request, $this->responseMock);
+        
+        // Assert - should return error response
+        $this->assertEquals(500, $response->getStatusCode());
+    }
+
+    /**
+     * Test that correct service methods are called
+     */
+    public function testHandleRequestCallsServiceWithCorrectArguments(): void
+    {
+        // Arrange
+        $request = $this->createMock(RequestInterface::class);
+        $request->method('getParsedBody')->willReturn([
+            'email' => 'user@example.com',
+            'password' => 'secret',
+        ]);
+        
+        // Strict expectation: service MUST be called with these exact arguments
+        $this->serviceMock
+            ->expects($this->once())
+            ->method('authenticate')
+            ->with('user@example.com', 'secret');
+        
+        // Act
+        $this->controller->handleRequest($request, $this->responseMock);
+        
+        // Assert is implicit - if arguments don't match, test fails
+    }
+
+    /**
+     * Test edge case: empty request body
+     */
+    public function testHandleRequestWithEmptyBodyReturnsBadRequest(): void
+    {
+        // Arrange
+        $request = $this->createMock(RequestInterface::class);
+        $request->method('getParsedBody')->willReturn([]);
+        
+        // Service should NOT be called for invalid input
+        $this->serviceMock->expects($this->never())->method('authenticate');
+        
+        // Act
+        $response = $this->controller->handleRequest($request, $this->responseMock);
+        
+        // Assert
+        $this->assertEquals(400, $response->getStatusCode());
+    }
+
+    /**
+     * Test response format verification
+     */
+    public function testHandleRequestReturnsValidJSON(): void
+    {
+        // Arrange
+        $request = $this->createMock(RequestInterface::class);
+        $request->method('getParsedBody')->willReturn([
+            'email' => 'user@example.com',
+            'password' => 'password123',
+        ]);
+        
+        $this->serviceMock
+            ->method('authenticate')
+            ->willReturn(['id' => 1, 'email' => 'user@example.com']);
+        
+        // Act
+        $response = $this->controller->handleRequest($request, $this->responseMock);
+        $body = (string)$response->getBody();
+        
+        // Assert - response is valid JSON
+        $json = json_decode($body, true);
+        $this->assertNotNull($json);
+        $this->assertArrayHasKey('id', $json);
+        $this->assertEquals(1, $json['id']);
+    }
+}
+
+/**
+ * TEMPLATE USAGE GUIDE
+ * 
+ * Controllers coordinate HTTP requests and responses.
+ * Tests should verify:
+ * 1. Correct HTTP responses (status codes, headers)
+ * 2. Input validation
+ * 3. Service method calls
+ * 4. Error handling
+ * 5. Response format (JSON structure, etc.)
+ * 
+ * KEY PATTERNS
+ * 
+ * Verify status codes:
+ * $this->assertEquals(200, $response->getStatusCode());
+ * $this->assertEquals(400, $response->getStatusCode());
+ * $this->assertEquals(500, $response->getStatusCode());
+ * 
+ * Verify service calls:
+ * $this->serviceMock->expects($this->once())->method('authenticate');
+ * $this->serviceMock->expects($this->never())->method('authenticate');
+ * 
+ * Verify response content:
+ * $body = (string)$response->getBody();
+ * $json = json_decode($body, true);
+ * $this->assertArrayHasKey('key', $json);
+ */

@@ -1,18 +1,76 @@
 # SparkInsight
 
-A simple tool for sharing content with reviewers, collecting feedback, and letting authors resolve it their way.
+SparkInsight is a lightweight review workflow platform skeleton built for Composer-based deployment and local development.
 
-## Installation
+## What is included
 
-[Add installation instructions here once the project setup is decided.]
+- Slim 4 web application structure
+- GitHub and Google OAuth login support
+- Local demo login for development
+- PSR-4 autoloading and Composer readiness
 
-## Usage
+## Local development
 
-[Add usage instructions here.]
+1. Copy environment variables:
+   ```bash
+   cp .env.example .env
+   ```
+2. Set GitHub, Google, and/or LinkedIn OAuth credentials in `.env`.
+3. Install dependencies:
+   ```bash
+   composer install
+   ```
+4. Start the app:
+   ```bash
+   composer start
+   ```
+   This is a long-running development server. Stop with `Ctrl+C`.
 
-## Contributing
+   Manual alternative:
+   ```bash
+   php -S localhost:8000 -t public public/index.php
+   ```
+5. Visit `http://localhost:8000`
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to contribute.
+## OAuth providers
+
+This release supports:
+
+- GitHub
+- Google
+- LinkedIn
+
+For full provider app registration details (redirect URIs, production secret handling), see `docs/Setup.md`.
+
+## Composer deployment
+
+The project is designed to be installed and updated via Composer. Once published to GitHub, the repository can be used as a Composer repository target for webserver deployments.
+
+If your hosting environment does not provide Composer access and only allows FTP uploads:
+
+1. Prepare the project locally so the `vendor/` directory is included (for example from a release package or a local checkout where dependencies are already installed).
+   - Keep `composer.lock` in the deployment package so dependency versions stay pinned.
+2. Upload the complete project directory via FTP.
+3. Set your web root/document root to `public/`.
+4. Configure `.env` on the server (at minimum `APP_URL` and OAuth credentials).
+
+Optional deployment diagnosis (for FTP-only servers):
+
+1. Set `DIAG_ACCESS_TOKEN` in `.env` to a temporary random value.
+2. Open `/install_diagnose.php?token=<your-token>` in the browser.
+3. Review checks for PHP version, required extensions, `.env`, `vendor/`, and `composer.lock`.
+4. Remove `public/install_diagnose.php` or clear `DIAG_ACCESS_TOKEN` after validation.
+
+Without Composer on the server, package updates must be prepared locally first and then uploaded again via FTP.
+
+To reduce environment drift across hosting targets, use the production prep workflow in `deployment/production-prep/` before creating an upload package.
+
+## Documentation
+
+See `docs/Setup.md` for more details on environment setup and running the app.
+See `docs/scrivener-setup.md` for author-side Scrivener setup and backup workflow guidance.
+See `docs/imports.md` for Scrivener import workflow and import batch maintenance commands.
+See `docs/migrations.md` for migration runner usage, naming/version rules, and rollback guidance.
 
 ## License
 

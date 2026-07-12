@@ -1,26 +1,26 @@
-# RFC 0003: Scrivener export proof of concept for review ingestion
+# RFC 0003: Scrivener ingestion proof of concept for review import
 
-Status: Completed
+Status: Implemented
 
 Date: 2026-04-15
 
 ## Summary
 
-Define a proof-of-concept for exporting Scrivener data into a review-ready format. The goal is to establish a repeatable export path that keeps author workflows in Scrivener while enabling review import, anchoring, and change tracking.
+Define a proof-of-concept for ingesting Scrivener data into a review-ready format. The goal is to establish a repeatable path that keeps author workflows in Scrivener while enabling review import, anchoring, and change tracking.
 
 ## Problem
 
-The review platform needs structured content from Scrivener, but Scrivener itself does not expose a native, review-oriented export path. Authors must stay in Scrivener, and reviewers must receive a consistent representation of document content, metadata, and version context.
+The review platform needs structured content from Scrivener, and reviewers require consistent hierarchy/order semantics. Authors must stay in Scrivener, and the ingestion source must preserve binder relationships, document identifiers, and version context.
 
 ## Proposal
 
-Build a PoC that evaluates how Scrivener data can be exported and ingested into the review system. The PoC should cover:
+Build a PoC that evaluates how Scrivener data can be ingested into the review system. The PoC should cover:
 
-1. Export trigger and delivery
-   - Export can be initiated from Scrivener via compile/export or by reading the Scrivener project package directly.
-   - The PoC should demonstrate both a manual export workflow and an automated export pipeline if possible.
+1. Source trigger and delivery
+  - Candidate inputs include compile/export artifacts and Scrivener project backups.
+  - The PoC should compare manual export workflows with direct project/backup ingestion.
 
-2. Export format
+2. Input format
    - Use an intermediate format that preserves content structure and enough metadata for review anchoring.
    - Candidate PoC formats: structured XML, Markdown with metadata frontmatter, or JSON.
 
@@ -34,10 +34,10 @@ Build a PoC that evaluates how Scrivener data can be exported and ingested into 
 
 ## Alternative approaches
 
-### Approach A: Use Scrivener project package export
+### Approach A: Use Scrivener project backup/package ingestion
 
-- Export by reading the `.scriv` package contents directly.
-- Extract `index.xml` and text files to reconstruct the document hierarchy and IDs.
+- Ingest by reading `.scriv` backup contents directly.
+- Extract `.scrivx` and `Files/Data/<UUID>/content.rtf` to reconstruct hierarchy and IDs.
 - Pros:
   - Access to native document identifiers and structure.
   - Can support more fine-grained anchoring and metadata.
@@ -68,6 +68,13 @@ Build a PoC that evaluates how Scrivener data can be exported and ingested into 
 ### Approach D: Use a plain text / Markdown export plus heuristic anchoring
 
 - Export Scrivener content to Markdown or plain text and infer structure during import.
+
+## Quality Considerations
+
+Implementation of this PoC must comply with:
+- **RFC 0011**: Quality-First Development Framework (foundational requirement)
+- **ADR 0006**: Adopt Test-Driven Development (test export parsing and format validation)
+- **ADR 0007**: Apply SOLID Principles (separate export mechanism, format parsing, and validation)
 - Pros:
   - Minimal Scrivener-specific tooling.
   - Simple to parse and review.
@@ -77,14 +84,14 @@ Build a PoC that evaluates how Scrivener data can be exported and ingested into 
 
 ## PoC scope
 
-The PoC should verify at least one export path and compare it with one alternative:
+The PoC should verify at least one ingestion path and compare it with one alternative:
 
-- Path 1: Extract document structure from the `.scriv` package or a Scrivener-exported XML/JSON package.
+- Path 1: Extract structure/content from `.scriv` backup data (`.scrivx` + `Files/Data`).
 - Path 2: Export via compile to Markdown/HTML and validate review import using heuristic mapping.
 
 The PoC should produce example exports and a short import prototype that demonstrates:
 
-- importing a Scrivener export into the review system
+- importing Scrivener project content into the review system
 - preserving document structure and identifiers
 - detecting changed regions between two exported versions
 - anchoring review comments to target sections
@@ -93,9 +100,17 @@ The PoC should produce example exports and a short import prototype that demonst
 
 The PoC is successful when it can:
 
-- ingest Scrivener export data into the review platform without manual content rekeying
+- ingest Scrivener project data into the review platform without manual content rekeying
 - preserve enough structure to support reviewer comments on discrete sections
-- show at least one feasible export workflow that is compatible with author Scrivener usage
+- show at least one feasible ingestion workflow that is compatible with author Scrivener usage
+
+## Outcome
+
+The PoC outcome favored direct Scrivener backup/project ingestion over export-centric paths for production use.
+
+- Selected path: parse `.scrivx` binder structure plus `Files/Data/<UUID>/content.rtf` content.
+- Rejected as primary path: FDX/DOCX-only exports, due to insufficient relationship data for full binder reconstruction.
+- Operational result: importer now preserves hierarchy/order metadata and supports directory-aware reviewer navigation.
 
 ## Open questions
 
