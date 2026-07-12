@@ -29,7 +29,7 @@ This approach provides complete structural fidelity required by reviewer navigat
 
 ## Links
 
-- Scrivener documentation: https://www.literatureandlatte.com/scrivener/user-manual
+- Scrivener documentation: https://www.literatureandlatte.com/learn-and-support/user-guides
 - RFC 0003: Scrivener ingestion proof of concept
 - ADR 0006: Adopt Test-Driven Development (implement sync validation with TDD)
 - ADR 0007: Apply SOLID Principles (import parser/service component design)

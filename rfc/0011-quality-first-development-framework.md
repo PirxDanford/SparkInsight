@@ -124,4 +124,4 @@ SparkInsight handles critical feedback workflows for manuscript review. Authors 
 - TDD Best Practices: https://martinfowler.com/bliki/TestDrivenDevelopment.html
 - SOLID Principles: https://en.wikipedia.org/wiki/SOLID
 - PHPUnit Documentation: https://phpunit.de/
-- The Three Rules of TDD: https://blog.cleancoder.com/uncle-bob/2014/12/17/TheCycles.html
+- The Three Rules of TDD: http://butunclebob.com/ArticleS.UncleBob.TheThreeRulesOfTdd

@@ -56,7 +56,7 @@ Ensures predictable, safe database changes; enables easy rollback if needed; kee
 
 ## Links
 
-- Doctrine Migrations: https://www.doctrine-project.org/projects/doctrine-migrations/en/latest/
+- Doctrine Migrations: https://www.doctrine-project.org/projects/doctrine-migrations/en/current/index.html
 - Phinx: https://phinx.org/
 - RFC 0011: Quality-First Development Framework (migration implementation requires comprehensive tests)
 - ADR 0006: Adopt Test-Driven Development (test migration up/down paths)

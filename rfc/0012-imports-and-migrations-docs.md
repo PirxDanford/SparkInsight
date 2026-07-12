@@ -1,6 +1,6 @@
 # RFC 0012: Imports and Migrations Documentation
 
-Status: Draft
+Status: Implemented
 
 Date: 2026-06-03
 
@@ -31,3 +31,12 @@ Implementation of imports and migration tooling exists, but safe operation requi
 - `src/Service/MigrationRunner.php`
 - `src/Command/MigrateDbCommand.php`
 - `database/migrations/`
+
+## Implementation (v1.0.0)
+
+Completed 2026-07-12.
+
+- Delivered `docs/imports.md` with supported formats, validation flow, command usage, and troubleshooting.
+- Delivered `docs/migrations.md` with `db:migrate` usage, status/rollback behavior, migration policy, and pre-deploy workflow.
+- Added migration CI checks documentation and aligned it with `.github/workflows/migration-checks.yml`.
+- Updated `CONTRIBUTING.md` to reference import/migration docs and required migration checks for PRs affecting migration/import behavior.

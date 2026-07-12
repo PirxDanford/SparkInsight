@@ -15,7 +15,7 @@ SparkInsight is a lightweight review workflow platform skeleton built for Compos
    ```bash
    cp .env.example .env
    ```
-2. Set GitHub and/or Google OAuth credentials in `.env`.
+2. Set GitHub, Google, and/or LinkedIn OAuth credentials in `.env`.
 3. Install dependencies:
    ```bash
    composer install
@@ -34,12 +34,13 @@ SparkInsight is a lightweight review workflow platform skeleton built for Compos
 
 ## OAuth providers
 
-This prototype supports:
+This release supports:
 
 - GitHub
 - Google
+- LinkedIn
 
-LinkedIn is intentionally hidden in the UI and reserved for future implementation.
+For full provider app registration details (redirect URIs, production secret handling), see `docs/Setup.md`.
 
 ## Composer deployment
 
@@ -67,7 +68,9 @@ To reduce environment drift across hosting targets, use the production prep work
 ## Documentation
 
 See `docs/Setup.md` for more details on environment setup and running the app.
-Migration naming and `dev_only_*.sql` contributor workflow are documented in `docs/Setup.md` under "Database migrations (Contributor workflow)".
+See `docs/scrivener-setup.md` for author-side Scrivener setup and backup workflow guidance.
+See `docs/imports.md` for Scrivener import workflow and import batch maintenance commands.
+See `docs/migrations.md` for migration runner usage, naming/version rules, and rollback guidance.
 
 ## License
 
