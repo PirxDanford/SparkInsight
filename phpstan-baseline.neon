@@ -1,0 +1,1086 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Parameter \\#1 \\$string of method Psr\\\\Http\\\\Message\\\\StreamInterface\\:\\:write\\(\\) expects string, string\\|false given\\.$#"
+			count: 1
+			path: public/index.php
+
+		-
+			message: "#^Cannot cast mixed to int\\.$#"
+			count: 1
+			path: src/Command/BootstrapAdminCommand.php
+
+		-
+			message: "#^Cannot cast mixed to string\\.$#"
+			count: 6
+			path: src/Command/BootstrapAdminCommand.php
+
+		-
+			message: "#^Part \\$appEnv \\(mixed\\) of encapsed string cannot be cast to string\\.$#"
+			count: 1
+			path: src/Command/CheckEnvironmentCommand.php
+
+		-
+			message: "#^Cannot cast mixed to int\\.$#"
+			count: 1
+			path: src/Command/GenerateInvitationCommand.php
+
+		-
+			message: "#^Parameter \\#2 \\$email of method SparkInsight\\\\Service\\\\InvitationService\\:\\:generateInvitation\\(\\) expects string\\|null, mixed given\\.$#"
+			count: 1
+			path: src/Command/GenerateInvitationCommand.php
+
+		-
+			message: "#^Cannot cast mixed to int\\.$#"
+			count: 1
+			path: src/Command/ListContentImportsCommand.php
+
+		-
+			message: "#^Cannot cast mixed to string\\.$#"
+			count: 5
+			path: src/Command/ListContentImportsCommand.php
+
+		-
+			message: "#^Cannot cast mixed to int\\.$#"
+			count: 1
+			path: src/Command/ListUsersCommand.php
+
+		-
+			message: "#^Cannot cast mixed to string\\.$#"
+			count: 6
+			path: src/Command/ListUsersCommand.php
+
+		-
+			message: "#^Cannot cast mixed to int\\.$#"
+			count: 2
+			path: src/Command/PurgeContentImportsCommand.php
+
+		-
+			message: "#^Cannot cast mixed to string\\.$#"
+			count: 1
+			path: src/Command/PurgeContentImportsCommand.php
+
+		-
+			message: "#^Cannot cast mixed to int\\.$#"
+			count: 1
+			path: src/Command/ScrivenerImportCommand.php
+
+		-
+			message: "#^Cannot cast mixed to string\\.$#"
+			count: 3
+			path: src/Command/ScrivenerImportCommand.php
+
+		-
+			message: "#^Parameter \\#4 \\$dryRun of method SparkInsight\\\\Service\\\\ContentImportService\\:\\:importScrivenerDirectory\\(\\) expects bool, mixed given\\.$#"
+			count: 1
+			path: src/Command/ScrivenerImportCommand.php
+
+		-
+			message: "#^Method SparkInsight\\\\Config\\\\Config\\:\\:__construct\\(\\) has parameter \\$values with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Config/Config.php
+
+		-
+			message: "#^Method SparkInsight\\\\Config\\\\Config\\:\\:getActiveProviders\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Config/Config.php
+
+		-
+			message: "#^Method SparkInsight\\\\Config\\\\Config\\:\\:getDatabaseConfig\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Config/Config.php
+
+		-
+			message: "#^Method SparkInsight\\\\Config\\\\Config\\:\\:getProviderConfig\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Config/Config.php
+
+		-
+			message: "#^Property SparkInsight\\\\Config\\\\Config\\:\\:\\$values type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Config/Config.php
+
+		-
+			message: "#^Cannot access offset 'display_name' on array\\|object\\|null\\.$#"
+			count: 1
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Cannot access offset 'roles' on array\\|object\\.$#"
+			count: 1
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Cannot access offset 'status' on array\\|object\\.$#"
+			count: 1
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Cannot cast mixed to int\\.$#"
+			count: 1
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\AdminController\\:\\:buildInvitationsSectionData\\(\\) has parameter \\$flashMessage with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\AdminController\\:\\:buildInvitationsSectionData\\(\\) has parameter \\$overrides with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\AdminController\\:\\:buildInvitationsSectionData\\(\\) has parameter \\$queryParams with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\AdminController\\:\\:buildInvitationsSectionData\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\AdminController\\:\\:buildSettingsSectionData\\(\\) has parameter \\$flashMessage with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\AdminController\\:\\:buildSettingsSectionData\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\AdminController\\:\\:buildUsersSectionData\\(\\) has parameter \\$queryParams with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\AdminController\\:\\:buildUsersSectionData\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\AdminController\\:\\:deleteInvitation\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\AdminController\\:\\:renderAdminDashboard\\(\\) has parameter \\$invitationOverrides with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\AdminController\\:\\:renderAdminDashboard\\(\\) has parameter \\$queryParams with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\AdminController\\:\\:renderAdminDashboard\\(\\) has parameter \\$user with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\AdminController\\:\\:updateUserDisplayName\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\AdminController\\:\\:updateUserRoles\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\AdminController\\:\\:updateUserStatus\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\AdminController\\:\\:validateCsrfData\\(\\) has parameter \\$data with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Parameter \\#1 \\$data of method SparkInsight\\\\Controller\\\\AdminController\\:\\:validateCsrfData\\(\\) expects array, array\\|object\\|null given\\.$#"
+			count: 2
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Parameter \\#1 \\$string of method Psr\\\\Http\\\\Message\\\\StreamInterface\\:\\:write\\(\\) expects string, string\\|false given\\.$#"
+			count: 4
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Parameter \\#2 \\.\\.\\.\\$values of function sprintf expects bool\\|float\\|int\\|string\\|null, mixed given\\.$#"
+			count: 2
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Property SparkInsight\\\\Controller\\\\AdminController\\:\\:\\$connection is never read, only written\\.$#"
+			count: 1
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Call to an undefined method object\\:\\:findOrCreateUser\\(\\)\\.$#"
+			count: 1
+			path: src/Controller/AuthController.php
+
+		-
+			message: "#^Call to an undefined method object\\:\\:getUserByProviderAndId\\(\\)\\.$#"
+			count: 1
+			path: src/Controller/AuthController.php
+
+		-
+			message: "#^Call to an undefined method object\\:\\:markInvitationAsUsed\\(\\)\\.$#"
+			count: 1
+			path: src/Controller/AuthController.php
+
+		-
+			message: "#^Call to an undefined method object\\:\\:setLastLogin\\(\\)\\.$#"
+			count: 1
+			path: src/Controller/AuthController.php
+
+		-
+			message: "#^Call to an undefined method object\\:\\:validateInvitation\\(\\)\\.$#"
+			count: 3
+			path: src/Controller/AuthController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\AuthController\\:\\:buildProviderOptions\\(\\) has parameter \\$providers with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/AuthController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\AuthController\\:\\:buildProviderOptions\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/AuthController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\AuthController\\:\\:callback\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/AuthController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\AuthController\\:\\:login\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/AuthController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\AuthController\\:\\:renderPage\\(\\) has parameter \\$data with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/AuthController.php
+
+		-
+			message: "#^Parameter \\#2 \\$string2 of function strcasecmp expects string, mixed given\\.$#"
+			count: 1
+			path: src/Controller/AuthController.php
+
+		-
+			message: "#^Parameter \\#2 \\$token of method SparkInsight\\\\Service\\\\OAuthProviderFactoryInterface\\:\\:getUserProfile\\(\\) expects League\\\\OAuth2\\\\Client\\\\Token\\\\AccessToken, League\\\\OAuth2\\\\Client\\\\Token\\\\AccessTokenInterface given\\.$#"
+			count: 1
+			path: src/Controller/AuthController.php
+
+		-
+			message: "#^Cannot cast mixed to int\\.$#"
+			count: 53
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Cannot cast mixed to string\\.$#"
+			count: 81
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Else branch is unreachable because ternary operator condition is always true\\.$#"
+			count: 6
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:applyAuthorQueueFilters\\(\\) has parameter \\$filters with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:applyAuthorQueueFilters\\(\\) has parameter \\$queue with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:applyAuthorQueueFilters\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:applyReviewerQueueFilters\\(\\) has parameter \\$filters with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:applyReviewerQueueFilters\\(\\) has parameter \\$queue with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:applyReviewerQueueFilters\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:authorFeedbackStatusForReview\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:authorItem\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:authorLocationStatusForReview\\(\\) has parameter \\$row with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:authorResolutionContextsForReview\\(\\) has parameter \\$row with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:authorVersionLinkageForReview\\(\\) has parameter \\$row with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:buildAuthorExportItems\\(\\) has parameter \\$selectedIds with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:buildAuthorExportItems\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:buildAuthorItem\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:buildAuthorMetrics\\(\\) has parameter \\$authorQueue with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:buildAuthorMetrics\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:buildAuthorParentOptions\\(\\) has parameter \\$user with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:buildAuthorParentOptions\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:buildAuthorQueue\\(\\) has parameter \\$filters with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:buildAuthorQueue\\(\\) has parameter \\$user with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:buildAuthorQueue\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:buildAuthorQueueContext\\(\\) has parameter \\$queue with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:buildAuthorQueueContext\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:buildAuthorQueueQueryString\\(\\) has parameter \\$filters with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:buildEmptyQueuePagination\\(\\) has parameter \\$filters with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:buildEmptyQueuePagination\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:buildReaderPresentation\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:buildReviewItem\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:buildReviewerMetrics\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:buildReviewerOtherItemsByState\\(\\) has parameter \\$user with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:buildReviewerOtherItemsByState\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:buildReviewerQueue\\(\\) has parameter \\$filters with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:buildReviewerQueue\\(\\) has parameter \\$user with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:buildReviewerQueue\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:buildReviewerQueueContext\\(\\) has parameter \\$queue with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:buildReviewerQueueContext\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:buildReviewerQueueQueryString\\(\\) has parameter \\$filters with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:canAuthor\\(\\) has parameter \\$roles with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:canReview\\(\\) has parameter \\$roles with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:deriveReviewState\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:extractScrivenerQueueMetadata\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:fetchReviewHistory\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:getUserRoles\\(\\) has parameter \\$user with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:getUserRoles\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:injectQueueDirectoryStructure\\(\\) has parameter \\$queue with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:injectQueueDirectoryStructure\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:isPureAdmin\\(\\) has parameter \\$roles with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:isUnresolvedReviewLocation\\(\\) has parameter \\$row with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:normalizeAuthorExportIds\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:normalizeAuthorQueueFilters\\(\\) has parameter \\$queryParams with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:normalizeAuthorQueueFilters\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:normalizeRequiresAction\\(\\) has parameter \\$data with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:normalizeReviewerQueueFilters\\(\\) has parameter \\$queryParams with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:normalizeReviewerQueueFilters\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:renderDashboard\\(\\) has parameter \\$extra with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:renderDashboard\\(\\) has parameter \\$user with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:resolveAuthorReview\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:reviewItem\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:sortAuthorQueueItems\\(\\) has parameter \\$queue with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:sortAuthorQueueItems\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:sortReviewerQueueItems\\(\\) has parameter \\$queue with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:sortReviewerQueueItems\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:submitReview\\(\\) has parameter \\$args with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\DashboardController\\:\\:validateReviewSubmissionCsrf\\(\\) has parameter \\$data with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Offset 'child_folder_count' on array\\{child_item_count\\: int\\<0, max\\>, child_folder_count\\: int\\<0, max\\>\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Offset 'child_item_count' on array\\{child_item_count\\: int\\<0, max\\>, child_folder_count\\: int\\<0, max\\>\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Offset 'items' on array\\{status_key\\: string, status_label\\: string, status_tone\\: string, items\\: non\\-empty\\-array\\<int\\<0, max\\>, array\\{id\\: int, title\\: string, display_title\\: string, book_title\\: string, content_status\\: string, status\\: mixed, status_tone\\: mixed, due\\: non\\-falsy\\-string, \\.\\.\\.\\}\\>\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Parameter \\#2 \\$timestamp of function date expects int\\|null, int\\|false given\\.$#"
+			count: 4
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between 'needs_author_review'\\|'open' and 'resolved' will always evaluate to false\\.$#"
+			count: 2
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between int and null will always evaluate to false\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between non\\-empty\\-string and '' will always evaluate to false\\.$#"
+			count: 1
+			path: src/Controller/DashboardController.php
+
+		-
+			message: "#^Parameter \\#1 \\$callback of function array_map expects \\(callable\\(string, int\\|string\\)\\: mixed\\)\\|null, Closure\\(array, string\\)\\: array\\{name\\: mixed, key\\: string, login_url\\: non\\-falsy\\-string\\} given\\.$#"
+			count: 1
+			path: src/Controller/HomeController.php
+
+		-
+			message: "#^Cannot cast mixed to string\\.$#"
+			count: 12
+			path: src/Service/AppSettingsService.php
+
+		-
+			message: "#^Parameter \\#2 \\$value of method SparkInsight\\\\Service\\\\AppSettingsService\\:\\:upsert\\(\\) expects string, string\\|false given\\.$#"
+			count: 1
+			path: src/Service/AppSettingsService.php
+
+		-
+			message: "#^Cannot cast mixed to string\\.$#"
+			count: 12
+			path: src/Service/AuthorPdfExportService.php
+
+		-
+			message: "#^Offset 1 on array\\{string, string, string\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: src/Service/AuthorPdfExportService.php
+
+		-
+			message: "#^Offset 1 on array\\{string, string\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: src/Service/AuthorPdfExportService.php
+
+		-
+			message: "#^Offset 2 on array\\{string, string, string\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: src/Service/AuthorPdfExportService.php
+
+		-
+			message: "#^Cannot call method getExtension\\(\\) on mixed\\.$#"
+			count: 1
+			path: src/Service/ContentImportService.php
+
+		-
+			message: "#^Cannot call method getFilename\\(\\) on SplFileInfo\\|string\\.$#"
+			count: 1
+			path: src/Service/ContentImportService.php
+
+		-
+			message: "#^Cannot call method getPathname\\(\\) on SplFileInfo\\|string\\.$#"
+			count: 2
+			path: src/Service/ContentImportService.php
+
+		-
+			message: "#^Cannot call method getPathname\\(\\) on mixed\\.$#"
+			count: 3
+			path: src/Service/ContentImportService.php
+
+		-
+			message: "#^Cannot call method isDir\\(\\) on SplFileInfo\\|string\\.$#"
+			count: 1
+			path: src/Service/ContentImportService.php
+
+		-
+			message: "#^Cannot call method isFile\\(\\) on SplFileInfo\\|string\\.$#"
+			count: 1
+			path: src/Service/ContentImportService.php
+
+		-
+			message: "#^Cannot call method isFile\\(\\) on mixed\\.$#"
+			count: 1
+			path: src/Service/ContentImportService.php
+
+		-
+			message: "#^Cannot cast mixed to int\\.$#"
+			count: 10
+			path: src/Service/ContentImportService.php
+
+		-
+			message: "#^Cannot cast mixed to string\\.$#"
+			count: 5
+			path: src/Service/ContentImportService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\ContentImportService\\:\\:collectScrivenerItems\\(\\) has parameter \\$items with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/ContentImportService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\ContentImportService\\:\\:collectScrivenerItems\\(\\) has parameter \\$orderTrail with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/ContentImportService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\ContentImportService\\:\\:collectScrivenerItems\\(\\) has parameter \\$parentPathParts with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/ContentImportService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\ContentImportService\\:\\:discoverScrivenerProjects\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/ContentImportService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\ContentImportService\\:\\:extractTextLinesFromXml\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/ContentImportService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\ContentImportService\\:\\:importFdxDirectory\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/ContentImportService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\ContentImportService\\:\\:importLegacyFdxDirectory\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/ContentImportService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\ContentImportService\\:\\:importScrivenerDirectory\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/ContentImportService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\ContentImportService\\:\\:insertScrivenerItem\\(\\) has parameter \\$item with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/ContentImportService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\ContentImportService\\:\\:parseScrivenerProjectItems\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/ContentImportService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\ContentImportService\\:\\:remapReviewerAnchorsForUpdatedScrivenerVersion\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/ContentImportService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\ContentImportService\\:\\:validateFdxContent\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/ContentImportService.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between array\\<SimpleXMLElement\\> and false will always evaluate to false\\.$#"
+			count: 1
+			path: src/Service/ContentImportService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\ImportValidationException\\:\\:__construct\\(\\) has parameter \\$errors with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/ImportValidationException.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\ImportValidationException\\:\\:getErrors\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/ImportValidationException.php
+
+		-
+			message: "#^Property SparkInsight\\\\Service\\\\ImportValidationException\\:\\:\\$errors type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/ImportValidationException.php
+
+		-
+			message: "#^Cannot cast mixed to int\\.$#"
+			count: 1
+			path: src/Service/InvitationService.php
+
+		-
+			message: "#^Cannot cast mixed to string\\.$#"
+			count: 2
+			path: src/Service/InvitationService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\InvitationService\\:\\:generateInvitation\\(\\) has parameter \\$roles with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/InvitationService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\InvitationService\\:\\:getInvitationCount\\(\\) has parameter \\$filters with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/InvitationService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\InvitationService\\:\\:getInvitations\\(\\) has parameter \\$filters with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/InvitationService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\InvitationService\\:\\:getInvitations\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/InvitationService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\InvitationService\\:\\:purgeExpiredInvitations\\(\\) should return int but returns int\\|string\\.$#"
+			count: 1
+			path: src/Service/InvitationService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\InvitationService\\:\\:validateInvitation\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/InvitationService.php
+
+		-
+			message: "#^Parameter \\#1 \\$datetime of class DateTime constructor expects string, mixed given\\.$#"
+			count: 1
+			path: src/Service/InvitationService.php
+
+		-
+			message: "#^Parameter \\#1 \\$json of function json_decode expects string, mixed given\\.$#"
+			count: 2
+			path: src/Service/InvitationService.php
+
+		-
+			message: "#^Parameter \\#3 \\$types of method Doctrine\\\\DBAL\\\\Connection\\:\\:executeQuery\\(\\) expects array\\<int\\<0, max\\>\\|string, Doctrine\\\\DBAL\\\\ArrayParameterType\\|Doctrine\\\\DBAL\\\\ParameterType\\|Doctrine\\\\DBAL\\\\Types\\\\Type\\|string\\>, non\\-empty\\-array\\<int, Doctrine\\\\DBAL\\\\ParameterType\\:\\:INTEGER\\|Doctrine\\\\DBAL\\\\ParameterType\\:\\:STRING\\> given\\.$#"
+			count: 1
+			path: src/Service/InvitationService.php
+
+		-
+			message: "#^Cannot access offset 0 on array\\<int, string\\>\\|false\\.$#"
+			count: 1
+			path: src/Service/MigrationRunner.php
+
+		-
+			message: "#^Cannot cast mixed to int\\.$#"
+			count: 1
+			path: src/Service/MigrationRunner.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\MigrationRunner\\:\\:getMigrationFiles\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/MigrationRunner.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\MigrationRunner\\:\\:getMigrationFiles\\(\\) should return array but returns array\\<int, string\\>\\|false\\.$#"
+			count: 1
+			path: src/Service/MigrationRunner.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\MigrationRunner\\:\\:getPendingMigrations\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/MigrationRunner.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\MigrationRunner\\:\\:parseMigrationFile\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/MigrationRunner.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\MigrationRunner\\:\\:runMigrations\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/MigrationRunner.php
+
+		-
+			message: "#^Parameter \\#1 \\$array of function usort expects TArray of array\\<string\\>, array\\<int, string\\>\\|false given\\.$#"
+			count: 1
+			path: src/Service/MigrationRunner.php
+
+		-
+			message: "#^Parameter \\#2 \\$string of function explode expects string, string\\|false given\\.$#"
+			count: 1
+			path: src/Service/MigrationRunner.php
+
+		-
+			message: "#^Parameter \\#2 \\$subject of function preg_split expects string, string\\|false given\\.$#"
+			count: 1
+			path: src/Service/MigrationRunner.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between non\\-falsy\\-string and '' will always evaluate to false\\.$#"
+			count: 1
+			path: src/Service/MigrationRunner.php
+
+		-
+			message: "#^Cannot cast mixed to int\\.$#"
+			count: 1
+			path: src/Service/UserService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\UserService\\:\\:findOrCreateUser\\(\\) has parameter \\$roles with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/UserService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\UserService\\:\\:findOrCreateUser\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/UserService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\UserService\\:\\:getAllUsers\\(\\) has parameter \\$filters with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/UserService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\UserService\\:\\:getAllUsers\\(\\) has parameter \\$sort with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/UserService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\UserService\\:\\:getAllUsers\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/UserService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\UserService\\:\\:getLinkedOAuthProviders\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/UserService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\UserService\\:\\:getUserByEmail\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/UserService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\UserService\\:\\:getUserById\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/UserService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\UserService\\:\\:getUserByProviderAndId\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/UserService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\UserService\\:\\:getUserCount\\(\\) has parameter \\$filters with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/UserService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\UserService\\:\\:updateUserRoles\\(\\) has parameter \\$roles with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/UserService.php
+
+		-
+			message: "#^Parameter \\#1 \\$json of function json_decode expects string, mixed given\\.$#"
+			count: 6
+			path: src/Service/UserService.php
+
+		-
+			message: "#^Parameter \\#3 \\$types of method Doctrine\\\\DBAL\\\\Connection\\:\\:executeQuery\\(\\) expects array\\<int\\<0, max\\>\\|string, Doctrine\\\\DBAL\\\\ArrayParameterType\\|Doctrine\\\\DBAL\\\\ParameterType\\|Doctrine\\\\DBAL\\\\Types\\\\Type\\|string\\>, non\\-empty\\-array\\<int, Doctrine\\\\DBAL\\\\ParameterType\\:\\:INTEGER\\|Doctrine\\\\DBAL\\\\ParameterType\\:\\:STRING\\> given\\.$#"
+			count: 1
+			path: src/Service/UserService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\UserSession\\:\\:getFlash\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/UserSession.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\UserSession\\:\\:getUser\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/UserSession.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\UserSession\\:\\:setUser\\(\\) has parameter \\$user with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/UserSession.php
+
+		-
+			message: "#^Offset 'domain' on array\\{lifetime\\: int\\<0, max\\>, path\\: non\\-falsy\\-string, domain\\: string, secure\\: bool, httponly\\: bool, samesite\\: string\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: src/Service/UserSession.php
+
+		-
+			message: "#^Offset 'httponly' on array\\{lifetime\\: int\\<0, max\\>, path\\: non\\-falsy\\-string, domain\\: string, secure\\: bool, httponly\\: bool, samesite\\: string\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: src/Service/UserSession.php
+
+		-
+			message: "#^Offset 'path' on array\\{lifetime\\: int\\<0, max\\>, path\\: non\\-falsy\\-string, domain\\: string, secure\\: bool, httponly\\: bool, samesite\\: string\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: src/Service/UserSession.php
+
+		-
+			message: "#^Offset 'samesite' on array\\{lifetime\\: int\\<0, max\\>, path\\: non\\-falsy\\-string, domain\\: string, secure\\: bool, httponly\\: bool, samesite\\: string\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: src/Service/UserSession.php
+
+		-
+			message: "#^Offset 'secure' on array\\{lifetime\\: int\\<0, max\\>, path\\: non\\-falsy\\-string, domain\\: string, secure\\: bool, httponly\\: bool, samesite\\: string\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: src/Service/UserSession.php
+
+		-
+			message: "#^Parameter \\#1 \\$name of function setcookie expects string, string\\|false given\\.$#"
+			count: 1
+			path: src/Service/UserSession.php
+
+		-
+			message: "#^Parameter \\#3 \\$options of function setcookie expects array\\{expires\\?\\: int, path\\?\\: string, domain\\?\\: string, secure\\?\\: bool, httponly\\?\\: bool, samesite\\?\\: 'Lax'\\|'lax'\\|'None'\\|'none'\\|'Strict'\\|'strict'\\}, array\\{expires\\: int\\<\\-41999, max\\>, path\\: non\\-falsy\\-string, domain\\: string, secure\\: bool, httponly\\: bool, samesite\\: string\\} given\\.$#"
+			count: 1
+			path: src/Service/UserSession.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\UserSessionInterface\\:\\:getFlash\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/UserSessionInterface.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\UserSessionInterface\\:\\:getUser\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/UserSessionInterface.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\UserSessionInterface\\:\\:setUser\\(\\) has parameter \\$user with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/UserSessionInterface.php
+
+		-
+			message: "#^Cannot access offset 'Type' on mixed\\.$#"
+			count: 1
+			path: src/Support/ReaderPresentationBuilder.php
+
+		-
+			message: "#^Cannot access offset 'type' on mixed\\.$#"
+			count: 1
+			path: src/Support/ReaderPresentationBuilder.php
+
+		-
+			message: "#^Cannot call method xpath\\(\\) on mixed\\.$#"
+			count: 1
+			path: src/Support/ReaderPresentationBuilder.php
+
+		-
+			message: "#^Cannot cast mixed to string\\.$#"
+			count: 5
+			path: src/Support/ReaderPresentationBuilder.php
+
+		-
+			message: "#^Offset 1 on array\\{string, non\\-empty\\-string\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: src/Support/ReaderPresentationBuilder.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between array\\<SimpleXMLElement\\> and false will always evaluate to false\\.$#"
+			count: 1
+			path: src/Support/ReaderPresentationBuilder.php
