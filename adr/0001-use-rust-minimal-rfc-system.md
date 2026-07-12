@@ -26,3 +26,5 @@ This repository is a small Rust-based CLI for managing Architectural Decision Re
 ## Links
 
 - Repository: https://github.com/joshrotenberg/adrs
+- ADR 0006: Adopt Test-Driven Development
+- ADR 0007: Apply SOLID Principles

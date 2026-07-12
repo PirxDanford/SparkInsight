@@ -1,0 +1,28 @@
+includes:
+  - phpstan-baseline.neon
+
+parameters:
+  level: max
+  paths:
+    - src
+    - public/index.php
+    - si.php
+  tmpDir: /tmp/phpstan
+  
+  # Excludes
+  excludePaths:
+    - tests
+    - vendor
+    - _tmp_noenv_runner
+  
+  # PHP version (using 80400 for PHP 8.4, will work with 8.5 code)
+  phpVersion: 80400
+  
+  # Type checking
+  checkMissingCallableSignature: true
+  checkMissingIterableValueType: true
+  
+  # Error handling
+  reportUnmatchedIgnoredErrors: true
+
+

@@ -18,9 +18,6 @@ env:
 jobs:
   ci:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      issues: write
     strategy:
       fail-fast: true
 
@@ -45,18 +42,7 @@ jobs:
             echo "⚠️  Warning: Latest commit is not signed. Commit signing is required for release branches."
           fi
 
-      - name: Detect PHP project
-        id: detect-php-project
-        run: |
-          if [ -f composer.json ]; then
-            echo "has_composer=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_composer=false" >> "$GITHUB_OUTPUT"
-            echo "ℹ️ No composer.json found; skipping PHP-specific CI steps."
-          fi
-
       - name: Set up PHP
-        if: steps.detect-php-project.outputs.has_composer == 'true'
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ env.PHP_VERSION }}
@@ -64,7 +50,6 @@ jobs:
           tools: composer, phpunit, phpstan
 
       - name: Cache Composer dependencies
-        if: steps.detect-php-project.outputs.has_composer == 'true'
         uses: actions/cache@v3
         with:
           path: vendor
@@ -73,21 +58,17 @@ jobs:
             ${{ runner.os }}-composer-
 
       - name: Install dependencies
-        if: steps.detect-php-project.outputs.has_composer == 'true'
         run: composer install --no-interaction --prefer-dist --no-progress
 
       - name: Validate composer.json
-        if: steps.detect-php-project.outputs.has_composer == 'true'
         run: composer validate --strict
 
       - name: Check PHP syntax
-        if: steps.detect-php-project.outputs.has_composer == 'true'
         run: |
           echo "Checking PHP syntax..."
           find src tests public -name "*.php" -type f -exec php -l {} \;
 
       - name: Run PHPUnit tests with coverage
-        if: steps.detect-php-project.outputs.has_composer == 'true'
         env:
           DB_DRIVER: pdo_sqlite
           DB_NAME: ':memory:'
@@ -99,7 +80,6 @@ jobs:
             --coverage-html=coverage-report
 
       - name: Check code coverage threshold
-        if: steps.detect-php-project.outputs.has_composer == 'true'
         run: |
           # Extract coverage percentage from coverage.txt
           COVERAGE=$(grep -oP '^\s+Code Coverage\s+:\s+\K[0-9.]+(?=%)' coverage.txt || grep -oP '[0-9]+\.[0-9]+(?=%)' coverage.txt | tail -1)
@@ -124,16 +104,14 @@ jobs:
           echo "✓ Coverage $COVERAGE% meets threshold $THRESHOLD%"
 
       - name: Run PHPStan static analysis
-        if: steps.detect-php-project.outputs.has_composer == 'true'
         run: vendor/bin/phpstan analyse --no-progress --memory-limit=512M
 
       - name: Run PHP-CS-Fixer (dry-run, check only)
-        if: steps.detect-php-project.outputs.has_composer == 'true'
         run: vendor/bin/php-cs-fixer fix --dry-run --allow-unsupported-php-version=1
 
       - name: Upload coverage reports
-        if: always() && steps.detect-php-project.outputs.has_composer == 'true'
-        uses: actions/upload-artifact@v4
+        if: always()
+        uses: actions/upload-artifact@v3
         with:
           name: coverage-reports
           path: |
@@ -142,7 +120,7 @@ jobs:
             coverage-report/
 
       - name: Comment coverage on PR
-        if: github.event_name == 'pull_request' && always() && steps.detect-php-project.outputs.has_composer == 'true'
+        if: github.event_name == 'pull_request' && always()
         uses: actions/github-script@v6
         with:
           script: |

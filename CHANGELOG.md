@@ -9,3 +9,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Initial project setup with ADRs, RFCs, and basic documentation structure.
+
+<!-- Target release: 1.0.0 (desired after Phase 5 completion). Keep only Unreleased changes here until official release. -->

@@ -1,0 +1,154 @@
+<?php
+/**
+ * TEMPLATE: Service Unit Test
+ * 
+ * Copy this template and replace:
+ * - [NAMESPACE] → Your namespace (e.g., SparkInsightTest\Unit\Service)
+ * - [CLASS_NAME] → Your service class name (e.g., UserService)
+ * - [DEPENDENCY_CLASS] → External dependency class name (e.g., Connection)
+ * - [METHOD_NAME] → The method you're testing
+ * 
+ * IMPORTANT: Write tests BEFORE implementing the service (TDD)
+ */
+
+declare(strict_types=1);
+
+namespace [NAMESPACE];
+
+use [YOUR_NAMESPACE]\[CLASS_NAME];
+use [EXTERNAL_NAMESPACE]\[DEPENDENCY_CLASS];
+use PHPUnit\Framework\TestCase;
+
+class [CLASS_NAME]Test extends TestCase
+{
+    private [DEPENDENCY_CLASS] $dependencyMock;
+    private [CLASS_NAME] $service;
+
+    /**
+     * setUp() runs before each test method.
+     * Initialize mocks and the service under test here.
+     */
+    protected function setUp(): void
+    {
+        // Create a mock of the external dependency
+        $this->dependencyMock = $this->createMock([DEPENDENCY_CLASS]::class);
+        
+        // Inject the mock into the service (dependency injection)
+        $this->service = new [CLASS_NAME]($this->dependencyMock);
+    }
+
+    /**
+     * Test successful behavior - the "happy path"
+     * 
+     * Following Arrange-Act-Assert pattern:
+     * 1. Arrange - Set up test data and mock expectations
+     * 2. Act - Call the method being tested
+     * 3. Assert - Verify the result
+     */
+    public function test[METHOD_NAME]WithValidInputReturnsExpectedResult(): void
+    {
+        // Arrange
+        $inputData = ['key' => 'value'];
+        
+        // Mock the dependency to return a specific value
+        $this->dependencyMock
+            ->expects($this->once())
+            ->method('someMethod')
+            ->with('expected_argument')
+            ->willReturn('expected_return_value');
+        
+        // Act
+        $result = $this->service->[METHOD_NAME]($inputData);
+        
+        // Assert
+        $this->assertEquals('expected_result', $result);
+    }
+
+    /**
+     * Test error/failure case
+     * Every feature should handle errors gracefully
+     */
+    public function test[METHOD_NAME]WithInvalidInputThrowsException(): void
+    {
+        // Arrange
+        $invalidInput = null;
+        
+        // Act & Assert - expect an exception
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Input cannot be null');
+        
+        // This call should throw the expected exception
+        $this->service->[METHOD_NAME]($invalidInput);
+    }
+
+    /**
+     * Test edge case
+     * Think about boundary conditions, empty inputs, etc.
+     */
+    public function test[METHOD_NAME]WithEmptyInputReturnsEmptyResult(): void
+    {
+        // Arrange
+        $emptyInput = [];
+        
+        // Act
+        $result = $this->service->[METHOD_NAME]($emptyInput);
+        
+        // Assert
+        $this->assertEmpty($result);
+    }
+
+    /**
+     * Test that dependencies are called correctly
+     * Verify the service interacts with its dependencies as expected
+     */
+    public function test[METHOD_NAME]CallsDependencyWithCorrectArguments(): void
+    {
+        // Arrange - Strict expectation: dependency MUST be called once with specific args
+        $this->dependencyMock
+            ->expects($this->once())
+            ->method('requiredMethod')
+            ->with(['arg1', 'arg2']);
+        
+        // Act
+        $this->service->[METHOD_NAME](['arg1', 'arg2']);
+        
+        // Assert is implicit - if dependency wasn't called correctly, test fails
+    }
+}
+
+/**
+ * TEMPLATE USAGE GUIDE
+ * 
+ * 1. Copy this file to your test directory
+ * 2. Rename the class: UserServiceTest, InvitationServiceTest, etc.
+ * 3. Replace [NAMESPACE], [CLASS_NAME], etc. with actual values
+ * 4. Write test methods for each behavior you want
+ * 5. Run: php vendor/bin/phpunit tests/Unit/Service/[YourService]Test.php
+ * 
+ * NAMING CONVENTION
+ * 
+ * Test method names should describe WHAT is being tested:
+ * test[MethodName][Condition][ExpectedResult]
+ * 
+ * Examples:
+ * - testCreateUserWithValidEmailReturnsUser()
+ * - testValidateInvitationWithExpiredCodeReturnsNull()
+ * - testGenerateCodeReturnsUniqueValue()
+ * - testDeleteUserThrowsExceptionWhenNotFound()
+ * 
+ * BEST PRACTICES
+ * 
+ * ✅ Do:
+ * - Mock external dependencies (database, API, etc.)
+ * - Test one behavior per test method
+ * - Use descriptive assertion messages
+ * - Test both success and failure cases
+ * - Keep tests fast (mock expensive operations)
+ * 
+ * ❌ Don't:
+ * - Mock the service being tested
+ * - Test multiple unrelated behaviors
+ * - Skip error cases
+ * - Create real database connections (use mocks)
+ * - Have tests that depend on each other
+ */
