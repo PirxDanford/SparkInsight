@@ -5,10 +5,8 @@ ob_start();
 ?>
 <div class="hero-panel">
     <div class="hero-content">
-        <div class="logo-placeholder">
-            <div class="logo-circle">
-                <span class="logo-text">SI</span>
-            </div>
+        <div class="signup-brand">
+            <img class="signup-brand-mark" src="/assets/sparkinsight-logo.png" alt="SparkInsight Logo">
             <h1 class="hero-title">Sign Up</h1>
             <p class="hero-subtitle">Join SparkInsight</p>
         </div>
@@ -58,8 +56,20 @@ ob_start();
     <?php if (!empty($invitationCode ?? null)): ?>
     <div class="provider-buttons">
         <?php foreach ($providers ?? [] as $provider): ?>
+        <?php
+        $providerKey = strtolower((string) ($provider['key'] ?? ''));
+        $providerIconText = match ($providerKey) {
+            'github' => 'GH',
+            'google' => 'G',
+            'linkedin' => 'in',
+            default => strtoupper(substr($providerKey, 0, 1)),
+        };
+        $providerIconClass = in_array($providerKey, ['github', 'google', 'linkedin'], true)
+            ? 'provider-icon--' . $providerKey
+            : 'provider-icon--default';
+        ?>
         <a class="button provider-button" href="/auth/<?= htmlspecialchars($provider['key'], ENT_QUOTES, 'UTF-8') ?>?code=<?= htmlspecialchars($invitationCode, ENT_QUOTES, 'UTF-8') ?>">
-            <span class="provider-icon"><?= $provider['name'] === 'GitHub' ? '🐙' : '🔵' ?></span>
+            <span class="provider-icon <?= htmlspecialchars($providerIconClass, ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"><?= htmlspecialchars($providerIconText, ENT_QUOTES, 'UTF-8') ?></span>
             <span>Continue with <?= htmlspecialchars($provider['label'], ENT_QUOTES, 'UTF-8') ?></span>
         </a>
         <?php endforeach; ?>

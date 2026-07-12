@@ -22,12 +22,9 @@ class OAuthProviderFactoryProfileTest extends TestCase
         $_ENV['OAUTH_GOOGLE_CLIENT_SECRET'] = 'secret';
         $_ENV['OAUTH_LINKEDIN_CLIENT_ID'] = '789';
         $_ENV['OAUTH_LINKEDIN_CLIENT_SECRET'] = 'secret';
-        $_ENV['OAUTH_FACEBOOK_CLIENT_ID'] = 'abc';
-        $_ENV['OAUTH_FACEBOOK_CLIENT_SECRET'] = 'secret';
         $_ENV['OAUTH_GITHUB_REDIRECT_URI'] = 'http://localhost:8000/callback/github';
         $_ENV['OAUTH_GOOGLE_REDIRECT_URI'] = 'http://localhost:8000/callback/google';
         $_ENV['OAUTH_LINKEDIN_REDIRECT_URI'] = 'http://localhost:8000/callback/linkedin';
-        $_ENV['OAUTH_FACEBOOK_REDIRECT_URI'] = 'http://localhost:8000/callback/facebook';
 
         $this->config = Config::fromEnvironment();
         $this->factory = new OAuthProviderFactory($this->config);
@@ -41,12 +38,9 @@ class OAuthProviderFactoryProfileTest extends TestCase
         unset($_ENV['OAUTH_GOOGLE_CLIENT_SECRET']);
         unset($_ENV['OAUTH_LINKEDIN_CLIENT_ID']);
         unset($_ENV['OAUTH_LINKEDIN_CLIENT_SECRET']);
-        unset($_ENV['OAUTH_FACEBOOK_CLIENT_ID']);
-        unset($_ENV['OAUTH_FACEBOOK_CLIENT_SECRET']);
         unset($_ENV['OAUTH_GITHUB_REDIRECT_URI']);
         unset($_ENV['OAUTH_GOOGLE_REDIRECT_URI']);
         unset($_ENV['OAUTH_LINKEDIN_REDIRECT_URI']);
-        unset($_ENV['OAUTH_FACEBOOK_REDIRECT_URI']);
     }
 
     public function testGetUserProfileThrowsForUnsupportedProvider(): void
@@ -114,14 +108,6 @@ class OAuthProviderFactoryProfileTest extends TestCase
 
         $this->assertStringContainsString('linkedin.com', $provider->getBaseAuthorizationUrl());
         $this->assertStringContainsString('linkedin.com', $provider->getBaseAccessTokenUrl([]));
-    }
-
-    public function testCreateProviderFacebookURLsAreCorrect(): void
-    {
-        $provider = $this->factory->createProvider('facebook');
-
-        $this->assertStringContainsString('facebook.com', $provider->getBaseAuthorizationUrl());
-        $this->assertStringContainsString('facebook.com', $provider->getBaseAccessTokenUrl([]));
     }
 
     public function testCreateProviderWithDevelopmentEnvironmentConfigured(): void

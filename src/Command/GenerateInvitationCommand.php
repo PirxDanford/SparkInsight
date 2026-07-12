@@ -105,6 +105,7 @@ final class GenerateInvitationCommand extends Command
             $io->section('Sign-in link for each provider:');
             $io->info('GitHub:  ' . $appUrl . '/auth/github?code=' . $code);
             $io->info('Google:  ' . $appUrl . '/auth/google?code=' . $code);
+            $io->info('LinkedIn:' . $appUrl . '/auth/linkedin?code=' . $code);
             $io->info('');
 
             return Command::SUCCESS;

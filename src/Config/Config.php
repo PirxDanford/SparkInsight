@@ -44,14 +44,7 @@ final class Config
                 'client_id' => $_ENV['OAUTH_LINKEDIN_CLIENT_ID'] ?? $_SERVER['OAUTH_LINKEDIN_CLIENT_ID'] ?? '',
                 'client_secret' => $_ENV['OAUTH_LINKEDIN_CLIENT_SECRET'] ?? $_SERVER['OAUTH_LINKEDIN_CLIENT_SECRET'] ?? '',
                 'redirect_uri' => rtrim($_ENV['APP_URL'] ?? $_SERVER['APP_URL'] ?? 'http://localhost:8000', '/') . '/callback/linkedin',
-                'scope' => 'r_liteprofile r_emailaddress',
-            ],
-            'facebook' => [
-                'label' => 'Facebook',
-                'client_id' => $_ENV['OAUTH_FACEBOOK_CLIENT_ID'] ?? $_SERVER['OAUTH_FACEBOOK_CLIENT_ID'] ?? '',
-                'client_secret' => $_ENV['OAUTH_FACEBOOK_CLIENT_SECRET'] ?? $_SERVER['OAUTH_FACEBOOK_CLIENT_SECRET'] ?? '',
-                'redirect_uri' => rtrim($_ENV['APP_URL'] ?? $_SERVER['APP_URL'] ?? 'http://localhost:8000', '/') . '/callback/facebook',
-                'scope' => 'email public_profile',
+                'scope' => 'openid profile email',
             ],
         ];
 

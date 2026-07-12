@@ -83,29 +83,27 @@ final class OAuthProviderFactory implements OAuthProviderFactoryInterface
         if ($providerName === 'linkedin') {
             $resourceOwner = $this->createProvider($providerName)->getResourceOwner($token);
             $profile = $resourceOwner->toArray();
-            $email = $this->fetchLinkedInEmail($token);
-            $name = trim(sprintf('%s %s', $profile['localizedFirstName'] ?? '', $profile['localizedLastName'] ?? ''));
+            $email = (string) ($profile['email'] ?? '');
+            if ($email === '') {
+                $email = $this->fetchLinkedInEmail($token);
+            }
+
+            $name = trim((string) ($profile['name'] ?? ''));
+            if ($name === '') {
+                $name = trim(sprintf('%s %s', $profile['localizedFirstName'] ?? '', $profile['localizedLastName'] ?? ''));
+            }
+
+            $avatar = $profile['picture'] ?? null;
+            if (!is_string($avatar) || trim($avatar) === '') {
+                $avatar = null;
+            }
 
             return [
                 'provider' => 'linkedin',
-                'provider_id' => (string) ($profile['id'] ?? ''),
+                'provider_id' => (string) ($profile['sub'] ?? $profile['id'] ?? ''),
                 'name' => $name !== '' ? $name : 'LinkedIn user',
                 'email' => $email,
-                'avatar' => null,
-            ];
-        }
-
-        if ($providerName === 'facebook') {
-            $resourceOwner = $this->createProvider($providerName)->getResourceOwner($token);
-            $profile = $resourceOwner->toArray();
-            $picture = $profile['picture']['data']['url'] ?? null;
-
-            return [
-                'provider' => 'facebook',
-                'provider_id' => (string) ($profile['id'] ?? ''),
-                'name' => trim($profile['name'] ?? 'Facebook user'),
-                'email' => $profile['email'] ?? '',
-                'avatar' => $picture,
+                'avatar' => $avatar,
             ];
         }
 
@@ -115,7 +113,7 @@ final class OAuthProviderFactory implements OAuthProviderFactoryInterface
     public function getSupportedProviders(): array
     {
         $providers = $this->config->getActiveProviders();
-        return array_intersect_key($providers, array_flip(['github', 'google', 'linkedin', 'facebook']));
+        return array_intersect_key($providers, array_flip(['github', 'google', 'linkedin']));
     }
 
     public function getProviderScope(string $provider): string
@@ -129,7 +127,6 @@ final class OAuthProviderFactory implements OAuthProviderFactoryInterface
             'github' => 'https://github.com/login/oauth/authorize',
             'google' => 'https://accounts.google.com/o/oauth2/v2/auth',
             'linkedin' => 'https://www.linkedin.com/oauth/v2/authorization',
-            'facebook' => 'https://www.facebook.com/v16.0/dialog/oauth',
             default => throw new \InvalidArgumentException('Unsupported provider.'),
         };
     }
@@ -140,7 +137,6 @@ final class OAuthProviderFactory implements OAuthProviderFactoryInterface
             'github' => 'https://github.com/login/oauth/access_token',
             'google' => 'https://oauth2.googleapis.com/token',
             'linkedin' => 'https://www.linkedin.com/oauth/v2/accessToken',
-            'facebook' => 'https://graph.facebook.com/v16.0/oauth/access_token',
             default => throw new \InvalidArgumentException('Unsupported provider.'),
         };
     }
@@ -150,8 +146,7 @@ final class OAuthProviderFactory implements OAuthProviderFactoryInterface
         return match (strtolower($provider)) {
             'github' => 'https://api.github.com/user',
             'google' => 'https://openidconnect.googleapis.com/v1/userinfo',
-            'linkedin' => 'https://api.linkedin.com/v2/me',
-            'facebook' => 'https://graph.facebook.com/me?fields=id,name,email,picture',
+            'linkedin' => 'https://api.linkedin.com/v2/userinfo',
             default => throw new \InvalidArgumentException('Unsupported provider.'),
         };
     }

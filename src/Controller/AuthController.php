@@ -152,7 +152,6 @@ final class AuthController
             'state' => $state,
             'scope' => $this->providerFactory->getProviderScope($provider),
             'access_type' => $provider === 'google' ? 'offline' : null,
-            'prompt' => $provider === 'google' ? 'consent' : null,
         ]);
 
         return $response->withHeader('Location', $authorizationUrl)->withStatus(302);
