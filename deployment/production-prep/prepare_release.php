@@ -8,7 +8,6 @@ declare(strict_types=1);
  * Validates local runtime against a target profile and writes
  * a report + composer.lock snapshot for FTP deployments.
  */
-
 $rootDir = dirname(__DIR__, 2);
 $defaultProfile = __DIR__ . '/profiles/shared-hosting.example.json';
 
@@ -17,12 +16,12 @@ $profilePathInput = isset($options['profile']) ? (string) $options['profile'] : 
 $outputBaseInput = isset($options['output']) ? (string) $options['output'] : __DIR__ . '/output';
 
 $profilePath = $profilePathInput;
-if (!str_starts_with($profilePathInput, DIRECTORY_SEPARATOR) && !preg_match('/^[A-Za-z]:\\\\/', $profilePathInput)) {
+if (!str_starts_with($profilePathInput, DIRECTORY_SEPARATOR) && !preg_match('/^[A-Za-z]:\\\/', $profilePathInput)) {
     $profilePath = $rootDir . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $profilePathInput);
 }
 
 $outputBase = $outputBaseInput;
-if (!str_starts_with($outputBaseInput, DIRECTORY_SEPARATOR) && !preg_match('/^[A-Za-z]:\\\\/', $outputBaseInput)) {
+if (!str_starts_with($outputBaseInput, DIRECTORY_SEPARATOR) && !preg_match('/^[A-Za-z]:\\\/', $outputBaseInput)) {
     $outputBase = $rootDir . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $outputBaseInput);
 }
 
@@ -104,8 +103,8 @@ foreach ($checks as $check) {
     }
 }
 
-$outputDir = rtrim($outputBase, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $profileName;
-if (!is_dir($outputDir) && !mkdir($outputDir, 0777, true) && !is_dir($outputDir)) {
+$outputDir = mb_rtrim($outputBase, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $profileName;
+if (!is_dir($outputDir) && !mkdir($outputDir, 0o777, true) && !is_dir($outputDir)) {
     fwrite(STDERR, 'Unable to create output directory: ' . $outputDir . PHP_EOL);
     exit(2);
 }

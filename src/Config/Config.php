@@ -29,28 +29,28 @@ final class Config
                 'label' => 'GitHub',
                 'client_id' => $_ENV['OAUTH_GITHUB_CLIENT_ID'] ?? $_SERVER['OAUTH_GITHUB_CLIENT_ID'] ?? '',
                 'client_secret' => $_ENV['OAUTH_GITHUB_CLIENT_SECRET'] ?? $_SERVER['OAUTH_GITHUB_CLIENT_SECRET'] ?? '',
-                'redirect_uri' => rtrim($_ENV['APP_URL'] ?? $_SERVER['APP_URL'] ?? 'http://localhost:8000', '/') . '/callback/github',
+                'redirect_uri' => mb_rtrim($_ENV['APP_URL'] ?? $_SERVER['APP_URL'] ?? 'http://localhost:8000', '/') . '/callback/github',
                 'scope' => 'read:user user:email',
             ],
             'google' => [
                 'label' => 'Google',
                 'client_id' => $_ENV['OAUTH_GOOGLE_CLIENT_ID'] ?? $_SERVER['OAUTH_GOOGLE_CLIENT_ID'] ?? '',
                 'client_secret' => $_ENV['OAUTH_GOOGLE_CLIENT_SECRET'] ?? $_SERVER['OAUTH_GOOGLE_CLIENT_SECRET'] ?? '',
-                'redirect_uri' => rtrim($_ENV['APP_URL'] ?? $_SERVER['APP_URL'] ?? 'http://localhost:8000', '/') . '/callback/google',
+                'redirect_uri' => mb_rtrim($_ENV['APP_URL'] ?? $_SERVER['APP_URL'] ?? 'http://localhost:8000', '/') . '/callback/google',
                 'scope' => 'openid profile email',
             ],
             'linkedin' => [
                 'label' => 'LinkedIn',
                 'client_id' => $_ENV['OAUTH_LINKEDIN_CLIENT_ID'] ?? $_SERVER['OAUTH_LINKEDIN_CLIENT_ID'] ?? '',
                 'client_secret' => $_ENV['OAUTH_LINKEDIN_CLIENT_SECRET'] ?? $_SERVER['OAUTH_LINKEDIN_CLIENT_SECRET'] ?? '',
-                'redirect_uri' => rtrim($_ENV['APP_URL'] ?? $_SERVER['APP_URL'] ?? 'http://localhost:8000', '/') . '/callback/linkedin',
+                'redirect_uri' => mb_rtrim($_ENV['APP_URL'] ?? $_SERVER['APP_URL'] ?? 'http://localhost:8000', '/') . '/callback/linkedin',
                 'scope' => 'openid profile email',
             ],
         ];
 
         return new self([
             'app_env' => $_ENV['APP_ENV'] ?? $_SERVER['APP_ENV'] ?? 'development',
-            'app_url' => rtrim($_ENV['APP_URL'] ?? $_SERVER['APP_URL'] ?? 'http://localhost:8000', '/'),
+            'app_url' => mb_rtrim($_ENV['APP_URL'] ?? $_SERVER['APP_URL'] ?? 'http://localhost:8000', '/'),
             'providers' => $providers,
             'database' => [
                 'driver' => $_ENV['DB_DRIVER'] ?? $_SERVER['DB_DRIVER'] ?? 'pdo_mysql',
@@ -76,9 +76,7 @@ final class Config
 
     public function getActiveProviders(): array
     {
-        return array_filter($this->values['providers'], static function (array $provider): bool {
-            return (bool) $provider['client_id'] && (bool) $provider['client_secret'];
-        });
+        return array_filter($this->values['providers'], static fn (array $provider): bool => (bool) $provider['client_id'] && (bool) $provider['client_secret']);
     }
 
     public function getDatabaseConfig(): array

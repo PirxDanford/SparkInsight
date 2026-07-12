@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SparkInsight - <?= htmlspecialchars($title ?? 'Home', ENT_QUOTES, 'UTF-8') ?></title>
+    <title>SparkInsight - <?php echo htmlspecialchars($title ?? 'Home', ENT_QUOTES, 'UTF-8'); ?></title>
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -39,43 +39,43 @@
                 <?php $canReview = in_array('reviewer', $roles, true) || $canAuthor; ?>
                 <?php $isPureAdmin = $isAdmin && !$canAuthor && !in_array('reviewer', $roles, true); ?>
                 <ul>
-                    <?php if (($user ?? null) && !$isPureAdmin): ?>
-                        <?php if ($canAuthor): ?>
-                            <li class="<?= ($dashboard_mode ?? null) === 'author' ? 'active' : '' ?>"><a href="/dashboard/author">Home</a></li>
-                        <?php endif; ?>
-                        <?php if ($canReview): ?>
-                            <?php if ($canAuthor): ?>
-                                <li class="<?= ($dashboard_mode ?? null) === 'review' ? 'active' : '' ?>"><a href="/dashboard/review">Review</a></li>
-                            <?php else: ?>
-                                <li class="<?= ($dashboard_mode ?? null) === 'review' ? 'active' : '' ?>"><a href="/dashboard/review">Home</a></li>
-                            <?php endif; ?>
-                        <?php endif; ?>
-                    <?php endif; ?>
-                    <?php if ($isAdmin): ?>
-                        <li class="<?= in_array($title, ['Admin', 'User Management', 'Invitations', 'Admin Settings'], true) ? 'active' : '' ?>"><a href="/dashboard/admin">Admin</a></li>
-                    <?php endif; ?>
+                    <?php if (($user ?? null) && !$isPureAdmin) { ?>
+                        <?php if ($canAuthor) { ?>
+                            <li class="<?php echo ($dashboard_mode ?? null) === 'author' ? 'active' : ''; ?>"><a href="/dashboard/author">Home</a></li>
+                        <?php } ?>
+                        <?php if ($canReview) { ?>
+                            <?php if ($canAuthor) { ?>
+                                <li class="<?php echo ($dashboard_mode ?? null) === 'review' ? 'active' : ''; ?>"><a href="/dashboard/review">Review</a></li>
+                            <?php } else { ?>
+                                <li class="<?php echo ($dashboard_mode ?? null) === 'review' ? 'active' : ''; ?>"><a href="/dashboard/review">Home</a></li>
+                            <?php } ?>
+                        <?php } ?>
+                    <?php } ?>
+                    <?php if ($isAdmin) { ?>
+                        <li class="<?php echo in_array($title, ['Admin', 'User Management', 'Invitations', 'Admin Settings'], true) ? 'active' : ''; ?>"><a href="/dashboard/admin">Admin</a></li>
+                    <?php } ?>
                 </ul>
             </nav>
             <div class="current-location header-section">
                 <span class="location-icon">
-                    <?= htmlspecialchars((string) $currentView['icon'], ENT_QUOTES, 'UTF-8') ?>
+                    <?php echo htmlspecialchars((string) $currentView['icon'], ENT_QUOTES, 'UTF-8'); ?>
                 </span>
                 <span class="location-prefix">Current View:</span>
-                <span class="location-text"><?= htmlspecialchars((string) $currentView['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                <span class="location-text"><?php echo htmlspecialchars((string) $currentView['label'], ENT_QUOTES, 'UTF-8'); ?></span>
             </div>
             <div class="auth-section header-section">
-                <?php if ($user ?? null): ?>
+                <?php if ($user ?? null) { ?>
                     <div class="user-info">
                         <span class="user-name" tabindex="0">
-                            <?= htmlspecialchars((string) ($user['display_name'] ?? $user['name']), ENT_QUOTES, 'UTF-8') ?>
-                            <span class="user-provider-tooltip">Signed in via <?= htmlspecialchars((string) ($user['provider'] ?? 'unknown provider'), ENT_QUOTES, 'UTF-8') ?></span>
+                            <?php echo htmlspecialchars((string) ($user['display_name'] ?? $user['name']), ENT_QUOTES, 'UTF-8'); ?>
+                            <span class="user-provider-tooltip">Signed in via <?php echo htmlspecialchars((string) ($user['provider'] ?? 'unknown provider'), ENT_QUOTES, 'UTF-8'); ?></span>
                         </span>
                         <a class="button small secondary" href="/logout">
                             <span class="icon">🚪</span>
                             Logout
                         </a>
                     </div>
-                <?php else: ?>
+                <?php } else { ?>
                     <div class="auth-buttons">
                         <a class="button small" href="/login">
                             <span class="provider-icon">🔐</span>
@@ -86,17 +86,17 @@
                             Sign Up
                         </a>
                     </div>
-                <?php endif; ?>
+                <?php } ?>
             </div>
         </div>
     </header>
 
     <main class="main-content">
-        <?= $content ?? '' ?>
+        <?php echo $content ?? ''; ?>
     </main>
 
     <footer class="footer">
-        <p>&copy; <?= date('Y') ?> SparkInsight. Modern review workflows.</p>
+        <p>&copy; <?php echo date('Y'); ?> SparkInsight. Modern review workflows.</p>
     </footer>
 </body>
 </html>

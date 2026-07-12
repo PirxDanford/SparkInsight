@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SparkInsight\Command;
 
+use Exception;
 use SparkInsight\Config\Config;
 use SparkInsight\Service\MigrationRunner;
 use Symfony\Component\Console\Command\Command;
@@ -16,7 +17,7 @@ final class InitializeDbCommand extends Command
     protected function configure(): void
     {
         $this->setName('db:init')
-             ->setDescription('Initialize the database by running all migrations');
+            ->setDescription('Initialize the database by running all migrations');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -39,8 +40,8 @@ final class InitializeDbCommand extends Command
             ];
             $conn = \Doctrine\DBAL\DriverManager::getConnection($connectionParams);
             $conn->executeQuery('SELECT 1');
-        } catch (\Exception $e) {
-            if (stripos($e->getMessage(), 'unknown database') !== false) {
+        } catch (Exception $e) {
+            if (mb_stripos($e->getMessage(), 'unknown database') !== false) {
                 // Create the database
                 $connectionParamsWithoutDb = $connectionParams;
                 unset($connectionParamsWithoutDb['dbname']);
@@ -49,6 +50,7 @@ final class InitializeDbCommand extends Command
                 $io->info("Created database '{$dbConfig['dbname']}'");
             } else {
                 $io->error('Cannot connect to database: ' . $e->getMessage());
+
                 return Command::FAILURE;
             }
         }

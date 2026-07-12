@@ -25,7 +25,7 @@ function parseEnvFile(string $path): array
     }
 
     foreach ($lines as $line) {
-        $trimmed = trim($line);
+        $trimmed = mb_trim($line);
         if ($trimmed === '' || str_starts_with($trimmed, '#')) {
             continue;
         }
@@ -35,9 +35,9 @@ function parseEnvFile(string $path): array
             continue;
         }
 
-        $key = trim($parts[0]);
-        $value = trim($parts[1]);
-        $result[$key] = trim($value, "\"'");
+        $key = mb_trim($parts[0]);
+        $value = mb_trim($parts[1]);
+        $result[$key] = mb_trim($value, "\"'");
     }
 
     return $result;
@@ -130,7 +130,7 @@ if (is_file($composerLockPath)) {
     }
 }
 
-$autoloadReady = class_exists('SparkInsight\\Config\\Config');
+$autoloadReady = class_exists('SparkInsight\Config\Config');
 printCheck('Application autoload', $autoloadReady, $autoloadReady ? 'SparkInsight classes available' : 'autoload failed or dependencies missing');
 
 $requiredEnvKeys = [

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SparkInsight\Command;
 
 use Doctrine\DBAL\DriverManager;
+use Exception;
 use SparkInsight\Config\Config;
 use SparkInsight\Service\ContentImportService;
 use Symfony\Component\Console\Command\Command;
@@ -12,6 +13,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Throwable;
 
 final class ScrivenerImportCommand extends Command
 {
@@ -39,7 +41,7 @@ final class ScrivenerImportCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $directory = (string) $input->getOption('directory');
         $authorId = (int) $input->getOption('author-id');
-        $bookTitle = $input->getOption('book-title') !== null ? trim((string) $input->getOption('book-title')) : null;
+        $bookTitle = $input->getOption('book-title') !== null ? mb_trim((string) $input->getOption('book-title')) : null;
         if ($bookTitle === '') {
             $bookTitle = null;
         }
@@ -50,8 +52,9 @@ final class ScrivenerImportCommand extends Command
 
         try {
             $connection = DriverManager::getConnection($config->getDatabaseConfig());
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $io->error('Cannot connect to database: ' . $e->getMessage());
+
             return Command::FAILURE;
         }
 
@@ -59,8 +62,9 @@ final class ScrivenerImportCommand extends Command
 
         try {
             $result = $service->importScrivenerDirectory($directory, $authorId, $labelPrefix, $dryRun, $bookTitle);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $io->error($e->getMessage());
+
             return Command::FAILURE;
         }
 
@@ -98,6 +102,7 @@ final class ScrivenerImportCommand extends Command
 
         if ($result['scanned'] === 0) {
             $io->warning('No Scrivener binder items were found in the selected directory.');
+
             return Command::SUCCESS;
         }
 

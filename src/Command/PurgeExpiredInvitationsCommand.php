@@ -6,6 +6,7 @@ namespace SparkInsight\Command;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
+use Exception;
 use SparkInsight\Config\Config;
 use SparkInsight\Service\InvitationService;
 use Symfony\Component\Console\Command\Command;
@@ -13,6 +14,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Throwable;
 
 final class PurgeExpiredInvitationsCommand extends Command
 {
@@ -46,7 +48,7 @@ final class PurgeExpiredInvitationsCommand extends Command
 
             try {
                 $this->connection = DriverManager::getConnection($config->getDatabaseConfig());
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $io->error('Cannot connect to database: ' . $e->getMessage());
 
                 return Command::FAILURE;
@@ -57,7 +59,7 @@ final class PurgeExpiredInvitationsCommand extends Command
 
         try {
             $deleted = $invitationService->purgeExpiredInvitations();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $io->error('Failed to purge expired invitations: ' . $e->getMessage());
 
             return Command::FAILURE;

@@ -1,6 +1,6 @@
 <?php
 $title = 'Login';
-$user = $user ?? null;
+$user ??= null;
 $providers = isset($providers) && is_array($providers) ? $providers : [];
 ob_start();
 ?>
@@ -27,24 +27,24 @@ ob_start();
         </section>
 
         <section class="card login-auth-card" aria-label="OAuth sign in">
-            <?php if (is_array($flash_message ?? null) && !empty($flash_message)): ?>
+            <?php if (is_array($flash_message ?? null) && !empty($flash_message)) { ?>
             <div class="notification-box" id="flash-message">
                 <div class="notification-content">
                     <span class="notification-icon">
-                        <?php if (($flash_message['type'] ?? 'info') === 'error'): ?>❌<?php elseif (($flash_message['type'] ?? 'info') === 'success'): ?>✅<?php else: ?>ℹ️<?php endif; ?>
+                        <?php if (($flash_message['type'] ?? 'info') === 'error') { ?>❌<?php } elseif (($flash_message['type'] ?? 'info') === 'success') { ?>✅<?php } else { ?>ℹ️<?php } ?>
                     </span>
-                    <span class="notification-text"><?= htmlspecialchars($flash_message['message'] ?? '', ENT_QUOTES, 'UTF-8') ?></span>
+                    <span class="notification-text"><?php echo htmlspecialchars($flash_message['message'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
                     <button class="notification-close" onclick="dismissNotification('flash-message')">&times;</button>
                 </div>
             </div>
-            <?php endif; ?>
+            <?php } ?>
 
             <div class="card-header">
                 <h2>Sign In with OAuth</h2>
             </div>
 
             <div class="provider-buttons">
-                <?php if (empty($providers)): ?>
+                <?php if (empty($providers)) { ?>
                 <div class="notification-box warning">
                     <div class="notification-content">
                         <span class="notification-icon">⚠️</span>
@@ -53,33 +53,33 @@ ob_start();
                         </span>
                     </div>
                 </div>
-                <?php else: ?>
-                <?php foreach ($providers as $provider): ?>
+                <?php } else { ?>
+                <?php foreach ($providers as $provider) { ?>
                 <?php
-                $providerKey = strtolower((string) ($provider['key'] ?? ''));
-                $providerIconText = match ($providerKey) {
-                    'github' => 'GH',
-                    'google' => 'G',
-                    'linkedin' => 'in',
-                    default => strtoupper(substr($providerKey, 0, 1)),
-                };
-                $providerIconClass = in_array($providerKey, ['github', 'google', 'linkedin'], true)
-                    ? 'provider-icon--' . $providerKey
-                    : 'provider-icon--default';
-                ?>
-                <a class="button provider-button" href="/auth/<?= htmlspecialchars($provider['key'], ENT_QUOTES, 'UTF-8') ?>">
-                    <span class="provider-icon <?= htmlspecialchars($providerIconClass, ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"><?= htmlspecialchars($providerIconText, ENT_QUOTES, 'UTF-8') ?></span>
-                    <span>Continue with <?= htmlspecialchars($provider['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                $providerKey = mb_strtolower((string) ($provider['key'] ?? ''));
+                    $providerIconText = match ($providerKey) {
+                        'github' => 'GH',
+                        'google' => 'G',
+                        'linkedin' => 'in',
+                        default => mb_strtoupper(mb_substr($providerKey, 0, 1)),
+                    };
+                    $providerIconClass = in_array($providerKey, ['github', 'google', 'linkedin'], true)
+                        ? 'provider-icon--' . $providerKey
+                        : 'provider-icon--default';
+                    ?>
+                <a class="button provider-button" href="/auth/<?php echo htmlspecialchars($provider['key'], ENT_QUOTES, 'UTF-8'); ?>">
+                    <span class="provider-icon <?php echo htmlspecialchars($providerIconClass, ENT_QUOTES, 'UTF-8'); ?>" aria-hidden="true"><?php echo htmlspecialchars($providerIconText, ENT_QUOTES, 'UTF-8'); ?></span>
+                    <span>Continue with <?php echo htmlspecialchars($provider['label'], ENT_QUOTES, 'UTF-8'); ?></span>
                 </a>
-                <?php endforeach; ?>
-                <?php endif; ?>
+                <?php } ?>
+                <?php } ?>
             </div>
 
             <div class="card-footer">
                 <p>Don't have an account? <a href="/signup">Sign up</a></p>
-                <?php if ($showDemo ?? false): ?>
+                <?php if ($showDemo ?? false) { ?>
                 <p><a href="/demo">Try demo mode</a></p>
-                <?php endif; ?>
+                <?php } ?>
             </div>
         </section>
     </div>

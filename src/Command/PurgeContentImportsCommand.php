@@ -6,12 +6,14 @@ namespace SparkInsight\Command;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
+use Exception;
 use SparkInsight\Config\Config;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Throwable;
 
 final class PurgeContentImportsCommand extends Command
 {
@@ -37,6 +39,7 @@ final class PurgeContentImportsCommand extends Command
 
         if (!$input->getOption('force')) {
             $io->error('Refusing to delete imports without --force.');
+
             return Command::FAILURE;
         }
 
@@ -45,8 +48,9 @@ final class PurgeContentImportsCommand extends Command
 
             try {
                 $this->connection = DriverManager::getConnection($config->getDatabaseConfig());
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $io->error('Cannot connect to database: ' . $e->getMessage());
+
                 return Command::FAILURE;
             }
         }
@@ -60,18 +64,20 @@ final class PurgeContentImportsCommand extends Command
                 [$whereSql, $params] = $this->buildBatchWhereClause($targetIds);
                 $count = (int) $this->connection->executeQuery(
                     'SELECT COUNT(*) FROM content_versions WHERE ' . $whereSql,
-                    $params
+                    $params,
                 )->fetchOne();
             } else {
                 $count = (int) $this->connection->fetchOne('SELECT COUNT(*) FROM content_versions');
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $io->error('Failed to inspect imported content: ' . $e->getMessage());
+
             return Command::FAILURE;
         }
 
         if ($count === 0) {
             $io->success('No imported content found to delete.');
+
             return Command::SUCCESS;
         }
 
@@ -83,15 +89,15 @@ final class PurgeContentImportsCommand extends Command
 
                 $this->connection->executeStatement(
                     'DELETE FROM reviews WHERE content_version_id IN (SELECT id FROM content_versions WHERE ' . $whereSql . ')',
-                    $params
+                    $params,
                 );
                 $this->connection->executeStatement(
                     'DELETE FROM review_assignments WHERE content_version_id IN (SELECT id FROM content_versions WHERE ' . $whereSql . ')',
-                    $params
+                    $params,
                 );
                 $this->connection->executeStatement(
                     'DELETE FROM content_versions WHERE ' . $whereSql,
-                    $params
+                    $params,
                 );
             } else {
                 $this->connection->executeStatement('DELETE FROM reviews');
@@ -99,12 +105,13 @@ final class PurgeContentImportsCommand extends Command
                 $this->connection->executeStatement('DELETE FROM content_versions');
             }
             $this->connection->commit();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             if ($this->connection->isTransactionActive()) {
                 $this->connection->rollBack();
             }
 
             $io->error('Failed to purge imported content: ' . $e->getMessage());
+
             return Command::FAILURE;
         }
 
@@ -125,7 +132,7 @@ final class PurgeContentImportsCommand extends Command
     {
         $ids = [];
         foreach ($rawIds as $rawId) {
-            $id = trim((string) $rawId);
+            $id = mb_trim((string) $rawId);
             if ($id !== '') {
                 $ids[$id] = $id;
             }

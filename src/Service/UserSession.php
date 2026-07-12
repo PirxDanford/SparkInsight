@@ -19,14 +19,14 @@ final class UserSession implements UserSessionInterface
             session_name('sparkinsight_session');
 
             $secure = false;
-            if (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off') {
+            if (!empty($_SERVER['HTTPS']) && mb_strtolower($_SERVER['HTTPS']) !== 'off') {
                 $secure = true;
             }
             if (!$secure && !empty($_SERVER['HTTP_X_FORWARDED_PROTO'])) {
-                $secure = strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https';
+                $secure = mb_strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https';
             }
             if (!$secure && !empty($_SERVER['HTTP_X_FORWARDED_SSL'])) {
-                $secure = strtolower($_SERVER['HTTP_X_FORWARDED_SSL']) !== 'off';
+                $secure = mb_strtolower($_SERVER['HTTP_X_FORWARDED_SSL']) !== 'off';
             }
 
             ini_set('session.cookie_secure', $secure ? '1' : '0');
@@ -85,7 +85,7 @@ final class UserSession implements UserSessionInterface
                     'secure' => $params['secure'] ?? false,
                     'httponly' => $params['httponly'] ?? true,
                     'samesite' => $params['samesite'] ?? 'Lax',
-                ]
+                ],
             );
         }
 

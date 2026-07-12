@@ -6,12 +6,14 @@ namespace SparkInsight\Command;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
+use Exception;
 use SparkInsight\Config\Config;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Throwable;
 
 final class ListContentImportsCommand extends Command
 {
@@ -39,8 +41,9 @@ final class ListContentImportsCommand extends Command
 
             try {
                 $this->connection = DriverManager::getConnection($config->getDatabaseConfig());
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $io->error('Cannot connect to database: ' . $e->getMessage());
+
                 return Command::FAILURE;
             }
         }
@@ -61,27 +64,27 @@ final class ListContentImportsCommand extends Command
                 LIMIT " . $limit;
 
             $rows = $this->connection->executeQuery(
-                $sql
+                $sql,
             )->fetchAllAssociative();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $io->error('Failed to list imported content: ' . $e->getMessage());
+
             return Command::FAILURE;
         }
 
         if ($rows === []) {
             $io->success('No imported content found.');
+
             return Command::SUCCESS;
         }
 
-        $tableRows = array_map(static function (array $row): array {
-            return [
-                (string) ($row['import_id'] ?? ''),
-                (string) ($row['item_count'] ?? '0'),
-                (string) (($row['book_title'] ?? '') !== '' ? $row['book_title'] : '-'),
-                (string) ($row['started_at'] ?? ''),
-                (string) ($row['finished_at'] ?? ''),
-            ];
-        }, $rows);
+        $tableRows = array_map(static fn (array $row): array => [
+            (string) ($row['import_id'] ?? ''),
+            (string) ($row['item_count'] ?? '0'),
+            (string) (($row['book_title'] ?? '') !== '' ? $row['book_title'] : '-'),
+            (string) ($row['started_at'] ?? ''),
+            (string) ($row['finished_at'] ?? ''),
+        ], $rows);
 
         $io->section('Import batches');
         $io->table(['Import ID', 'Items', 'Book', 'Started At', 'Finished At'], $tableRows);

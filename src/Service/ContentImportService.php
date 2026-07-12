@@ -4,7 +4,14 @@ declare(strict_types=1);
 
 namespace SparkInsight\Service;
 
+use DateTimeImmutable;
 use Doctrine\DBAL\Connection;
+use FilesystemIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use RuntimeException;
+use SimpleXMLElement;
+use Throwable;
 
 final class ContentImportService
 {
@@ -18,7 +25,7 @@ final class ContentImportService
     public function validateFdxContent(string $fdxXml, ?string $source = null, ?string $versionLabel = null): array
     {
         $errors = [];
-        $fdxXml = trim($fdxXml);
+        $fdxXml = mb_trim($fdxXml);
 
         if ($fdxXml === '') {
             return ['Import content is empty.'];
@@ -30,10 +37,11 @@ final class ContentImportService
         if ($xml === false) {
             $libxmlErrors = [];
             foreach (libxml_get_errors() as $error) {
-                $libxmlErrors[] = trim($error->message);
+                $libxmlErrors[] = mb_trim($error->message);
             }
             libxml_clear_errors();
             $errors[] = 'Invalid XML import content: ' . implode('; ', $libxmlErrors);
+
             return $errors;
         }
 
@@ -58,7 +66,7 @@ final class ContentImportService
         }
 
         libxml_use_internal_errors(true);
-        $xml = simplexml_load_string(trim($fdxXml));
+        $xml = simplexml_load_string(mb_trim($fdxXml));
         if ($xml === false) {
             throw new ImportValidationException(['Could not parse FDX content after validation.']);
         }
@@ -76,7 +84,7 @@ final class ContentImportService
             throw new ImportValidationException(['A content version with this title and version label already exists.']);
         }
 
-        $now = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
+        $now = (new DateTimeImmutable())->format('Y-m-d H:i:s');
         $metadata = json_encode([
             'format' => 'fdx',
             'content_hash' => sha1($fdxXml),
@@ -92,7 +100,7 @@ final class ContentImportService
         try {
             $this->connection->executeStatement(
                 'INSERT INTO content_versions (title, book_title, version_label, source, content_rtf, content_text, author_id, status, metadata, import_batch_id, imported_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                [$title, $bookTitle, $versionLabel, $source, null, $contentText !== '' ? $contentText : null, $authorId, $status, $metadata, $effectiveImportBatchId, $now, $now, $now]
+                [$title, $bookTitle, $versionLabel, $source, null, $contentText !== '' ? $contentText : null, $authorId, $status, $metadata, $effectiveImportBatchId, $now, $now, $now],
             );
 
             $contentVersionId = (int) $this->connection->lastInsertId();
@@ -100,7 +108,7 @@ final class ContentImportService
             $this->connection->commit();
 
             return $contentVersionId;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             if ($this->connection->isTransactionActive()) {
                 $this->connection->rollBack();
             }
@@ -111,19 +119,19 @@ final class ContentImportService
 
     public function rollbackImport(int $contentVersionId): bool
     {
-        $now = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
+        $now = (new DateTimeImmutable())->format('Y-m-d H:i:s');
         $this->connection->beginTransaction();
 
         try {
             $updated = $this->connection->executeStatement(
                 'UPDATE content_versions SET status = ?, updated_at = ? WHERE id = ? AND status != ?',
-                ['archived', $now, $contentVersionId, 'archived']
+                ['archived', $now, $contentVersionId, 'archived'],
             );
 
             $this->connection->commit();
 
             return $updated > 0;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             if ($this->connection->isTransactionActive()) {
                 $this->connection->rollBack();
             }
@@ -146,7 +154,7 @@ final class ContentImportService
     {
         $projects = $this->discoverScrivenerProjects($directory);
         if ($projects === []) {
-            throw new \RuntimeException('No Scrivener project backups were found at: ' . $directory);
+            throw new RuntimeException('No Scrivener project backups were found at: ' . $directory);
         }
 
         $result = [
@@ -170,7 +178,7 @@ final class ContentImportService
             } catch (ImportValidationException $e) {
                 $result['failed'][$projectPath] = $e->getErrors();
                 continue;
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $result['failed'][$projectPath] = [$e->getMessage()];
                 continue;
             }
@@ -199,7 +207,7 @@ final class ContentImportService
                     ];
                 } catch (ImportValidationException $exception) {
                     $result['failed'][$entryKey] = $exception->getErrors();
-                } catch (\Throwable $exception) {
+                } catch (Throwable $exception) {
                     $result['failed'][$entryKey] = [$exception->getMessage()];
                 }
             }
@@ -211,12 +219,12 @@ final class ContentImportService
     private function importLegacyFdxDirectory(string $directory, int $authorId, ?string $labelPrefix = null, bool $dryRun = false, ?string $bookTitle = null): array
     {
         if (!is_dir($directory)) {
-            throw new \RuntimeException('Import directory does not exist: ' . $directory);
+            throw new RuntimeException('Import directory does not exist: ' . $directory);
         }
 
-        $directory = rtrim(str_replace('\\', '/', $directory), '/');
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS)
+        $directory = mb_rtrim(str_replace('\\', '/', $directory), '/');
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS),
         );
 
         $result = [
@@ -233,14 +241,14 @@ final class ContentImportService
 
             $result['scanned']++;
             $filePath = str_replace('\\', '/', $file->getPathname());
-            $relativePath = ltrim(substr($filePath, strlen($directory) + 1), '/');
+            $relativePath = mb_ltrim(mb_substr($filePath, mb_strlen($directory) + 1), '/');
             $versionLabel = $this->buildVersionLabel($relativePath, $labelPrefix);
             $source = $relativePath;
 
             try {
                 $fdxXml = file_get_contents($file->getPathname());
                 if ($fdxXml === false) {
-                    throw new \RuntimeException('Unable to read FDX file: ' . $file->getPathname());
+                    throw new RuntimeException('Unable to read FDX file: ' . $file->getPathname());
                 }
 
                 if ($dryRun) {
@@ -264,7 +272,7 @@ final class ContentImportService
                 ];
             } catch (ImportValidationException $exception) {
                 $result['failed'][$relativePath] = $exception->getErrors();
-            } catch (\Throwable $exception) {
+            } catch (Throwable $exception) {
                 $result['failed'][$relativePath] = [$exception->getMessage()];
             }
         }
@@ -284,7 +292,7 @@ final class ContentImportService
             throw new ImportValidationException(['A content version with this title and version label already exists.']);
         }
 
-        $now = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
+        $now = (new DateTimeImmutable())->format('Y-m-d H:i:s');
         $metadata = is_array($item['metadata']) ? $item['metadata'] : [];
         $effectiveImportBatchId = $importBatchId ?? $this->generateImportBatchId();
 
@@ -306,7 +314,7 @@ final class ContentImportService
                     $now,
                     $now,
                     $now,
-                ]
+                ],
             );
 
             $contentVersionId = (int) $this->connection->lastInsertId();
@@ -317,19 +325,19 @@ final class ContentImportService
                 (string) ($bookTitle ?? $item['book_title'] ?? ''),
                 $authorId,
                 (string) ($item['content_text'] ?? ''),
-                $now
+                $now,
             );
             if ($remapSummary !== null) {
                 $metadata['anchor_remap'] = $remapSummary;
                 $this->connection->executeStatement(
                     'UPDATE content_versions SET metadata = ?, updated_at = ? WHERE id = ?',
-                    [json_encode($metadata, JSON_THROW_ON_ERROR), $now, $contentVersionId]
+                    [json_encode($metadata, JSON_THROW_ON_ERROR), $now, $contentVersionId],
                 );
             }
             $this->connection->commit();
 
             return $contentVersionId;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             if ($this->connection->isTransactionActive()) {
                 $this->connection->rollBack();
             }
@@ -345,16 +353,16 @@ final class ContentImportService
 
     private function discoverScrivenerProjects(string $path): array
     {
-        $normalized = rtrim(str_replace('\\', '/', $path), '/');
+        $normalized = mb_rtrim(str_replace('\\', '/', $path), '/');
         if ($normalized === '') {
             return [];
         }
 
-        if (is_file($normalized) && str_ends_with(strtolower($normalized), '.scrivx')) {
+        if (is_file($normalized) && str_ends_with(mb_strtolower($normalized), '.scrivx')) {
             return [dirname($normalized)];
         }
 
-        if (is_dir($normalized) && str_ends_with(strtolower($normalized), '.scriv')) {
+        if (is_dir($normalized) && str_ends_with(mb_strtolower($normalized), '.scriv')) {
             return [$normalized];
         }
 
@@ -368,14 +376,14 @@ final class ContentImportService
             $projects[] = $normalized;
         }
 
-        $iterator = new \FilesystemIterator($normalized, \FilesystemIterator::SKIP_DOTS);
+        $iterator = new FilesystemIterator($normalized, FilesystemIterator::SKIP_DOTS);
         foreach ($iterator as $entry) {
             if (!$entry->isDir()) {
                 continue;
             }
 
             $candidate = str_replace('\\', '/', $entry->getPathname());
-            if (!str_ends_with(strtolower($candidate), '.scriv')) {
+            if (!str_ends_with(mb_strtolower($candidate), '.scriv')) {
                 continue;
             }
 
@@ -383,19 +391,20 @@ final class ContentImportService
         }
 
         sort($projects);
+
         return array_values(array_unique($projects));
     }
 
     private function resolveScrivxPath(string $projectPath): ?string
     {
-        $projectPath = rtrim(str_replace('\\', '/', $projectPath), '/');
+        $projectPath = mb_rtrim(str_replace('\\', '/', $projectPath), '/');
         if (!is_dir($projectPath)) {
             return null;
         }
 
         $projectBaseName = basename($projectPath);
-        if (str_ends_with(strtolower($projectBaseName), '.scriv')) {
-            $projectBaseName = substr($projectBaseName, 0, -6);
+        if (str_ends_with(mb_strtolower($projectBaseName), '.scriv')) {
+            $projectBaseName = mb_substr($projectBaseName, 0, -6);
         }
 
         $preferredPath = $projectPath . '/' . $projectBaseName . '.scrivx';
@@ -403,9 +412,9 @@ final class ContentImportService
             return $preferredPath;
         }
 
-        $iterator = new \FilesystemIterator($projectPath, \FilesystemIterator::SKIP_DOTS);
+        $iterator = new FilesystemIterator($projectPath, FilesystemIterator::SKIP_DOTS);
         foreach ($iterator as $entry) {
-            if ($entry->isFile() && str_ends_with(strtolower($entry->getFilename()), '.scrivx')) {
+            if ($entry->isFile() && str_ends_with(mb_strtolower($entry->getFilename()), '.scrivx')) {
                 return str_replace('\\', '/', $entry->getPathname());
             }
         }
@@ -421,13 +430,14 @@ final class ContentImportService
         }
 
         libxml_use_internal_errors(true);
-        $xml = simplexml_load_string(trim($rawXml));
+        $xml = simplexml_load_string(mb_trim($rawXml));
         if ($xml === false) {
             $libxmlErrors = [];
             foreach (libxml_get_errors() as $error) {
-                $libxmlErrors[] = trim($error->message);
+                $libxmlErrors[] = mb_trim($error->message);
             }
             libxml_clear_errors();
+
             throw new ImportValidationException(['Invalid Scrivener project XML: ' . implode('; ', $libxmlErrors)]);
         }
 
@@ -442,7 +452,7 @@ final class ContentImportService
 
         $rootTitle = $this->resolveImportedBookTitle(
             $this->readBinderTitle($rootNode),
-            $bookTitleOverride
+            $bookTitleOverride,
         );
         $rootUuid = (string) ($rootNode['UUID'] ?? '');
         $items = [];
@@ -459,7 +469,7 @@ final class ContentImportService
                 $projectPath,
                 $scrivxPath,
                 $labelPrefix,
-                $items
+                $items,
             );
             $index++;
         }
@@ -467,7 +477,7 @@ final class ContentImportService
         return $items;
     }
 
-    private function resolveImportRootNode(\SimpleXMLElement $xml): ?\SimpleXMLElement
+    private function resolveImportRootNode(SimpleXMLElement $xml): ?SimpleXMLElement
     {
         $bookNodes = $xml->xpath('/ScrivenerProject/Binder/BinderItem[Title="The Book"]');
         if (is_array($bookNodes) && $bookNodes !== []) {
@@ -488,7 +498,7 @@ final class ContentImportService
     }
 
     private function collectScrivenerItems(
-        \SimpleXMLElement $node,
+        SimpleXMLElement $node,
         array $orderTrail,
         array $parentPathParts,
         string $parentUuid,
@@ -496,14 +506,14 @@ final class ContentImportService
         string $projectPath,
         string $scrivxPath,
         ?string $labelPrefix,
-        array &$items
+        array &$items,
     ): void {
         $uuid = (string) ($node['UUID'] ?? '');
         $type = (string) ($node['Type'] ?? 'Text');
         $title = $this->readBinderTitle($node) ?? 'Untitled Item';
         $pathParts = array_merge($parentPathParts, [$title]);
         $listPath = implode('/', $pathParts);
-        $orderPath = implode('.', array_map(static fn (int $value): string => str_pad((string) $value, 4, '0', STR_PAD_LEFT), $orderTrail));
+        $orderPath = implode('.', array_map(static fn (int $value): string => mb_str_pad((string) $value, 4, '0', STR_PAD_LEFT), $orderTrail));
         $isDirectory = $this->isDirectoryNodeType($type) || isset($node->Children->BinderItem);
 
         $source = null;
@@ -511,7 +521,7 @@ final class ContentImportService
         $plainText = '';
         $hasDataFile = false;
         if ($uuid !== '') {
-            $dataFilePath = rtrim($projectPath, '/') . '/Files/Data/' . $uuid . '/content.rtf';
+            $dataFilePath = mb_rtrim($projectPath, '/') . '/Files/Data/' . $uuid . '/content.rtf';
             if (is_file($dataFilePath)) {
                 $hasDataFile = true;
                 $source = $this->toProjectRelativePath($dataFilePath);
@@ -532,7 +542,7 @@ final class ContentImportService
             'book_title' => $bookTitle,
             'scrivener' => [
                 'project_file' => $this->toProjectRelativePath($scrivxPath),
-                'project_name' => basename(rtrim($projectPath, '/')),
+                'project_name' => basename(mb_rtrim($projectPath, '/')),
                 'uuid' => $uuid,
                 'parent_uuid' => $parentUuid,
                 'type' => $type,
@@ -573,16 +583,16 @@ final class ContentImportService
                 $projectPath,
                 $scrivxPath,
                 $labelPrefix,
-                $items
+                $items,
             );
             $index++;
         }
     }
 
-    private function readBinderTitle(\SimpleXMLElement $node): ?string
+    private function readBinderTitle(SimpleXMLElement $node): ?string
     {
-        if (isset($node->Title) && trim((string) $node->Title) !== '') {
-            return trim((string) $node->Title);
+        if (isset($node->Title) && mb_trim((string) $node->Title) !== '') {
+            return mb_trim((string) $node->Title);
         }
 
         return null;
@@ -590,12 +600,12 @@ final class ContentImportService
 
     private function resolveImportedBookTitle(?string $binderTitle, ?string $bookTitleOverride = null): string
     {
-        $override = trim((string) $bookTitleOverride);
+        $override = mb_trim((string) $bookTitleOverride);
         if ($override !== '') {
             return $override;
         }
 
-        $title = trim((string) $binderTitle);
+        $title = mb_trim((string) $binderTitle);
         if ($title === '' || strcasecmp($title, 'The Book') === 0) {
             return 'Enterprise Community Management';
         }
@@ -614,7 +624,7 @@ final class ContentImportService
         $projectRoot = str_replace('\\', '/', dirname(__DIR__, 2));
 
         if (str_starts_with($absolutePath, $projectRoot . '/')) {
-            return substr($absolutePath, strlen($projectRoot) + 1);
+            return mb_substr($absolutePath, mb_strlen($projectRoot) + 1);
         }
 
         return $absolutePath;
@@ -622,18 +632,18 @@ final class ContentImportService
 
     private function extractPlainTextFromRtf(string $rtf): string
     {
-        $rtf = str_ireplace(['\\pard', '\\par', '\\tab'], ["\n", "\n", "\t"], $rtf);
-        $rtf = preg_replace('/\\\\[a-z]+-?\d*\s?/i', '', $rtf) ?? $rtf;
+        $rtf = str_ireplace(['\pard', '\par', '\tab'], ["\n", "\n", "\t"], $rtf);
+        $rtf = preg_replace('/\\\[a-z]+-?\d*\s?/i', '', $rtf) ?? $rtf;
         $rtf = str_replace(['{', '}'], '', $rtf);
         $rtf = preg_replace('/[ \t]+/u', ' ', $rtf) ?? $rtf;
         $rtf = preg_replace('/\n{3,}/', "\n\n", $rtf) ?? $rtf;
 
-        return trim($rtf);
+        return mb_trim($rtf);
     }
 
     private function countTextSectionsFromText(string $text): int
     {
-        $normalized = trim($text);
+        $normalized = mb_trim($text);
         if ($normalized === '') {
             return 0;
         }
@@ -641,7 +651,7 @@ final class ContentImportService
         $lines = preg_split('/(?:\r\n|\r|\n)+/', $normalized) ?: [];
         $count = 0;
         foreach ($lines as $line) {
-            if (trim($line) !== '') {
+            if (mb_trim($line) !== '') {
                 $count++;
             }
         }
@@ -651,39 +661,39 @@ final class ContentImportService
 
     private function buildScrivenerVersionLabel(string $listPath, string $orderPath, ?string $labelPrefix): string
     {
-        $label = trim(($labelPrefix !== null ? trim($labelPrefix, '/') . '/' : '') . $orderPath . ' ' . $listPath);
-        if (strlen($label) <= 100) {
+        $label = mb_trim(($labelPrefix !== null ? mb_trim($labelPrefix, '/') . '/' : '') . $orderPath . ' ' . $listPath);
+        if (mb_strlen($label) <= 100) {
             return $label;
         }
 
-        $hash = substr(sha1($label), 0, 12);
-        $truncated = substr($label, 0, 86);
+        $hash = mb_substr(sha1($label), 0, 12);
+        $truncated = mb_substr($label, 0, 86);
 
-        return rtrim($truncated) . '#' . $hash;
+        return mb_rtrim($truncated) . '#' . $hash;
     }
 
     private function buildVersionLabel(string $relativePath, ?string $labelPrefix): string
     {
         $relativePath = preg_replace('/\.fdx$/i', '', $relativePath);
-        $relativePath = trim($relativePath, '/');
+        $relativePath = mb_trim($relativePath, '/');
 
-        return $labelPrefix !== null ? trim($labelPrefix . '/' . $relativePath, '/') : $relativePath;
+        return $labelPrefix !== null ? mb_trim($labelPrefix . '/' . $relativePath, '/') : $relativePath;
     }
 
-    private function extractTitle(\SimpleXMLElement $xml): ?string
+    private function extractTitle(SimpleXMLElement $xml): ?string
     {
-        if (isset($xml->PROJECT->NAME) && trim((string) $xml->PROJECT->NAME) !== '') {
-            return trim((string) $xml->PROJECT->NAME);
+        if (isset($xml->PROJECT->NAME) && mb_trim((string) $xml->PROJECT->NAME) !== '') {
+            return mb_trim((string) $xml->PROJECT->NAME);
         }
 
-        if (isset($xml->TITLE) && trim((string) $xml->TITLE) !== '') {
-            return trim((string) $xml->TITLE);
+        if (isset($xml->TITLE) && mb_trim((string) $xml->TITLE) !== '') {
+            return mb_trim((string) $xml->TITLE);
         }
 
         $titles = $xml->xpath('//TITLE');
         if ($titles !== false) {
             foreach ($titles as $titleNode) {
-                $title = trim((string) $titleNode);
+                $title = mb_trim((string) $titleNode);
                 if ($title !== '') {
                     return $title;
                 }
@@ -693,12 +703,12 @@ final class ContentImportService
         return null;
     }
 
-    private function countTextSections(\SimpleXMLElement $xml): int
+    private function countTextSections(SimpleXMLElement $xml): int
     {
         return count($this->extractTextLinesFromXml($xml));
     }
 
-    private function extractPlainTextFromXml(\SimpleXMLElement $xml): string
+    private function extractPlainTextFromXml(SimpleXMLElement $xml): string
     {
         $lines = $this->extractTextLinesFromXml($xml);
         if ($lines === []) {
@@ -708,7 +718,7 @@ final class ContentImportService
         return implode("\n\n", $lines);
     }
 
-    private function extractTextLinesFromXml(\SimpleXMLElement $xml): array
+    private function extractTextLinesFromXml(SimpleXMLElement $xml): array
     {
         $lines = [];
         $paragraphNodes = $xml->xpath('//Paragraph | //paragraph');
@@ -718,16 +728,16 @@ final class ContentImportService
                 $embeddedTextNodes = $paragraphNode->xpath('.//TEXT | .//Text | .//text');
                 if ($embeddedTextNodes !== false) {
                     foreach ($embeddedTextNodes as $textNode) {
-                        $chunk = trim((string) preg_replace('/\s+/u', ' ', (string) $textNode));
+                        $chunk = mb_trim((string) preg_replace('/\s+/u', ' ', (string) $textNode));
                         if ($chunk !== '') {
                             $textParts[] = $chunk;
                         }
                     }
                 }
 
-                $text = trim((string) preg_replace('/\s+/u', ' ', implode(' ', $textParts)));
+                $text = mb_trim((string) preg_replace('/\s+/u', ' ', implode(' ', $textParts)));
                 if ($text === '') {
-                    $text = trim((string) preg_replace('/\s+/u', ' ', (string) $paragraphNode));
+                    $text = mb_trim((string) preg_replace('/\s+/u', ' ', (string) $paragraphNode));
                 }
 
                 if ($text !== '') {
@@ -746,7 +756,7 @@ final class ContentImportService
         }
 
         foreach ($textNodes as $textNode) {
-            $text = trim((string) preg_replace('/\s+/u', ' ', (string) $textNode));
+            $text = mb_trim((string) preg_replace('/\s+/u', ' ', (string) $textNode));
             if ($text !== '') {
                 $lines[] = $text;
             }
@@ -761,7 +771,7 @@ final class ContentImportService
             $userRows = $this->connection
                 ->executeQuery('SELECT id, roles FROM users WHERE status = ?', ['active'])
                 ->fetchAllAssociative();
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return;
         }
 
@@ -774,9 +784,9 @@ final class ContentImportService
             try {
                 $this->connection->executeStatement(
                     'INSERT INTO review_assignments (content_version_id, reviewer_id, priority, due_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
-                    [$contentVersionId, $reviewerId, 'normal', null, $timestamp, $timestamp]
+                    [$contentVersionId, $reviewerId, 'normal', null, $timestamp, $timestamp],
                 );
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 // Keep import successful even when assignment table/state differs.
             }
         }
@@ -788,14 +798,14 @@ final class ContentImportService
             return in_array('reviewer', $rawRoles, true);
         }
 
-        if (is_string($rawRoles) && trim($rawRoles) !== '') {
+        if (is_string($rawRoles) && mb_trim($rawRoles) !== '') {
             try {
                 $decoded = json_decode($rawRoles, true, 512, JSON_THROW_ON_ERROR);
                 if (is_array($decoded)) {
                     return in_array('reviewer', $decoded, true);
                 }
-            } catch (\Throwable) {
-                return str_contains(strtolower($rawRoles), 'reviewer');
+            } catch (Throwable) {
+                return str_contains(mb_strtolower($rawRoles), 'reviewer');
             }
         }
 
@@ -808,14 +818,14 @@ final class ContentImportService
         string $bookTitle,
         int $authorId,
         string $newContentText,
-        string $timestamp
+        string $timestamp,
     ): ?array {
         try {
             $previous = $this->connection->executeQuery(
                 "SELECT id, content_text FROM content_versions WHERE author_id = ? AND title = ? AND COALESCE(book_title, '') = ? AND id <> ? ORDER BY imported_at DESC, id DESC LIMIT 1",
-                [$authorId, $title, $bookTitle, $newContentVersionId]
+                [$authorId, $title, $bookTitle, $newContentVersionId],
             )->fetchAssociative();
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return null;
         }
 
@@ -843,9 +853,9 @@ final class ContentImportService
                 FROM reviews
                 WHERE content_version_id = ?
                   AND status IN ('open', 'needs_author_review')",
-                [$previousVersionId]
+                [$previousVersionId],
             )->fetchAllAssociative();
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return [
                 'previous_content_version_id' => $previousVersionId,
                 'copied_reviews' => 0,
@@ -880,7 +890,7 @@ final class ContentImportService
                         (string) ($review['title'] ?? 'Review note'),
                         'needs_author_review',
                         $review['details'] !== null ? (string) $review['details'] : null,
-                        $review['selected_excerpt'] !== null ? trim((string) $review['selected_excerpt']) : null,
+                        $review['selected_excerpt'] !== null ? mb_trim((string) $review['selected_excerpt']) : null,
                         $remap['start_offset'],
                         $remap['end_offset'],
                         $remap['container_path'],
@@ -896,9 +906,9 @@ final class ContentImportService
                         null,
                         null,
                         null,
-                    ]
+                    ],
                 );
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 continue;
             }
 
@@ -936,7 +946,7 @@ final class ContentImportService
      */
     private function remapReviewAnchor(array $review, string $oldContentText, string $newContentText): array
     {
-        $excerpt = trim((string) ($review['selected_excerpt'] ?? ''));
+        $excerpt = mb_trim((string) ($review['selected_excerpt'] ?? ''));
         $start = array_key_exists('anchor_start_offset', $review) && $review['anchor_start_offset'] !== null
             ? max(0, (int) $review['anchor_start_offset'])
             : null;
@@ -955,7 +965,7 @@ final class ContentImportService
             ];
         }
 
-        $newLength = strlen($newContentText);
+        $newLength = mb_strlen($newContentText);
         if ($newLength === 0) {
             return [
                 'state' => 'failed',
@@ -971,24 +981,26 @@ final class ContentImportService
             $positions = $this->findAllOccurrences($newContentText, $excerpt);
             if (count($positions) === 1) {
                 $matchStart = $positions[0];
+
                 return [
                     'state' => 'mapped',
                     'confidence' => 'high',
                     'reason' => 'excerpt_unique_match',
                     'start_offset' => $matchStart,
-                    'end_offset' => $matchStart + strlen($excerpt),
+                    'end_offset' => $matchStart + mb_strlen($excerpt),
                     'container_path' => null,
                 ];
             }
 
             if (count($positions) > 1) {
-                $bestStart = $this->pickClosestPositionByExpectedOffset($positions, $start, strlen($oldContentText), $newLength);
+                $bestStart = $this->pickClosestPositionByExpectedOffset($positions, $start, mb_strlen($oldContentText), $newLength);
+
                 return [
                     'state' => 'mapped',
                     'confidence' => 'medium',
                     'reason' => 'excerpt_ambiguous_match',
                     'start_offset' => $bestStart,
-                    'end_offset' => $bestStart + strlen($excerpt),
+                    'end_offset' => $bestStart + mb_strlen($excerpt),
                     'container_path' => null,
                 ];
             }
@@ -996,29 +1008,31 @@ final class ContentImportService
 
         if ($start !== null && $end !== null && $end > $start && $oldContentText !== '') {
             $spanLength = min(200, $end - $start);
-            $span = trim(substr($oldContentText, $start, $spanLength));
+            $span = mb_trim(mb_substr($oldContentText, $start, $spanLength));
             if ($span !== '') {
                 $positions = $this->findAllOccurrences($newContentText, $span);
                 if (count($positions) === 1) {
                     $matchStart = $positions[0];
+
                     return [
                         'state' => 'mapped',
                         'confidence' => 'medium',
                         'reason' => 'old_span_unique_match',
                         'start_offset' => $matchStart,
-                        'end_offset' => $matchStart + strlen($span),
+                        'end_offset' => $matchStart + mb_strlen($span),
                         'container_path' => null,
                     ];
                 }
 
                 if (count($positions) > 1) {
-                    $bestStart = $this->pickClosestPositionByExpectedOffset($positions, $start, strlen($oldContentText), $newLength);
+                    $bestStart = $this->pickClosestPositionByExpectedOffset($positions, $start, mb_strlen($oldContentText), $newLength);
+
                     return [
                         'state' => 'mapped',
                         'confidence' => 'low',
                         'reason' => 'old_span_ambiguous_match',
                         'start_offset' => $bestStart,
-                        'end_offset' => $bestStart + strlen($span),
+                        'end_offset' => $bestStart + mb_strlen($span),
                         'container_path' => null,
                     ];
                 }
@@ -1047,7 +1061,7 @@ final class ContentImportService
         $positions = [];
         $offset = 0;
         while (true) {
-            $position = strpos($haystack, $needle, $offset);
+            $position = mb_strpos($haystack, $needle, $offset);
             if ($position === false) {
                 break;
             }
@@ -1092,10 +1106,10 @@ final class ContentImportService
     {
         $candidate = null;
 
-        if ($source !== null && trim($source) !== '') {
+        if ($source !== null && mb_trim($source) !== '') {
             $candidate = basename(str_replace('\\', '/', $source));
             $candidate = preg_replace('/\.fdx$/i', '', $candidate);
-        } elseif ($versionLabel !== null && trim($versionLabel) !== '') {
+        } elseif ($versionLabel !== null && mb_trim($versionLabel) !== '') {
             $candidate = basename(str_replace('\\', '/', $versionLabel));
         }
 
@@ -1105,7 +1119,8 @@ final class ContentImportService
 
         $candidate = preg_replace('/^\d+\s+/u', '', (string) $candidate);
         $candidate = preg_replace('/\s*\[\d+\]$/u', '', (string) $candidate);
-        $candidate = trim((string) $candidate);
+        $candidate = mb_trim((string) $candidate);
+
         return $candidate === '' ? null : $candidate;
     }
 }

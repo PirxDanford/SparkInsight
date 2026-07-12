@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
+use Doctrine\DBAL\DriverManager;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
 use Slim\Views\PhpRenderer;
-use Doctrine\DBAL\DriverManager;
 use SparkInsight\Config\Config;
 use SparkInsight\Controller\AdminController;
 use SparkInsight\Controller\AuthController;
@@ -48,16 +48,18 @@ $dashboardController = new DashboardController($view, $session, $connection);
 $authController = new AuthController($view, $providerFactory, $session, $invitationService, $userService);
 $adminController = new AdminController($view, $session, $userService, $invitationService, $settingsService, $config, $connection);
 
-$app->get('/style.css', function ($request, $response) {
+$app->get('/style.css', static function ($request, $response) {
     $file = __DIR__ . '/style.css';
     if (file_exists($file)) {
         $response->getBody()->write(file_get_contents($file));
+
         return $response->withHeader('Content-Type', 'text/css');
     }
+
     return $response->withStatus(404);
 });
 
-$app->get('/assets/sparkinsight-logo.png', function (Request $request, Response $response): Response {
+$app->get('/assets/sparkinsight-logo.png', static function (Request $request, Response $response): Response {
     $file = __DIR__ . '/sparkinsight-logo.png';
     if (!file_exists($file)) {
         return $response->withStatus(404);
@@ -70,9 +72,7 @@ $app->get('/assets/sparkinsight-logo.png', function (Request $request, Response 
         ->withHeader('Cache-Control', 'public, max-age=3600');
 });
 
-$app->get('/favicon.ico', function ($request, $response) {
-    return $response->withStatus(204);
-});
+$app->get('/favicon.ico', static fn ($request, $response) => $response->withStatus(204));
 
 $app->get('/', [$dashboardController, '__invoke']);
 $app->get('/dashboard', [$dashboardController, '__invoke']);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SparkInsight\Support;
 
 use RtfHtmlPhp\Document as RtfDocument;
+use Throwable;
 
 final class ReaderPresentationBuilder
 {
@@ -107,8 +108,8 @@ final class ReaderPresentationBuilder
 
     private function convertRtfToHtml(string $rawRtf): ?string
     {
-        $rawRtf = trim($rawRtf);
-        if ($rawRtf === '' || !str_starts_with($rawRtf, '{\\rtf')) {
+        $rawRtf = mb_trim($rawRtf);
+        if ($rawRtf === '' || !str_starts_with($rawRtf, '{\rtf')) {
             return null;
         }
 
@@ -120,8 +121,8 @@ final class ReaderPresentationBuilder
         try {
             $document = new RtfDocument($cleanedRtf);
             $formatter = new ScrivenerHtmlFormatter('UTF-8');
-            $html = trim($formatter->Format($document));
-        } catch (\Throwable) {
+            $html = mb_trim($formatter->Format($document));
+        } catch (Throwable) {
             return null;
         }
 
@@ -132,12 +133,12 @@ final class ReaderPresentationBuilder
         $html = preg_replace('/<!?\$Scr_[^>]+>/u', '', $html) ?? $html;
         $html = $this->restoreRtfHyperlinks($html, $rawRtf);
 
-        return trim($html) !== '' ? trim($html) : null;
+        return mb_trim($html) !== '' ? mb_trim($html) : null;
     }
 
     private function restoreRtfHyperlinks(string $html, string $rawRtf): string
     {
-        $segments = explode('{\\field', $rawRtf);
+        $segments = explode('{\field', $rawRtf);
         if (count($segments) < 2) {
             return $html;
         }
@@ -147,23 +148,23 @@ final class ReaderPresentationBuilder
                 continue;
             }
 
-            $url = trim((string) ($urlMatch[1] ?? ''));
-            $fldrsltPosition = stripos($segment, '\\fldrslt');
+            $url = mb_trim((string) ($urlMatch[1] ?? ''));
+            $fldrsltPosition = mb_stripos($segment, '\fldrslt');
             if ($url === '' || $fldrsltPosition === false) {
                 continue;
             }
 
-            $labelChunk = substr($segment, $fldrsltPosition + strlen('\\fldrslt'));
+            $labelChunk = mb_substr($segment, $fldrsltPosition + mb_strlen('\fldrslt'));
             if (!is_string($labelChunk) || $labelChunk === '') {
                 continue;
             }
 
-            $closingPosition = strpos($labelChunk, '}}');
+            $closingPosition = mb_strpos($labelChunk, '}}');
             if ($closingPosition !== false) {
-                $labelChunk = substr($labelChunk, 0, $closingPosition);
+                $labelChunk = mb_substr($labelChunk, 0, $closingPosition);
             }
 
-            $label = trim($this->extractPlainTextFromRtf('{' . $labelChunk . '}'));
+            $label = mb_trim($this->extractPlainTextFromRtf('{' . $labelChunk . '}'));
             if ($label === '') {
                 continue;
             }
@@ -181,8 +182,8 @@ final class ReaderPresentationBuilder
 
     private function resolveReadableSourcePath(string $source): ?string
     {
-        $normalized = trim(str_replace('\\', '/', $source));
-        $normalized = ltrim($normalized, '/');
+        $normalized = mb_trim(str_replace('\\', '/', $source));
+        $normalized = mb_ltrim($normalized, '/');
 
         if ($normalized === '' || str_contains($normalized, '..')) {
             return null;
@@ -210,7 +211,7 @@ final class ReaderPresentationBuilder
     private function extractReaderSections(string $rawXml): array
     {
         libxml_use_internal_errors(true);
-        $xml = simplexml_load_string(trim($rawXml));
+        $xml = simplexml_load_string(mb_trim($rawXml));
         if ($xml === false) {
             libxml_clear_errors();
 
@@ -234,7 +235,7 @@ final class ReaderPresentationBuilder
 
         $index = 1;
         foreach ($textNodes as $textNode) {
-            $text = trim((string) preg_replace('/\s+/u', ' ', (string) $textNode));
+            $text = mb_trim((string) preg_replace('/\s+/u', ' ', (string) $textNode));
             if ($text === '') {
                 continue;
             }
@@ -275,7 +276,7 @@ final class ReaderPresentationBuilder
         $index = 1;
 
         foreach ($lines as $line) {
-            $text = trim((string) preg_replace('/\s+/u', ' ', $line));
+            $text = mb_trim((string) preg_replace('/\s+/u', ' ', $line));
             if ($text === '') {
                 continue;
             }
@@ -295,16 +296,16 @@ final class ReaderPresentationBuilder
     private function extractPlainTextFromRtf(string $rtf): string
     {
         $rtf = $this->stripRtfDestinationGroups($rtf, ['fonttbl', 'colortbl', 'stylesheet', 'info']);
-        $rtf = preg_replace('/\{\\\\\*\\\\fldinst[^{}]*\}/i', '', $rtf) ?? $rtf;
-        $rtf = str_ireplace(['\\pard', '\\par', '\\tab'], ["\n", "\n", "\t"], $rtf);
-        $rtf = str_ireplace('\\fldrslt', '', $rtf);
-        $rtf = preg_replace('/\\\\[a-z]+-?\d*\s?/i', '', $rtf) ?? $rtf;
+        $rtf = preg_replace('/\{\\\\\*\\\fldinst[^{}]*\}/i', '', $rtf) ?? $rtf;
+        $rtf = str_ireplace(['\pard', '\par', '\tab'], ["\n", "\n", "\t"], $rtf);
+        $rtf = str_ireplace('\fldrslt', '', $rtf);
+        $rtf = preg_replace('/\\\[a-z]+-?\d*\s?/i', '', $rtf) ?? $rtf;
         $rtf = preg_replace('/\\\\\'[0-9a-f]{2}/i', '', $rtf) ?? $rtf;
         $rtf = str_replace(['{', '}'], '', $rtf);
         $rtf = preg_replace('/[ \t]+/u', ' ', $rtf) ?? $rtf;
         $rtf = preg_replace('/\n{3,}/', "\n\n", $rtf) ?? $rtf;
 
-        return trim($rtf);
+        return mb_trim($rtf);
     }
 
     /**
@@ -316,9 +317,9 @@ final class ReaderPresentationBuilder
             $needle = '{\\' . $destination;
             $offset = 0;
 
-            while (($start = stripos($rtf, $needle, $offset)) !== false) {
+            while (($start = mb_stripos($rtf, $needle, $offset)) !== false) {
                 $depth = 0;
-                $length = strlen($rtf);
+                $length = mb_strlen($rtf);
                 $end = null;
 
                 for ($index = $start; $index < $length; $index++) {
@@ -338,7 +339,7 @@ final class ReaderPresentationBuilder
                     break;
                 }
 
-                $rtf = substr($rtf, 0, $start) . substr($rtf, $end + 1);
+                $rtf = mb_substr($rtf, 0, $start) . mb_substr($rtf, $end + 1);
                 $offset = $start;
             }
         }
@@ -353,8 +354,8 @@ final class ReaderPresentationBuilder
             return null;
         }
 
-        $projectFile = trim((string) ($metadata['project_file'] ?? ''));
-        $uuid = trim((string) ($metadata['uuid'] ?? ''));
+        $projectFile = mb_trim((string) ($metadata['project_file'] ?? ''));
+        $uuid = mb_trim((string) ($metadata['uuid'] ?? ''));
         if ($projectFile === '' || $uuid === '') {
             return null;
         }
@@ -396,8 +397,8 @@ final class ReaderPresentationBuilder
             return null;
         }
 
-        $normalizedCandidate = strtolower(str_replace('\\', '/', $candidateRealPath));
-        $normalizedRoot = rtrim(strtolower(str_replace('\\', '/', $projectRootRealPath)), '/');
+        $normalizedCandidate = mb_strtolower(str_replace('\\', '/', $candidateRealPath));
+        $normalizedRoot = mb_rtrim(mb_strtolower(str_replace('\\', '/', $projectRootRealPath)), '/');
         if (!str_starts_with($normalizedCandidate, $normalizedRoot . '/')) {
             return null;
         }
@@ -419,23 +420,23 @@ final class ReaderPresentationBuilder
             $embeddedTextNodes = $paragraphNode->xpath('.//TEXT | .//Text | .//text');
             if ($embeddedTextNodes !== false) {
                 foreach ($embeddedTextNodes as $textNode) {
-                    $chunk = trim((string) preg_replace('/\s+/u', ' ', (string) $textNode));
+                    $chunk = mb_trim((string) preg_replace('/\s+/u', ' ', (string) $textNode));
                     if ($chunk !== '') {
                         $textParts[] = $chunk;
                     }
                 }
             }
 
-            $text = trim((string) preg_replace('/\s+/u', ' ', implode(' ', $textParts)));
+            $text = mb_trim((string) preg_replace('/\s+/u', ' ', implode(' ', $textParts)));
             if ($text === '') {
-                $text = trim((string) preg_replace('/\s+/u', ' ', (string) $paragraphNode));
+                $text = mb_trim((string) preg_replace('/\s+/u', ' ', (string) $paragraphNode));
             }
 
             if ($text === '') {
                 continue;
             }
 
-            $type = trim((string) ($paragraphNode['Type'] ?? $paragraphNode['type'] ?? ''));
+            $type = mb_trim((string) ($paragraphNode['Type'] ?? $paragraphNode['type'] ?? ''));
 
             $sections[] = [
                 'anchor' => 'section-' . $index,
@@ -451,7 +452,7 @@ final class ReaderPresentationBuilder
 
     private function buildReaderSectionLabel(string $text, int $index): string
     {
-        $normalized = trim((string) preg_replace('/\s+/u', ' ', $text));
+        $normalized = mb_trim((string) preg_replace('/\s+/u', ' ', $text));
         if ($normalized === '') {
             return 'Section ' . $index;
         }
@@ -462,7 +463,7 @@ final class ReaderPresentationBuilder
         }
 
         $previewWords = array_slice($words, 0, 8);
-        $preview = trim(implode(' ', $previewWords));
+        $preview = mb_trim(implode(' ', $previewWords));
 
         if (count($words) > 8) {
             $preview .= '...';
@@ -482,13 +483,13 @@ final class ReaderPresentationBuilder
             return is_array($scrivener) ? $scrivener : [];
         }
 
-        if (!is_string($rawMetadata) || trim($rawMetadata) === '') {
+        if (!is_string($rawMetadata) || mb_trim($rawMetadata) === '') {
             return [];
         }
 
         try {
             $decoded = json_decode($rawMetadata, true, 512, JSON_THROW_ON_ERROR);
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return [];
         }
 

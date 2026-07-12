@@ -6,6 +6,7 @@ namespace SparkInsight\Command;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
+use Exception;
 use SparkInsight\Config\Config;
 use SparkInsight\Service\AppSettingsService;
 use SparkInsight\Service\InvitationService;
@@ -21,7 +22,7 @@ final class GenerateInvitationCommand extends Command
 
     /**
      * Constructor supporting dependency injection for testing.
-     * 
+     *
      * @param Connection|null $connection Optional database connection (for testing; if null, creates from environment)
      */
     public function __construct(?Connection $connection = null)
@@ -33,12 +34,12 @@ final class GenerateInvitationCommand extends Command
     protected function configure(): void
     {
         $this->setName('invite:generate')
-             ->setDescription('Generate an invitation link for signing up')
-             ->addOption('admin', 'a', InputOption::VALUE_NONE, 'Make user admin and author')
-             ->addOption('reviewer', 'r', InputOption::VALUE_NONE, 'Make user reviewer (default if no role specified)')
-             ->addOption('author', null, InputOption::VALUE_NONE, 'Make user author')
-             ->addOption('email', 'e', InputOption::VALUE_OPTIONAL, 'Email to restrict invitation to (optional)')
-             ->addOption('hours', null, InputOption::VALUE_OPTIONAL, 'Hours until expiration (defaults to admin settings value)');
+            ->setDescription('Generate an invitation link for signing up')
+            ->addOption('admin', 'a', InputOption::VALUE_NONE, 'Make user admin and author')
+            ->addOption('reviewer', 'r', InputOption::VALUE_NONE, 'Make user reviewer (default if no role specified)')
+            ->addOption('author', null, InputOption::VALUE_NONE, 'Make user author')
+            ->addOption('email', 'e', InputOption::VALUE_OPTIONAL, 'Email to restrict invitation to (optional)')
+            ->addOption('hours', null, InputOption::VALUE_OPTIONAL, 'Hours until expiration (defaults to admin settings value)');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -60,8 +61,9 @@ final class GenerateInvitationCommand extends Command
                     'password' => $dbConfig['password'],
                     'charset' => $dbConfig['charset'],
                 ]);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $io->error('Database connection failed: ' . $e->getMessage());
+
                 return Command::FAILURE;
             }
         }
@@ -109,8 +111,9 @@ final class GenerateInvitationCommand extends Command
             $io->info('');
 
             return Command::SUCCESS;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $io->error('Failed to generate invitation: ' . $e->getMessage());
+
             return Command::FAILURE;
         }
     }
