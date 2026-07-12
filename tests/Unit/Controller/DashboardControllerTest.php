@@ -85,7 +85,7 @@ class DashboardControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testInvokeRedirectsPureAdminToUsers(): void
+    public function testInvokeRedirectsPureAdminToAdminDashboard(): void
     {
         $request = $this->createMock(ServerRequestInterface::class);
         $response = $this->createMock(ResponseInterface::class);
@@ -94,7 +94,7 @@ class DashboardControllerTest extends TestCase
 
         $response->expects($this->once())
             ->method('withHeader')
-            ->with('Location', '/admin/users')
+            ->with('Location', '/dashboard/admin')
             ->willReturn($response);
 
         $response->expects($this->once())

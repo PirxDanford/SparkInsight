@@ -7,11 +7,9 @@ namespace SparkInsight\Controller;
 use Doctrine\DBAL\Connection;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use RtfHtmlPhp\Document as RtfDocument;
 use Slim\Views\PhpRenderer;
 use SparkInsight\Service\AuthorPdfExportService;
 use SparkInsight\Support\ReaderPresentationBuilder;
-use SparkInsight\Support\ScrivenerHtmlFormatter;
 use SparkInsight\Service\UserSession;
 
 final class DashboardController
@@ -37,7 +35,7 @@ final class DashboardController
         $roles = $this->getUserRoles($user);
 
         if ($this->isPureAdmin($roles)) {
-            return $response->withHeader('Location', '/admin/users')->withStatus(302);
+            return $response->withHeader('Location', '/dashboard/admin')->withStatus(302);
         }
 
         if ($this->canAuthor($roles)) {
@@ -57,7 +55,7 @@ final class DashboardController
         $roles = $this->getUserRoles($user);
 
         if ($this->isPureAdmin($roles)) {
-            return $response->withHeader('Location', '/admin/users')->withStatus(302);
+            return $response->withHeader('Location', '/dashboard/admin')->withStatus(302);
         }
 
         if (!$this->canReview($roles)) {
@@ -81,7 +79,7 @@ final class DashboardController
         $roles = $this->getUserRoles($user);
 
         if ($this->isPureAdmin($roles)) {
-            return $response->withHeader('Location', '/admin/users')->withStatus(302);
+            return $response->withHeader('Location', '/dashboard/admin')->withStatus(302);
         }
 
         if (!$this->canReview($roles)) {
@@ -128,7 +126,7 @@ final class DashboardController
         $roles = $this->getUserRoles($user);
 
         if ($this->isPureAdmin($roles)) {
-            return $response->withHeader('Location', '/admin/users')->withStatus(302);
+            return $response->withHeader('Location', '/dashboard/admin')->withStatus(302);
         }
 
         if (!$this->canReview($roles)) {
@@ -290,7 +288,7 @@ final class DashboardController
         $roles = $this->getUserRoles($user);
 
         if ($this->isPureAdmin($roles)) {
-            return $response->withHeader('Location', '/admin/users')->withStatus(302);
+            return $response->withHeader('Location', '/dashboard/admin')->withStatus(302);
         }
 
         if (!$this->canAuthor($roles)) {
@@ -318,7 +316,7 @@ final class DashboardController
         $roles = $this->getUserRoles($user);
 
         if ($this->isPureAdmin($roles)) {
-            return $response->withHeader('Location', '/admin/users')->withStatus(302);
+            return $response->withHeader('Location', '/dashboard/admin')->withStatus(302);
         }
 
         if (!$this->canAuthor($roles)) {
@@ -365,7 +363,7 @@ final class DashboardController
         $roles = $this->getUserRoles($user);
 
         if ($this->isPureAdmin($roles)) {
-            return $response->withHeader('Location', '/admin/users')->withStatus(302);
+            return $response->withHeader('Location', '/dashboard/admin')->withStatus(302);
         }
 
         if (!$this->canAuthor($roles)) {
@@ -528,7 +526,7 @@ final class DashboardController
         $roles = $this->getUserRoles($user);
 
         if ($this->isPureAdmin($roles)) {
-            return $response->withHeader('Location', '/admin/users')->withStatus(302);
+            return $response->withHeader('Location', '/dashboard/admin')->withStatus(302);
         }
 
         if (!$this->canAuthor($roles)) {
@@ -1587,81 +1585,6 @@ final class DashboardController
         }
     }
 
-    private function convertRtfToHtml(string $rawRtf): ?string
-    {
-        $rawRtf = trim($rawRtf);
-        if ($rawRtf === '' || !str_starts_with($rawRtf, '{\\rtf')) {
-            return null;
-        }
-
-        // Scrivener injects its own pseudo-tags into text runs; strip only those known markers.
-        $cleanedRtf = preg_replace('/<!?\$Scr_[^>]+>/u', '', $rawRtf);
-        if (!is_string($cleanedRtf) || $cleanedRtf === '') {
-            return null;
-        }
-
-        try {
-            $document = new RtfDocument($cleanedRtf);
-            $formatter = new ScrivenerHtmlFormatter('UTF-8');
-            $html = trim($formatter->Format($document));
-        } catch (\Throwable) {
-            return null;
-        }
-
-        if ($html === '') {
-            return null;
-        }
-
-        $html = preg_replace('/<!?\$Scr_[^>]+>/u', '', $html) ?? $html;
-        $html = $this->restoreRtfHyperlinks($html, $rawRtf);
-
-        return trim($html) !== '' ? trim($html) : null;
-    }
-
-    private function restoreRtfHyperlinks(string $html, string $rawRtf): string
-    {
-        $segments = explode('{\\field', $rawRtf);
-        if (count($segments) < 2) {
-            return $html;
-        }
-
-        foreach (array_slice($segments, 1) as $segment) {
-            if (!preg_match('/HYPERLINK\s+"([^"]+)"/i', $segment, $urlMatch)) {
-                continue;
-            }
-
-            $url = trim((string) ($urlMatch[1] ?? ''));
-            $fldrsltPosition = stripos($segment, '\fldrslt');
-            if ($url === '' || $fldrsltPosition === false) {
-                continue;
-            }
-
-            $labelChunk = substr($segment, $fldrsltPosition + strlen('\fldrslt'));
-            if (!is_string($labelChunk) || $labelChunk === '') {
-                continue;
-            }
-
-            $closingPosition = strpos($labelChunk, '}}');
-            if ($closingPosition !== false) {
-                $labelChunk = substr($labelChunk, 0, $closingPosition);
-            }
-
-            $label = trim($this->extractPlainTextFromRtf('{' . $labelChunk . '}'));
-            if ($label === '') {
-                continue;
-            }
-
-            $quotedLabel = preg_quote($label, '/');
-            $replacement = '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="noopener noreferrer">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>';
-            $updatedHtml = preg_replace('/' . $quotedLabel . '/u', $replacement, $html, 1);
-            if (is_string($updatedHtml)) {
-                $html = $updatedHtml;
-            }
-        }
-
-        return $html;
-    }
-
     private function normalizeReaderViewMode(string $mode): string
     {
         $mode = trim($mode);
@@ -1693,217 +1616,6 @@ final class DashboardController
         }
 
         return null;
-    }
-
-    private function extractReaderSections(string $rawXml): array
-    {
-        libxml_use_internal_errors(true);
-        $xml = simplexml_load_string(trim($rawXml));
-        if ($xml === false) {
-            libxml_clear_errors();
-
-            return [];
-        }
-
-        $sections = [];
-        $paragraphNodes = $xml->xpath('//Paragraph | //paragraph');
-        if ($paragraphNodes !== false) {
-            $sections = $this->buildSectionsFromParagraphNodes($paragraphNodes);
-        }
-
-        if ($sections !== []) {
-            return $sections;
-        }
-
-        $textNodes = $xml->xpath('//TEXT | //Text | //text');
-        if ($textNodes === false) {
-            return [];
-        }
-
-        $index = 1;
-        foreach ($textNodes as $textNode) {
-            $text = trim((string) preg_replace('/\s+/u', ' ', (string) $textNode));
-            if ($text === '') {
-                continue;
-            }
-
-            $sections[] = [
-                'anchor' => 'section-' . $index,
-                'label' => $this->buildReaderSectionLabel($text, $index),
-                'type' => null,
-                'text' => $text,
-            ];
-            $index++;
-        }
-
-        return $sections;
-    }
-
-    private function extractReaderSectionsFromRtf(string $rawRtf): array
-    {
-        $plainText = $this->extractPlainTextFromRtf($rawRtf);
-        return $this->buildReaderSectionsFromPlainText($plainText);
-    }
-
-    private function buildReaderSectionsFromPlainText(string $plainText): array
-    {
-        if ($plainText === '') {
-            return [];
-        }
-
-        $sections = [];
-        $lines = preg_split('/(?:\r\n|\r|\n)+/', $plainText) ?: [];
-        $index = 1;
-
-        foreach ($lines as $line) {
-            $text = trim((string) preg_replace('/\s+/u', ' ', $line));
-            if ($text === '') {
-                continue;
-            }
-
-            $sections[] = [
-                'anchor' => 'section-' . $index,
-                'label' => $this->buildReaderSectionLabel($text, $index),
-                'type' => null,
-                'text' => $text,
-            ];
-            $index++;
-        }
-
-        return $sections;
-    }
-
-    private function extractPlainTextFromRtf(string $rtf): string
-    {
-        $rtf = str_ireplace(['\\pard', '\\par', '\\tab'], ["\n", "\n", "\t"], $rtf);
-        $rtf = preg_replace('/\\\\[a-z]+-?\d*\s?/i', '', $rtf) ?? $rtf;
-        $rtf = str_replace(['{', '}'], '', $rtf);
-        $rtf = preg_replace('/[ \t]+/u', ' ', $rtf) ?? $rtf;
-        $rtf = preg_replace('/\n{3,}/', "\n\n", $rtf) ?? $rtf;
-
-        return trim($rtf);
-    }
-
-    private function resolveReadableSourcePathFromMetadata(mixed $rawMetadata): ?string
-    {
-        $metadata = $this->extractScrivenerQueueMetadata($rawMetadata);
-        if ($metadata === []) {
-            return null;
-        }
-
-        $projectFile = trim((string) ($metadata['project_file'] ?? ''));
-        $uuid = trim((string) ($metadata['uuid'] ?? ''));
-        if ($projectFile === '' || $uuid === '') {
-            return null;
-        }
-
-        if (!preg_match('/^[A-Za-z0-9-]{8,64}$/', $uuid)) {
-            return null;
-        }
-
-        $projectFile = str_replace('\\', '/', $projectFile);
-        if (str_starts_with($projectFile, '/') || preg_match('/^[A-Za-z]:\//', $projectFile)) {
-            return null;
-        }
-
-        $segments = array_values(array_filter(explode('/', $projectFile), static fn (string $segment): bool => $segment !== ''));
-        if ($segments === []) {
-            return null;
-        }
-
-        foreach ($segments as $segment) {
-            if ($segment === '.' || $segment === '..') {
-                return null;
-            }
-        }
-
-        $projectFile = implode('/', $segments);
-        $projectDirectory = dirname($projectFile);
-        if ($projectDirectory === '.' || $projectDirectory === '') {
-            return null;
-        }
-
-        $projectRoot = dirname(__DIR__, 2);
-        $candidate = $projectRoot . '/' . $projectDirectory . '/Files/Data/' . $uuid . '/content.rtf';
-        if (!is_file($candidate)) {
-            return null;
-        }
-
-        $candidateRealPath = realpath($candidate);
-        $projectRootRealPath = realpath($projectRoot);
-        if (!is_string($candidateRealPath) || !is_string($projectRootRealPath)) {
-            return null;
-        }
-
-        $normalizedCandidate = strtolower(str_replace('\\', '/', $candidateRealPath));
-        $normalizedRoot = rtrim(strtolower(str_replace('\\', '/', $projectRootRealPath)), '/');
-        if (!str_starts_with($normalizedCandidate, $normalizedRoot . '/')) {
-            return null;
-        }
-
-        return $candidateRealPath;
-    }
-
-    private function buildSectionsFromParagraphNodes(array $paragraphNodes): array
-    {
-        $sections = [];
-        $index = 1;
-
-        foreach ($paragraphNodes as $paragraphNode) {
-            $textParts = [];
-            $embeddedTextNodes = $paragraphNode->xpath('.//TEXT | .//Text | .//text');
-            if ($embeddedTextNodes !== false) {
-                foreach ($embeddedTextNodes as $textNode) {
-                    $chunk = trim((string) preg_replace('/\s+/u', ' ', (string) $textNode));
-                    if ($chunk !== '') {
-                        $textParts[] = $chunk;
-                    }
-                }
-            }
-
-            $text = trim((string) preg_replace('/\s+/u', ' ', implode(' ', $textParts)));
-            if ($text === '') {
-                $text = trim((string) preg_replace('/\s+/u', ' ', (string) $paragraphNode));
-            }
-
-            if ($text === '') {
-                continue;
-            }
-
-            $type = trim((string) ($paragraphNode['Type'] ?? $paragraphNode['type'] ?? ''));
-
-            $sections[] = [
-                'anchor' => 'section-' . $index,
-                'label' => $this->buildReaderSectionLabel($text, $index),
-                'type' => $type !== '' ? $type : null,
-                'text' => $text,
-            ];
-            $index++;
-        }
-
-        return $sections;
-    }
-
-    private function buildReaderSectionLabel(string $text, int $index): string
-    {
-        $normalized = trim((string) preg_replace('/\s+/u', ' ', $text));
-        if ($normalized === '') {
-            return 'Section ' . $index;
-        }
-
-        $words = preg_split('/\s+/u', $normalized);
-        if (!is_array($words) || $words === []) {
-            return 'Section ' . $index;
-        }
-
-        $previewWords = array_slice($words, 0, 8);
-        $preview = trim(implode(' ', $previewWords));
-
-        if (count($words) > 8) {
-            $preview .= '...';
-        }
-
-        return $preview !== '' ? $preview : 'Section ' . $index;
     }
 
     private function deriveReviewState(string $contentStatus, int $openCount, int $resolvedCount, int $needsAuthorReplyCount, int $reviewCount): array

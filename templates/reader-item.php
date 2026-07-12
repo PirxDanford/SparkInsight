@@ -212,9 +212,11 @@ ob_start();
                                 </label>
 
                                 <div class="action-group review-note-actions">
-                                    <button class="button small warning" type="button" data-delete-note-button hidden>Delete note</button>
-                                    <button class="button small secondary" type="button" data-clear-comment>Clear comment</button>
-                                    <button class="button button-full" type="submit" data-save-note-button>Save note</button>
+                                    <button class="button primary button-full" type="submit" data-save-note-button>Save note</button>
+                                    <div class="review-note-secondary-actions" data-review-note-secondary-actions data-editing="false">
+                                        <button class="button small secondary" type="button" data-clear-comment>Clear comment</button>
+                                        <button class="button small danger" type="button" data-delete-note-button hidden>Delete note</button>
+                                    </div>
                                 </div>
                             </form>
                         </div>
@@ -250,6 +252,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const readerViewInput = document.querySelector('[data-reader-view-input]');
     const readerContent = document.querySelector('[data-reader-content]');
     const primaryContentRoot = document.querySelector('.reader-view-compact .reader-flow-text');
+    const fullscreenContentRoot = document.querySelector('.reader-view-fullscreen .reader-text-content');
     const selectionPreview = document.querySelector('[data-selection-preview]');
     const selectedExcerptInput = document.querySelector('[data-selected-excerpt-input]');
     const anchorStartOffsetInput = document.querySelector('[data-anchor-start-offset-input]');
@@ -257,6 +260,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const anchorContainerPathInput = document.querySelector('[data-anchor-container-path-input]');
     const noteIdInput = document.querySelector('[data-note-id-input]');
     const noteActionInput = document.querySelector('[data-note-action-input]');
+    const reviewNoteSecondaryActions = document.querySelector('[data-review-note-secondary-actions]');
     const dismissSelectionButton = document.querySelector('[data-dismiss-selection]');
     const clearCommentButton = document.querySelector('[data-clear-comment]');
     const deleteNoteButton = document.querySelector('[data-delete-note-button]');
@@ -277,6 +281,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let activeTooltipAnchor = null;
     let tooltipHideTimer = null;
     let searchOffsetByRoot = new WeakMap();
+    let quickActionHideTimer = null;
 
     if (!shell || !fullscreenView || !compactView || !toolbar || !optionsCol || !mainGrid) {
         return;
@@ -327,6 +332,7 @@ document.addEventListener('DOMContentLoaded', function() {
         writePanelPreference(mode);
 
         hideTooltip();
+        hideSelectionQuickAction();
 
         shell.setAttribute('data-view-mode', mode);
         if (readerViewInput) {
@@ -405,6 +411,129 @@ document.addEventListener('DOMContentLoaded', function() {
         updateFormActionState();
     }
 
+    function createSelectionQuickAction() {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'reader-selection-quick-action';
+        button.textContent = 'Create note from selection';
+        button.hidden = true;
+        button.setAttribute('aria-label', 'Create review note from selected text');
+
+        button.addEventListener('mouseenter', () => {
+            if (quickActionHideTimer) {
+                clearTimeout(quickActionHideTimer);
+            }
+        });
+
+        button.addEventListener('mouseleave', () => {
+            hideSelectionQuickActionSoon(100);
+        });
+
+        button.addEventListener('mousedown', (event) => {
+            event.preventDefault();
+        });
+
+        button.addEventListener('click', () => {
+            if (currentSelectionText === '') {
+                hideSelectionQuickAction();
+                return;
+            }
+
+            if (noteIdInput) {
+                noteIdInput.value = '0';
+            }
+            if (noteActionInput) {
+                noteActionInput.value = 'save';
+            }
+            if (editStateLabel) {
+                editStateLabel.textContent = '';
+            }
+            if (editState) {
+                editState.hidden = true;
+            }
+
+            setViewMode('compact-visible');
+            hideSelectionQuickAction();
+
+            if (detailsTextarea) {
+                detailsTextarea.focus();
+            }
+        });
+
+        document.body.appendChild(button);
+        return button;
+    }
+
+    const selectionQuickAction = createSelectionQuickAction();
+
+    function hideSelectionQuickAction() {
+        if (quickActionHideTimer) {
+            clearTimeout(quickActionHideTimer);
+            quickActionHideTimer = null;
+        }
+
+        if (selectionQuickAction) {
+            selectionQuickAction.hidden = true;
+        }
+    }
+
+    function hideSelectionQuickActionSoon(delayMs) {
+        if (!selectionQuickAction || selectionQuickAction.hidden) {
+            return;
+        }
+
+        if (quickActionHideTimer) {
+            clearTimeout(quickActionHideTimer);
+        }
+
+        quickActionHideTimer = setTimeout(() => {
+            hideSelectionQuickAction();
+        }, delayMs);
+    }
+
+    function showSelectionQuickActionForRange(range, selectionRoot) {
+        if (!selectionQuickAction || !range || currentSelectionText === '') {
+            hideSelectionQuickAction();
+            return;
+        }
+
+        if (!shell || !selectionRoot || !shell.contains(selectionRoot)) {
+            hideSelectionQuickAction();
+            return;
+        }
+
+        const mode = shell.getAttribute('data-view-mode') || '';
+        if (mode !== 'fullscreen' && mode !== 'compact-hidden') {
+            hideSelectionQuickAction();
+            return;
+        }
+
+        const rects = range.getClientRects();
+        let rect = null;
+        if (rects && rects.length > 0) {
+            rect = rects[0];
+        }
+        if (!rect) {
+            rect = range.getBoundingClientRect();
+        }
+
+        if (!rect || rect.width <= 0 || rect.height <= 0) {
+            hideSelectionQuickAction();
+            return;
+        }
+
+        selectionQuickAction.hidden = false;
+        const actionRect = selectionQuickAction.getBoundingClientRect();
+        const margin = 10;
+        const top = Math.max(12, rect.top - actionRect.height - margin);
+        const centeredLeft = rect.left + (rect.width / 2) - (actionRect.width / 2);
+        const maxLeft = Math.max(12, window.innerWidth - actionRect.width - 12);
+        const left = Math.min(maxLeft, Math.max(12, centeredLeft));
+
+        selectionQuickAction.style.top = Math.round(top) + 'px';
+        selectionQuickAction.style.left = Math.round(left) + 'px';
+    }
+
     function updateFormActionState() {
         if (!saveNoteButton) {
             return;
@@ -427,6 +556,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (deleteNoteButton) {
             deleteNoteButton.hidden = !editing;
             deleteNoteButton.style.setProperty('display', editing ? 'inline-flex' : 'none', 'important');
+        }
+
+        if (reviewNoteSecondaryActions) {
+            reviewNoteSecondaryActions.setAttribute('data-editing', editing ? 'true' : 'false');
         }
 
         if (noteActionInput) {
@@ -906,8 +1039,8 @@ document.addEventListener('DOMContentLoaded', function() {
         return segments.join('/');
     }
 
-    function extractSelectionAnchor(selectionRange) {
-        if (!primaryContentRoot || !selectionRange) {
+    function extractSelectionAnchor(selectionRange, contentRoot) {
+        if (!contentRoot || !selectionRange) {
             return null;
         }
 
@@ -923,11 +1056,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const startProbe = document.createRange();
-            startProbe.selectNodeContents(primaryContentRoot);
+            startProbe.selectNodeContents(contentRoot);
             startProbe.setEnd(selectionRange.startContainer, selectionRange.startOffset);
 
             const endProbe = document.createRange();
-            endProbe.selectNodeContents(primaryContentRoot);
+            endProbe.selectNodeContents(contentRoot);
             endProbe.setEnd(selectionRange.endContainer, selectionRange.endOffset);
 
             const startOffset = measureRangeTextLength(startProbe);
@@ -939,7 +1072,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return {
                 start: Math.max(0, startOffset),
                 end: Math.max(0, endOffset),
-                path: buildStructuralPathForNode(selectionRange.commonAncestorContainer, primaryContentRoot),
+                path: buildStructuralPathForNode(selectionRange.commonAncestorContainer, contentRoot),
             };
         } catch (error) {
             return null;
@@ -1162,31 +1295,107 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function getSelectionRoot(range) {
+        if (!range) {
+            return null;
+        }
+
+        if (primaryContentRoot
+            && primaryContentRoot.contains(range.startContainer)
+            && primaryContentRoot.contains(range.endContainer)) {
+            return primaryContentRoot;
+        }
+
+        if (fullscreenContentRoot
+            && fullscreenContentRoot.contains(range.startContainer)
+            && fullscreenContentRoot.contains(range.endContainer)) {
+            return fullscreenContentRoot;
+        }
+
+        return null;
+    }
+
     function captureSelectionFromReader() {
-        if (!primaryContentRoot) {
+        if (!primaryContentRoot && !fullscreenContentRoot) {
             return;
         }
 
         const selection = window.getSelection();
         if (!selection || selection.rangeCount === 0) {
+            hideSelectionQuickAction();
             return;
         }
 
         const range = selection.getRangeAt(0);
-        if (!primaryContentRoot.contains(range.startContainer) || !primaryContentRoot.contains(range.endContainer)) {
+        const selectionRoot = getSelectionRoot(range);
+        if (!selectionRoot) {
+            hideSelectionQuickAction();
             return;
         }
 
         const text = sanitizeExcerptText(selection.toString());
-        const anchor = extractSelectionAnchor(range);
+        const anchor = selectionRoot === primaryContentRoot
+            ? extractSelectionAnchor(range, selectionRoot)
+            : null;
         setSelectionAnchorData(anchor);
         updateSelectionPreview(text.length > 500 ? text.slice(0, 500).trim() + '...' : text);
+        if (text === '') {
+            hideSelectionQuickAction();
+            return;
+        }
+
+        showSelectionQuickActionForRange(range, selectionRoot);
     }
 
-    if (primaryContentRoot) {
+    if (primaryContentRoot || fullscreenContentRoot) {
         document.addEventListener('selectionchange', captureSelectionFromReader);
-        primaryContentRoot.addEventListener('mouseup', captureSelectionFromReader);
-        primaryContentRoot.addEventListener('keyup', captureSelectionFromReader);
+    }
+
+    [primaryContentRoot, fullscreenContentRoot].filter(Boolean).forEach((root) => {
+        root.addEventListener('mouseup', captureSelectionFromReader);
+        root.addEventListener('keyup', captureSelectionFromReader);
+        root.addEventListener('scroll', () => {
+            hideSelectionQuickActionSoon(90);
+        }, { passive: true });
+    });
+
+    document.addEventListener('mousedown', (event) => {
+        if (!selectionQuickAction || selectionQuickAction.hidden) {
+            return;
+        }
+
+        const target = event.target;
+        if (target instanceof Node && selectionQuickAction.contains(target)) {
+            return;
+        }
+
+        hideSelectionQuickActionSoon(0);
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            hideSelectionQuickAction();
+        }
+    });
+
+    window.addEventListener('scroll', () => {
+        hideSelectionQuickActionSoon(0);
+    }, true);
+
+    window.addEventListener('resize', () => {
+        hideSelectionQuickActionSoon(0);
+    });
+
+    if (readerContent) {
+        readerContent.addEventListener('mouseleave', () => {
+            hideSelectionQuickActionSoon(120);
+        });
+    }
+
+    if (fullscreenContentRoot) {
+        fullscreenContentRoot.addEventListener('mouseleave', () => {
+            hideSelectionQuickActionSoon(120);
+        });
     }
 
     if (dismissSelectionButton) {

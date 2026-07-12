@@ -33,6 +33,7 @@ abstract class DatabaseTestCase extends TestCase
                 provider_id TEXT NOT NULL,
                 email TEXT NOT NULL,
                 name TEXT NOT NULL,
+                display_name TEXT,
                 avatar TEXT,
                 roles TEXT NOT NULL,
                 status TEXT NOT NULL DEFAULT "active",

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SparkInsightTest\Unit\Service;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\Result;
 use PHPUnit\Framework\TestCase;
 use SparkInsight\Service\InvitationService;
@@ -86,6 +87,18 @@ class InvitationServiceTest extends TestCase
         $this->invitationService->markInvitationAsUsed('abc123', 123);
     }
 
+    public function testDeleteInvitation(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('executeStatement')
+            ->with('DELETE FROM invitations WHERE code = ?', ['abc123'])
+            ->willReturn(1);
+
+        $result = $this->invitationService->deleteInvitation('abc123');
+
+        $this->assertTrue($result);
+    }
+
     public function testGetInvitationsReturnsList(): void
     {
         $expectedRows = [
@@ -106,7 +119,11 @@ class InvitationServiceTest extends TestCase
 
         $this->connection->expects($this->once())
             ->method('executeQuery')
-            ->with('SELECT invitations.*, u.name AS used_by_name, u.email AS used_by_email FROM invitations LEFT JOIN users u ON invitations.used_by = u.id ORDER BY created_at DESC LIMIT ? OFFSET ?', [50, 0])
+            ->with(
+                'SELECT invitations.*, u.name AS used_by_name, u.email AS used_by_email FROM invitations LEFT JOIN users u ON invitations.used_by = u.id ORDER BY created_at DESC LIMIT ? OFFSET ?',
+                [50, 0],
+                [ParameterType::INTEGER, ParameterType::INTEGER]
+            )
             ->willReturn($resultMock);
 
         $invitations = $this->invitationService->getInvitations([], 50, 0);
@@ -139,7 +156,11 @@ class InvitationServiceTest extends TestCase
 
         $this->connection->expects($this->once())
             ->method('executeQuery')
-            ->with('SELECT invitations.*, u.name AS used_by_name, u.email AS used_by_email FROM invitations LEFT JOIN users u ON invitations.used_by = u.id ORDER BY created_at DESC LIMIT ? OFFSET ?', [50, 0])
+            ->with(
+                'SELECT invitations.*, u.name AS used_by_name, u.email AS used_by_email FROM invitations LEFT JOIN users u ON invitations.used_by = u.id ORDER BY created_at DESC LIMIT ? OFFSET ?',
+                [50, 0],
+                [ParameterType::INTEGER, ParameterType::INTEGER]
+            )
             ->willReturn($resultMock);
 
         $invitations = $this->invitationService->getInvitations([], 50, 0);
@@ -162,5 +183,25 @@ class InvitationServiceTest extends TestCase
         $count = $this->invitationService->getInvitationCount([]);
 
         $this->assertSame(7, $count);
+    }
+
+    public function testGetInvitationsBindsPaginationAsIntegersWithFilters(): void
+    {
+        $resultMock = $this->createMock(Result::class);
+        $resultMock->method('fetchAllAssociative')->willReturn([]);
+
+        $this->connection->expects($this->once())
+            ->method('executeQuery')
+            ->with(
+                $this->stringContains('WHERE email = ? AND roles LIKE ? ORDER BY created_at DESC LIMIT ? OFFSET ?'),
+                ['test@example.com', '%"reviewer"%', 50, 0],
+                [ParameterType::STRING, ParameterType::STRING, ParameterType::INTEGER, ParameterType::INTEGER]
+            )
+            ->willReturn($resultMock);
+
+        $this->invitationService->getInvitations([
+            'email' => 'test@example.com',
+            'role' => 'reviewer',
+        ], 50, 0);
     }
 }

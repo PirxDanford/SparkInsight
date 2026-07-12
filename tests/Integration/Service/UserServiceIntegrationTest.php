@@ -72,6 +72,18 @@ class UserServiceIntegrationTest extends DatabaseTestCase
         $this->assertEquals('disabled', $user['status']);
     }
 
+    public function testUpdateUserDisplayName(): void
+    {
+        $this->userService->findOrCreateUser('github', '123', 'test@example.com', 'Test User');
+
+        $result = $this->userService->updateUserDisplayName(1, 'Readable Name');
+
+        $this->assertTrue($result);
+
+        $user = $this->userService->getUserById(1);
+        $this->assertSame('Readable Name', $user['display_name']);
+    }
+
     public function testGetAllUsers(): void
     {
         $this->userService->findOrCreateUser('github', '123', 'test@example.com', 'Test User');

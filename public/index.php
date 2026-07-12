@@ -57,6 +57,19 @@ $app->get('/style.css', function ($request, $response) {
     return $response->withStatus(404);
 });
 
+$app->get('/assets/sparkinsight-logo.png', function (Request $request, Response $response): Response {
+    $file = __DIR__ . '/sparkinsight-logo.png';
+    if (!file_exists($file)) {
+        return $response->withStatus(404);
+    }
+
+    $response->getBody()->write(file_get_contents($file));
+
+    return $response
+        ->withHeader('Content-Type', 'image/png')
+        ->withHeader('Cache-Control', 'public, max-age=3600');
+});
+
 $app->get('/favicon.ico', function ($request, $response) {
     return $response->withStatus(204);
 });
@@ -77,12 +90,15 @@ $app->get('/demo', [$authController, 'demo']);
 $app->get('/auth/{provider}', [$authController, 'login']);
 $app->get('/callback/{provider}', [$authController, 'callback']);
 
-$app->get('/admin/users', [$adminController, 'users']);
-$app->get('/admin/invitations', [$adminController, 'invitations']);
-$app->post('/admin/invitations', [$adminController, 'createInvitation']);
-$app->get('/admin/settings', [$adminController, 'settings']);
-$app->post('/admin/settings', [$adminController, 'saveSettings']);
-$app->post('/admin/users/{id}/status', [$adminController, 'updateUserStatus']);
-$app->post('/admin/users/{id}/roles', [$adminController, 'updateUserRoles']);
+$app->get('/dashboard/admin', [$adminController, 'dashboard']);
+$app->get('/dashboard/admin/users', [$adminController, 'users']);
+$app->get('/dashboard/admin/invitations', [$adminController, 'invitations']);
+$app->post('/dashboard/admin/invitations', [$adminController, 'createInvitation']);
+$app->get('/dashboard/admin/settings', [$adminController, 'settings']);
+$app->post('/dashboard/admin/settings', [$adminController, 'saveSettings']);
+$app->post('/dashboard/admin/users/{id}/status', [$adminController, 'updateUserStatus']);
+$app->post('/dashboard/admin/users/{id}/roles', [$adminController, 'updateUserRoles']);
+$app->post('/dashboard/admin/users/{id}/display-name', [$adminController, 'updateUserDisplayName']);
+$app->post('/dashboard/admin/invitations/{code:[a-f0-9]{64}}/delete', [$adminController, 'deleteInvitation']);
 
 $app->run();
