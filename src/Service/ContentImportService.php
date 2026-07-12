@@ -674,7 +674,7 @@ final class ContentImportService
 
     private function buildVersionLabel(string $relativePath, ?string $labelPrefix): string
     {
-        $relativePath = preg_replace('/\.fdx$/i', '', $relativePath);
+        $relativePath = preg_replace('/\.fdx$/i', '', $relativePath) ?? $relativePath;
         $relativePath = mb_trim($relativePath, '/');
 
         return $labelPrefix !== null ? mb_trim($labelPrefix . '/' . $relativePath, '/') : $relativePath;
