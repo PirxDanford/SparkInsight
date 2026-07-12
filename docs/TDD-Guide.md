@@ -130,7 +130,7 @@ Basic tests verifying the application starts and main routes work.
 Run coverage reports:
 ```bash
 composer coverage          # Text summary
-composer coverage-html     # HTML report in tests/coverage/html/
+composer coverage-html     # HTML report in coverage-report/
 ```
 
 Coverage must never decrease with new code.
@@ -374,7 +374,7 @@ php vendor/bin/phpunit --verbose
 |------|---------|
 | Run all tests | `php vendor/bin/phpunit` |
 | Run with coverage | `composer coverage` |
-| Coverage report (HTML) | `composer coverage-html` then open `tests/coverage/html/index.html` |
+| Coverage report (HTML) | `composer coverage-html` then open `coverage-report/index.html` |
 | Watch for failures | `php vendor/bin/phpunit --stop-on-failure` |
 | Run specific test | `php vendor/bin/phpunit --filter testName` |
 | Verbose output | `php vendor/bin/phpunit --verbose` |
@@ -382,7 +382,7 @@ php vendor/bin/phpunit --verbose
 ## Further Reading
 
 - [PHPUnit Documentation](https://phpunit.de/)
-- [Uncle Bob: The Three Rules of TDD](https://blog.cleancoder.com/uncle-bob/2014/12/17/TheCycles.html)
+- [Uncle Bob: The Three Rules of TDD](http://butunclebob.com/ArticleS.UncleBob.TheThreeRulesOfTdd)
 - [SOLID Principles](https://en.wikipedia.org/wiki/SOLID)
 - [Growing Object-Oriented Software, Guided by Tests](https://www.amazon.com/Growing-Object-Oriented-Software-Guided-Tests/dp/0321503627)
 

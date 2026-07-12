@@ -673,5 +673,5 @@ If you answer "No" to any question, refactor before proceeding.
 
 - [SOLID Principles on Wikipedia](https://en.wikipedia.org/wiki/SOLID)
 - [Uncle Bob's SOLID Principles](https://blog.cleancoder.com/)
-- [SOLID Design Principles in PHP](https://www.php.net/manual/en/class.spl.php)
+- [SOLID Design Principles in PHP](https://www.php.net/manual/en/book.spl.php)
 - [Dependency Injection in PHP](https://www.phptherightway.com/#dependency_injection)

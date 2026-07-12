@@ -1,6 +1,6 @@
 # RFC 0004: Scrivener-side setup and workflow documentation
 
-Status: Draft
+Status: Implemented
 
 Date: 2026-04-18
 
@@ -54,3 +54,11 @@ Documentation must reference:
 - **RFC 0011**: Quality-First Development Framework (explain how testing is part of review process)
 - **ADR 0006**: Adopt Test-Driven Development (how authors can validate imports locally)
 - **ADR 0007**: Apply SOLID Principles (structured approach to import configuration)
+
+## Implementation (v1.0.0)
+
+Completed 2026-07-12.
+
+- Delivered author-facing setup guide in `docs/scrivener-setup.md`.
+- Added quick-start checklist, backup workflow steps, validation guidance, and troubleshooting.
+- Documented platform notes (Windows/macOS workflow parity) and quality-framework alignment.

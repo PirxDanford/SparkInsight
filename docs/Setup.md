@@ -19,6 +19,8 @@
    - `OAUTH_GITHUB_CLIENT_SECRET`
    - `OAUTH_GOOGLE_CLIENT_ID`
    - `OAUTH_GOOGLE_CLIENT_SECRET`
+   - `OAUTH_LINKEDIN_CLIENT_ID`
+   - `OAUTH_LINKEDIN_CLIENT_SECRET`
    - `APP_URL` should match the local callback URL host (default: `http://localhost:8000`)
 3. Install dependencies:
    ```bash
@@ -108,6 +110,7 @@ Invitation Details:
 Sign-in link for each provider:
 GitHub:  http://localhost:8000/auth/github?code=c1ad72a12267ffc5eb19e8abc19fa957562344dee9838fa6c1bb5150bbd936bb
 Google:  http://localhost:8000/auth/google?code=c1ad72a12267ffc5eb19e8abc19fa957562344dee9838fa6c1bb5150bbd936bb
+LinkedIn: http://localhost:8000/auth/linkedin?code=c1ad72a12267ffc5eb19e8abc19fa957562344dee9838fa6c1bb5150bbd936bb
 ```
 
 ### Sign in with an invitation
@@ -129,42 +132,167 @@ This version supports:
 
 - GitHub
 - Google
+- LinkedIn
 
-LinkedIn is intentionally hidden for later implementation.
+Facebook/Meta OAuth is intentionally deferred to a future contributor-facing item.
+
+## OAuth app setup for a real website (GitHub, Google, LinkedIn)
+
+This section documents provider app registration for production-style deployments (public domain + HTTPS), including redirect URI setup and safe client secret handling.
+
+### 1. Decide your canonical production URL first
+
+Choose one canonical base URL and use it consistently in `.env`:
+
+- Example: `https://app.example.com`
+- Set `APP_URL=https://app.example.com`
+
+SparkInsight derives provider callback URLs from `APP_URL`:
+
+- GitHub callback: `https://app.example.com/callback/github`
+- Google callback: `https://app.example.com/callback/google`
+- LinkedIn callback: `https://app.example.com/callback/linkedin`
+
+If your production host supports both `www` and apex domains, pick one as canonical and redirect the other to avoid OAuth callback mismatches.
+
+### 2. Register OAuth apps in each provider console
+
+Create a separate OAuth app/client for each environment (local, staging, production). Do not reuse production client secrets in non-production systems.
+
+#### GitHub OAuth app
+
+1. Open GitHub Developer Settings: `Settings -> Developer settings -> OAuth Apps -> New OAuth App`.
+2. Set Homepage URL to your production base URL, for example `https://app.example.com`.
+3. Set Authorization callback URL to:
+   - `https://app.example.com/callback/github`
+4. Create the app, copy Client ID and generate/copy Client Secret.
+5. Store in production `.env`:
+   - `OAUTH_GITHUB_CLIENT_ID=<client-id>`
+   - `OAUTH_GITHUB_CLIENT_SECRET=<client-secret>`
+
+GitHub notes:
+
+- SparkInsight uses `read:user user:email` scope for GitHub.
+- If users keep email private on GitHub, the `user:email` scope is required for login/signup mapping.
+
+#### Google OAuth client
+
+1. Open Google Cloud Console and select/create your project.
+2. Configure OAuth consent screen for your organization/use case.
+3. Go to `APIs & Services -> Credentials -> Create Credentials -> OAuth client ID`.
+4. Choose `Web application`.
+5. Add Authorized redirect URI:
+   - `https://app.example.com/callback/google`
+6. Create the client and copy Client ID and Client Secret.
+7. Store in production `.env`:
+   - `OAUTH_GOOGLE_CLIENT_ID=<client-id>`
+   - `OAUTH_GOOGLE_CLIENT_SECRET=<client-secret>`
+
+Google notes:
+
+- SparkInsight uses `openid profile email` scopes.
+- In testing mode, only approved test users may sign in until app publishing/verification requirements are satisfied.
+
+#### LinkedIn OAuth app
+
+1. Open LinkedIn Developer portal and create/select your app.
+2. Ensure required products are enabled for Sign In with LinkedIn/OpenID Connect.
+3. In OAuth settings, add Authorized redirect URL:
+   - `https://app.example.com/callback/linkedin`
+4. Copy Client ID and Client Secret.
+5. Store in production `.env`:
+   - `OAUTH_LINKEDIN_CLIENT_ID=<client-id>`
+   - `OAUTH_LINKEDIN_CLIENT_SECRET=<client-secret>`
+
+LinkedIn notes:
+
+- SparkInsight uses `openid profile email` scopes.
+- LinkedIn app review/product enablement requirements can delay readiness, so complete this early in release preparation.
+
+### 3. Handle client secrets safely
+
+For FTP-style hosting without a native secret manager, treat `.env` as sensitive deployment material:
+
+- Never commit `.env` to Git.
+- Use unique, high-entropy secrets per environment and provider.
+- Restrict file permissions so only the web process and authorized administrators can read the file.
+- Rotate secrets immediately if exposed in logs, screenshots, backups, chat, or support tickets.
+- Keep secrets out of browser-side code and templates; OAuth secrets must remain server-side only.
+
+If your host supports environment variables or a secret vault, prefer that over storing long-lived secrets directly in uploaded files.
+
+### 4. Validate provider configuration end-to-end
+
+After setting `.env` and provider app credentials:
+
+1. Generate a fresh invitation (`php si.php invite:generate --reviewer` or needed role).
+2. Open each provider invite link (GitHub/Google/LinkedIn) from the generated output.
+3. Complete login and verify callback returns to SparkInsight without provider redirect errors.
+4. Confirm the user is created/linked and invitation constraints (email restriction, one-time use) are enforced.
+
+If login fails with redirect mismatch errors, verify:
+
+- `APP_URL` exactly matches the public URL used by end users.
+- Provider callback URL exactly matches `/callback/<provider>` (including scheme and host).
+- The correct environment credentials were deployed.
+
+### 5. Production hardening checklist
+
+- HTTPS enabled for the canonical domain.
+- Production provider apps separated from local/staging apps.
+- Only required scopes configured per provider.
+- Secret rotation process documented in operations notes.
+- A fallback admin account access procedure exists in case one provider is temporarily unavailable.
+
+### Live test-system OAuth QA
+
+For the FTP/live test system, set the same provider variables in `.env` for the target host and verify the callback URLs registered in each provider console point to the live `APP_URL` plus the provider callback path.
+
+- Google: `APP_URL/callback/google`
+- LinkedIn: `APP_URL/callback/linkedin`
+
+Before creating the provider app, use the SparkInsight logo asset at `/assets/sparkinsight-logo.png` as the application icon. LinkedIn requires a square image of at least 100px on one side.
+
+Provider setup notes:
+
+- Google: include the exact callback URI, not just the domain root.
+- LinkedIn: upload the square logo and complete the OAuth product/application setup before testing.
+
+Use a fresh invitation and a new account for each provider when validating the full flow:
+
+1. Create a new invitation code.
+2. Open the provider signup link from the live admin/dashboard flow.
+3. Sign in with a brand-new Google or LinkedIn account.
+4. Confirm the account is created, the invitation is consumed, and the user lands in the dashboard.
+5. Repeat the same sequence separately for each provider.
+
+If a provider redirects back with an error, verify the `.env` values, the provider app registration, the redirect URI, and the provider-specific scopes.
 
 ## Composer deployment
 
 The project is prepared for composer-based deployment. On a webserver, you can install from GitHub with a repository entry in `composer.json` or by using `composer create-project` once the package is published.
 
-## Database migrations (Contributor workflow)
+## Import and migration documentation
 
-Use the built-in migration command:
+Detailed contributor/operator documentation is available in dedicated pages:
 
-```bash
-php si.php db:migrate --status
-php si.php db:migrate
-```
+- `docs/scrivener-setup.md` for author-side Scrivener project setup, backup workflow conventions, and pre-import validation
+- `docs/imports.md` for Scrivener import workflow, dry-run validation, and import batch maintenance commands
+- `docs/migrations.md` for migration runner usage, version resolution, rollback rules, and migration file templates
 
-### Supported migration naming schemes
+## Production one-time cronjob examples
 
-- Release/baseline migrations: `NNN_description.sql` (for example `001_initial_schema.sql`)
-- Development snapshots: `dev_only_description.sql` (for example `dev_only_add_export_events.sql`)
+The Admin dashboard now exposes a One-time Cronjob Examples section under Settings.
+This section is intended for hosting panels where you can schedule one-time jobs but do not have shell access.
 
-### How versions are resolved
+Provided examples cover typical production maintenance operations:
 
-- For `NNN_*.sql`, the migration version is read from the numeric prefix (`NNN`).
-- For `dev_only_*.sql`, the migration version is read from the SQL statement:
-   - `INSERT INTO schema_version (version, applied_at) VALUES (<number>, NOW());`
+- apply pending migrations (`db:migrate`)
+- run environment checks (`check-environment`)
+- run/import Scrivener content (`content:import-scrivener`)
+- purge expired invitations (`invite:purge-expired --force`)
+- inspect import batches before cleanup (`content:list-imports`)
+- purge a specific import batch when required (`content:purge-imports --id=<import-id> --force`)
+- generate invitations as an operational fallback (`invite:generate`)
 
-`dev_only` files must include exactly one `schema_version` insert in the UP section so they can be ordered and tracked correctly.
-
-### Ordering and execution
-
-- The runner orders migrations by resolved version (ascending).
-- If two files resolve to the same version, filename order is used as a tie-breaker.
-- Any `.sql` file that does not resolve to a version is ignored.
-
-### Rollback behavior
-
-- `php si.php db:migrate --rollback` rolls back the file that matches the current `schema_version` value.
-- Works for both `NNN_*.sql` and `dev_only_*.sql` files.
+Each example is formatted as a cron line and should be removed after it has run.

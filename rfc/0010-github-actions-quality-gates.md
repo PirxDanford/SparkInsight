@@ -1,6 +1,6 @@
 # RFC 0010: GitHub Actions Quality Gates
 
-Status: Draft
+Status: Implemented
 
 Date: 2026-04-20
 
@@ -70,11 +70,72 @@ This RFC is the CI/CD implementation vehicle for **RFC 0011: Quality-First Devel
   - Code style checks (PSR-12 consistency)
   - Dependency quality validation
 
+## Implementation (v1.0.0)
+
+Completed 2026-07-12. The following quality gates have been implemented:
+
+### Main CI Workflow (`.github/workflows/ci.yml`)
+
+- **Commit Signing Verification:** Validates GPG signatures and fails `release/*` branch builds when the latest commit is unsigned
+- **PHP Syntax Checking:** Lints all PHP files for syntax errors
+- **Composer Validation:** Ensures `composer.json` is valid and dependencies are locked
+- **PHPUnit Tests:** Runs full test suite with coverage reporting (PCOV driver)
+- **Code Coverage:** Enforces minimum 90% coverage threshold for project code, with artifact storage for review
+- **PHPStan Static Analysis:** Level max analysis with 443 baseline errors captured for incremental improvement (type safety, potential bugs)
+- **PHP-CS-Fixer Style Checks:** Dry-run validation against PSR-12 and modern PHP standards
+- **Coverage Reporting:** Generates coverage reports as artifacts and posts summary comments on PRs
+
+### Migration Checks Workflow (`.github/workflows/migration-checks.yml`)
+
+Enhanced with:
+- Commit signing verification with strict enforcement on `release/*` branches
+- Existing migration naming policy enforcement (validates `001_initial_schema.sql`, `dev_only_*.sql` patterns)
+
+### Tooling & Configuration
+
+- **PHPStan** (v1.12.33): Configured with max level type checking, baseline file for existing issues
+- **PHP-CS-Fixer** (v3.95.13): PSR-12 + PHP 8.1+ migration rules, ~90% of available fixers enabled
+- **Composer Dependencies:** Both tools added as `require-dev` dependencies
+- **Memory Optimization:** PHPStan runs with `--memory-limit=512M` to handle large codebase analysis
+
+### Deliverables
+
+- [x] `.github/workflows/ci.yml` — Main CI pipeline with all quality gates
+- [x] `.github/workflows/migration-checks.yml` — Enhanced with commit signing
+- [x] `phpstan.neon` + `phpstan-baseline.neon` — Type checking configuration with baseline
+- [x] `.php-cs-fixer.php` — Code style enforcement configuration
+- [x] `composer.json` updated with PHPStan and PHP-CS-Fixer dependencies
+- [x] Coverage reporting with PR comments
+- [x] Artifact storage for coverage reports (HTML + text formats)
+
+### Coverage Threshold Rationale
+
+- **90%** chosen as pragmatic threshold balancing:
+  - Enforces strong coverage discipline (ADR 0006)
+  - Accommodates Windows dev environment limitations mentioned in RFC
+  - Allows incremental path to 100% without blocking releases
+  - Can be increased to 95-100% as codebase matures
+
+### Type Safety Progress
+
+- **443 baseline errors** captured from initial PHPStan run
+- Baseline allows new contributions without regression while enabling incremental type safety improvements
+- Future work can remove items from baseline as code is refactored
+
+### Next Steps (v1.1+)
+
+- Upgrade to PHPStan 2.x (mentioned in output; offers level 10, ~50-70% less memory)
+- Add SARIF output for GitHub Security tab integration
+- Consider adding Psalm as complementary type checker
+- Expand to include mutation testing (Infection PHP)
+- Add automated code coverage trend tracking
+
 ## Links
 
 - GitHub Actions Documentation: https://docs.github.com/en/actions
 - PHPUnit: https://phpunit.de/
 - PHPStan: https://phpstan.org/
+- PHP-CS-Fixer: https://cs.symfony.com/
 - RFC 0011: Quality-First Development Framework
 - ADR 0006: Adopt Test-Driven Development
 - ADR 0007: Apply SOLID Principles
