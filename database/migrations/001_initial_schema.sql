@@ -11,6 +11,7 @@ CREATE TABLE users (
     provider_id VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
+    display_name VARCHAR(255),
     avatar VARCHAR(500),
     roles JSON NOT NULL,
     status ENUM('active', 'disabled') NOT NULL DEFAULT 'active',
@@ -35,12 +36,14 @@ CREATE TABLE content_versions (
     author_id INT,
     status ENUM('ready', 'placeholder', 'archived') NOT NULL DEFAULT 'ready',
     metadata JSON,
+    import_batch_id VARCHAR(64) NULL,
     imported_at DATETIME NOT NULL,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL,
     UNIQUE KEY unique_content_version_label (title, version_label),
     INDEX idx_author_id (author_id),
     INDEX idx_content_version_status (status),
+    INDEX idx_content_versions_import_batch_id (import_batch_id),
     FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
@@ -150,6 +153,20 @@ CREATE TABLE app_settings (
     updated_at DATETIME NOT NULL
 );
 
+CREATE TABLE export_events (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    content_version_ids_json JSON NOT NULL,
+    export_profile ENUM('secure', 'archive') NOT NULL,
+    pdf_standard VARCHAR(40) NOT NULL,
+    password_protected TINYINT(1) NOT NULL DEFAULT 0,
+    download_ip VARCHAR(64) NULL,
+    user_agent VARCHAR(512) NULL,
+    created_at DATETIME NOT NULL,
+    INDEX idx_export_events_user_created (user_id, created_at),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 INSERT INTO app_settings (setting_key, setting_value, value_type, updated_at)
 VALUES
     ('invitation_default_hours', '168', 'int', NOW()),
@@ -165,6 +182,7 @@ DROP TABLE oauth_identities;
 DROP TABLE review_resolution_events;
 DROP TABLE reviews;
 DROP TABLE content_versions;
+DROP TABLE export_events;
 DROP TABLE invitations;
 DROP TABLE app_settings;
 DROP TABLE users;
