@@ -27,6 +27,19 @@ class HomeControllerTest extends TestCase
         $_ENV['APP_URL'] = 'http://localhost:8000';
         $_ENV['OAUTH_GITHUB_CLIENT_ID'] = '123';
         $_ENV['OAUTH_GITHUB_CLIENT_SECRET'] = 'secret';
+        $_ENV['OAUTH_GOOGLE_CLIENT_ID'] = '';
+        $_ENV['OAUTH_GOOGLE_CLIENT_SECRET'] = '';
+        $_ENV['OAUTH_LINKEDIN_CLIENT_ID'] = '';
+        $_ENV['OAUTH_LINKEDIN_CLIENT_SECRET'] = '';
+
+        $_SERVER['APP_ENV'] = 'development';
+        $_SERVER['APP_URL'] = 'http://localhost:8000';
+        $_SERVER['OAUTH_GITHUB_CLIENT_ID'] = '123';
+        $_SERVER['OAUTH_GITHUB_CLIENT_SECRET'] = 'secret';
+        $_SERVER['OAUTH_GOOGLE_CLIENT_ID'] = '';
+        $_SERVER['OAUTH_GOOGLE_CLIENT_SECRET'] = '';
+        $_SERVER['OAUTH_LINKEDIN_CLIENT_ID'] = '';
+        $_SERVER['OAUTH_LINKEDIN_CLIENT_SECRET'] = '';
 
         $this->renderer = $this->createMock(PhpRenderer::class);
         $this->config = Config::fromEnvironment();
@@ -41,6 +54,12 @@ class HomeControllerTest extends TestCase
         unset($_ENV['APP_URL']);
         unset($_ENV['OAUTH_GITHUB_CLIENT_ID']);
         unset($_ENV['OAUTH_GITHUB_CLIENT_SECRET']);
+        unset($_ENV['OAUTH_GOOGLE_CLIENT_ID'], $_ENV['OAUTH_GOOGLE_CLIENT_SECRET']);
+        unset($_ENV['OAUTH_LINKEDIN_CLIENT_ID'], $_ENV['OAUTH_LINKEDIN_CLIENT_SECRET']);
+        unset($_SERVER['APP_ENV'], $_SERVER['APP_URL']);
+        unset($_SERVER['OAUTH_GITHUB_CLIENT_ID'], $_SERVER['OAUTH_GITHUB_CLIENT_SECRET']);
+        unset($_SERVER['OAUTH_GOOGLE_CLIENT_ID'], $_SERVER['OAUTH_GOOGLE_CLIENT_SECRET']);
+        unset($_SERVER['OAUTH_LINKEDIN_CLIENT_ID'], $_SERVER['OAUTH_LINKEDIN_CLIENT_SECRET']);
         if (session_status() === PHP_SESSION_ACTIVE) {
             session_destroy();
         }

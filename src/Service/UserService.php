@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SparkInsight\Service;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\ParameterType;
 
 final class UserService
 {
@@ -41,6 +42,7 @@ final class UserService
                 'provider_id' => $existing['provider_id'],
                 'email' => $existing['email'],
                 'name' => $existing['name'],
+                'display_name' => $existing['display_name'] ?? null,
                 'avatar' => $existing['avatar'],
                 'roles' => json_decode($existing['roles'] ?? '[]', true),
                 'status' => $existing['status'],
@@ -76,6 +78,7 @@ final class UserService
             'provider_id' => $providerId,
             'email' => $email,
             'name' => $name,
+            'display_name' => null,
             'avatar' => $avatar,
             'roles' => $roles,
             'status' => 'active',
@@ -99,6 +102,7 @@ final class UserService
                     'provider_id' => $identityResult['provider_id'],
                     'email' => $identityResult['email'],
                     'name' => $identityResult['name'],
+                    'display_name' => $identityResult['display_name'] ?? null,
                     'avatar' => $identityResult['avatar'],
                     'roles' => json_decode($identityResult['roles'] ?? '[]', true),
                     'status' => $identityResult['status'],
@@ -127,6 +131,7 @@ final class UserService
             'provider_id' => $result['provider_id'],
             'email' => $result['email'],
             'name' => $result['name'],
+            'display_name' => $result['display_name'] ?? null,
             'avatar' => $result['avatar'],
             'roles' => json_decode($result['roles'] ?? '[]', true),
             'status' => $result['status'],
@@ -154,6 +159,7 @@ final class UserService
             'provider_id' => $result['provider_id'],
             'email' => $result['email'],
             'name' => $result['name'],
+            'display_name' => $result['display_name'] ?? null,
             'avatar' => $result['avatar'],
             'roles' => json_decode($result['roles'] ?? '[]', true),
             'status' => $result['status'],
@@ -216,6 +222,7 @@ final class UserService
             'provider_id' => $result['provider_id'],
             'email' => $result['email'],
             'name' => $result['name'],
+            'display_name' => $result['display_name'] ?? null,
             'avatar' => $result['avatar'],
             'roles' => json_decode($result['roles'] ?? '[]', true),
             'status' => $result['status'],
@@ -243,7 +250,8 @@ final class UserService
 
         if (!empty($filters['search'])) {
             $search = '%' . $filters['search'] . '%';
-            $where[] = '(name LIKE ? OR email LIKE ?)';
+            $where[] = '(name LIKE ? OR display_name LIKE ? OR email LIKE ?)';
+            $params[] = $search;
             $params[] = $search;
             $params[] = $search;
         }
@@ -262,8 +270,11 @@ final class UserService
         $sql = "SELECT * FROM users $whereClause $orderClause LIMIT ? OFFSET ?";
         $params[] = $limit;
         $params[] = $offset;
+        $types = array_fill(0, count($params) - 2, ParameterType::STRING);
+        $types[] = ParameterType::INTEGER;
+        $types[] = ParameterType::INTEGER;
 
-        $results = $this->connection->executeQuery($sql, $params)->fetchAllAssociative();
+        $results = $this->connection->executeQuery($sql, $params, $types)->fetchAllAssociative();
 
         return array_map(function ($row) {
             return [
@@ -272,6 +283,7 @@ final class UserService
                 'provider_id' => $row['provider_id'],
                 'email' => $row['email'],
                 'name' => $row['name'],
+                'display_name' => $row['display_name'] ?? null,
                 'avatar' => $row['avatar'],
                 'roles' => json_decode($row['roles'] ?? '[]', true),
                 'status' => $row['status'],
@@ -309,6 +321,26 @@ final class UserService
         return $result > 0;
     }
 
+    public function updateUserDisplayName(int $userId, ?string $displayName): bool
+    {
+        $normalizedDisplayName = $displayName !== null ? trim($displayName) : null;
+        if ($normalizedDisplayName === '') {
+            $normalizedDisplayName = null;
+        }
+
+        if ($normalizedDisplayName !== null && mb_strlen($normalizedDisplayName) > 255) {
+            return false;
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $result = $this->connection->executeStatement(
+            'UPDATE users SET display_name = ?, updated_at = ? WHERE id = ?',
+            [$normalizedDisplayName, $now, $userId]
+        );
+
+        return $result > 0;
+    }
+
     public function getUserCount(array $filters = []): int
     {
         $where = [];
@@ -326,7 +358,8 @@ final class UserService
 
         if (!empty($filters['search'])) {
             $search = '%' . $filters['search'] . '%';
-            $where[] = '(name LIKE ? OR email LIKE ?)';
+            $where[] = '(name LIKE ? OR display_name LIKE ? OR email LIKE ?)';
+            $params[] = $search;
             $params[] = $search;
             $params[] = $search;
         }

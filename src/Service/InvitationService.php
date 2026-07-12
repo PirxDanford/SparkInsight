@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SparkInsight\Service;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\ParameterType;
 
 final class InvitationService
 {
@@ -57,6 +58,16 @@ final class InvitationService
         );
     }
 
+    public function deleteInvitation(string $code): bool
+    {
+        $deleted = $this->connection->executeStatement(
+            'DELETE FROM invitations WHERE code = ?',
+            [$code]
+        );
+
+        return $deleted > 0;
+    }
+
     public function getInvitations(array $filters = [], int $limit = 50, int $offset = 0): array
     {
         $where = [];
@@ -95,8 +106,11 @@ final class InvitationService
 
         $params[] = $limit;
         $params[] = $offset;
+        $types = array_fill(0, count($params) - 2, ParameterType::STRING);
+        $types[] = ParameterType::INTEGER;
+        $types[] = ParameterType::INTEGER;
 
-        $results = $this->connection->executeQuery($sql, $params)->fetchAllAssociative();
+        $results = $this->connection->executeQuery($sql, $params, $types)->fetchAllAssociative();
 
         return array_map(static function (array $row) {
             $expiresAt = $row['expires_at'] ? new \DateTime($row['expires_at']) : null;

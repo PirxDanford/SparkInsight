@@ -8,15 +8,14 @@
 </head>
 <body>
     <?php
+    $user = isset($user) && is_array($user) ? $user : [];
     $viewMeta = [
         'Home' => ['label' => 'Home', 'icon' => '🏠'],
         'Login' => ['label' => 'Login', 'icon' => '🔐'],
         'Sign Up' => ['label' => 'Signup', 'icon' => '📝'],
         'Author' => ['label' => 'Author', 'icon' => '✍️'],
         'Review' => ['label' => 'Review', 'icon' => '🔎'],
-        'User Management' => ['label' => 'Users', 'icon' => '👥'],
-        'Invitations' => ['label' => 'Invites', 'icon' => '✉️'],
-        'Admin Settings' => ['label' => 'Settings', 'icon' => '⚙️'],
+        'Admin' => ['label' => 'Admin', 'icon' => '🛠️'],
     ];
     $currentView = $viewMeta[$title ?? 'Home'] ?? [
         'label' => (string) ($title ?? 'Home'),
@@ -53,9 +52,7 @@
                         <?php endif; ?>
                     <?php endif; ?>
                     <?php if ($isAdmin): ?>
-                        <li class="<?= in_array($title, ['User Management', 'Invitations', 'Admin Settings']) ? 'active' : '' ?>"><a href="/admin/users">Users</a></li>
-                        <li class="<?= $title === 'Invitations' ? 'active' : '' ?>"><a href="/admin/invitations">Invitations</a></li>
-                        <li class="<?= $title === 'Admin Settings' ? 'active' : '' ?>"><a href="/admin/settings">Settings</a></li>
+                        <li class="<?= in_array($title, ['Admin', 'User Management', 'Invitations', 'Admin Settings'], true) ? 'active' : '' ?>"><a href="/dashboard/admin">Admin</a></li>
                     <?php endif; ?>
                 </ul>
             </nav>
@@ -70,7 +67,7 @@
                 <?php if ($user ?? null): ?>
                     <div class="user-info">
                         <span class="user-name" tabindex="0">
-                            <?= htmlspecialchars($user['name'], ENT_QUOTES, 'UTF-8') ?>
+                            <?= htmlspecialchars((string) ($user['display_name'] ?? $user['name']), ENT_QUOTES, 'UTF-8') ?>
                             <span class="user-provider-tooltip">Signed in via <?= htmlspecialchars((string) ($user['provider'] ?? 'unknown provider'), ENT_QUOTES, 'UTF-8') ?></span>
                         </span>
                         <a class="button small secondary" href="/logout">

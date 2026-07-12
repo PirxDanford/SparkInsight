@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SparkInsightTest\Unit\Service;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\Result;
 use PHPUnit\Framework\TestCase;
 use SparkInsight\Service\UserService;
@@ -62,6 +63,7 @@ class UserServiceTest extends TestCase
             'provider_id' => '123',
             'email' => 'test@example.com',
             'name' => 'Test User',
+            'display_name' => null,
             'avatar' => 'avatar.jpg',
             'roles' => '["reviewer"]',
             'status' => 'active',
@@ -104,6 +106,7 @@ class UserServiceTest extends TestCase
             'provider_id' => '123',
             'email' => 'test@example.com',
             'name' => 'Test User',
+            'display_name' => null,
             'avatar' => 'avatar.jpg',
             'roles' => '["reviewer"]',
             'status' => 'active',
@@ -202,6 +205,7 @@ class UserServiceTest extends TestCase
             'provider_id' => 'abc',
             'email' => 'user@example.com',
             'name' => 'Example User',
+            'display_name' => 'Public Example',
             'avatar' => 'avatar.png',
             'roles' => '["reviewer"]',
             'status' => 'active',
@@ -222,6 +226,7 @@ class UserServiceTest extends TestCase
         $user = $this->userService->getUserById(2);
 
         $this->assertSame(2, $user['id']);
+        $this->assertSame('Public Example', $user['display_name']);
         $this->assertSame(['reviewer'], $user['roles']);
     }
 
@@ -253,6 +258,7 @@ class UserServiceTest extends TestCase
                 'provider_id' => '123',
                 'email' => 'test@example.com',
                 'name' => 'Filtered User',
+                'display_name' => 'Readable Filtered User',
                 'avatar' => null,
                 'roles' => '["reviewer"]',
                 'status' => 'active',
@@ -272,7 +278,8 @@ class UserServiceTest extends TestCase
                         && $params[0] === 'active'
                         && $params[1] === json_encode('reviewer')
                         && $params[2] === '%test%'
-                        && $params[3] === '%test%';
+                        && $params[3] === '%test%'
+                        && $params[4] === '%test%';
                 })
             )
             ->willReturn($resultMock);
@@ -297,7 +304,8 @@ class UserServiceTest extends TestCase
                         && $params[0] === 'disabled'
                         && $params[1] === json_encode('admin')
                         && $params[2] === '%find%'
-                        && $params[3] === '%find%';
+                        && $params[3] === '%find%'
+                        && $params[4] === '%find%';
                 })
             )
             ->willReturn($resultMock);
@@ -309,6 +317,29 @@ class UserServiceTest extends TestCase
         ]);
 
         $this->assertSame(7, $count);
+    }
+
+    public function testUpdateUserDisplayName(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('executeStatement')
+            ->with('UPDATE users SET display_name = ?, updated_at = ? WHERE id = ?', $this->callback(function ($params) {
+                return is_array($params)
+                    && $params[0] === 'Friendly Name'
+                    && $params[2] === 4;
+            }))
+            ->willReturn(1);
+
+        $result = $this->userService->updateUserDisplayName(4, 'Friendly Name');
+
+        $this->assertTrue($result);
+    }
+
+    public function testUpdateUserDisplayNameRejectsTooLongValue(): void
+    {
+        $result = $this->userService->updateUserDisplayName(4, str_repeat('a', 256));
+
+        $this->assertFalse($result);
     }
 
     public function testUpdateUserRoles(): void
@@ -325,5 +356,22 @@ class UserServiceTest extends TestCase
         $result = $this->userService->updateUserRoles(4, ['author']);
 
         $this->assertTrue($result);
+    }
+
+    public function testGetAllUsersBindsLimitAndOffsetAsIntegers(): void
+    {
+        $resultMock = $this->createMock(Result::class);
+        $resultMock->method('fetchAllAssociative')->willReturn([]);
+
+        $this->connection->expects($this->once())
+            ->method('executeQuery')
+            ->with(
+                $this->stringContains('LIMIT ? OFFSET ?'),
+                ['active', 20, 0],
+                [ParameterType::STRING, ParameterType::INTEGER, ParameterType::INTEGER]
+            )
+            ->willReturn($resultMock);
+
+        $this->userService->getAllUsers(['status' => 'active'], ['created_at' => 'DESC'], 20, 0);
     }
 }
