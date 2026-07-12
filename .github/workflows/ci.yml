@@ -18,6 +18,9 @@ env:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
     strategy:
       fail-fast: true
 
