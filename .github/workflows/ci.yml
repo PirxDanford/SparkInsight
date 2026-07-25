@@ -15,6 +15,10 @@ env:
   PHP_VERSION: '8.5'
   COVERAGE_THRESHOLD: 90
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   ci:
     runs-on: ubuntu-latest
@@ -33,7 +37,8 @@ jobs:
           git log --oneline -1
           git log -1 --pretty=format:"%H %G? %GS"
           TARGET_BRANCH="${GITHUB_BASE_REF:-${GITHUB_REF_NAME}}"
-          if [ "$(git log -1 --pretty=format:%G?)" != "G" ]; then
+          GIT_SIGN_STATUS=$(git log -1 --pretty=format:%G?)
+          if [ "$GIT_SIGN_STATUS" = "N" ] || [ "$GIT_SIGN_STATUS" = "B" ]; then
             if [[ "$TARGET_BRANCH" == release/* ]]; then
               echo "❌ Latest commit is not signed. Signed commits are required for release branches."
               exit 1
@@ -125,6 +130,10 @@ jobs:
         with:
           script: |
             const fs = require('fs');
+            if (!fs.existsSync('coverage.txt')) {
+              console.log('No coverage.txt found — skipping coverage comment.');
+              return;
+            }
             const coverageText = fs.readFileSync('coverage.txt', 'utf8');
             const coverage = coverageText.match(/Classes.*?\s+([0-9.]+)%/);
             const coveragePercent = coverage ? coverage[1] : 'unknown';
