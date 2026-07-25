@@ -49,8 +49,8 @@ final class AuthControllerOAuthProviderQaIntegrationTest extends DatabaseTestCas
                 $invitationCode,
                 $profile['email'],
                 json_encode(['reviewer']),
-                '2026-07-11 12:00:00',
-                '2026-07-14 12:00:00',
+                date('Y-m-d H:i:s', strtotime('-1 day')),
+                date('Y-m-d H:i:s', strtotime('+30 days')),
             ]
         );
 
