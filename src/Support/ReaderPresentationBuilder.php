@@ -61,7 +61,7 @@ final class ReaderPresentationBuilder
 
         $html = $this->convertRtfToHtml($rawXml);
         $sections = $this->extractReaderSections($rawXml);
-        if ($sections === []) {
+        if ($sections === [] && !str_starts_with(mb_trim($rawXml), '<')) {
             $sections = $this->extractReaderSectionsFromRtf($rawXml);
         }
 
