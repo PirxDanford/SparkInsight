@@ -61,6 +61,89 @@ RTF;
         $this->assertStringContainsString('Example Link', (string) $presentation['html']);
     }
 
+    public function testBuildPresentationUsesStoredPlainTextWhenAvailable(): void
+    {
+        $builder = new ReaderPresentationBuilder($this->projectRoot);
+
+        $presentation = $builder->buildPresentation(" First paragraph\n\nSecond paragraph ", '', '', null);
+
+        $this->assertTrue((bool) $presentation['available']);
+        $this->assertSame('Stored import content', $presentation['source_label']);
+        $this->assertNull($presentation['html']);
+        $this->assertSame(2, $presentation['paragraph_count']);
+        $this->assertSame(4, $presentation['word_count']);
+        $this->assertCount(2, $presentation['sections']);
+        $this->assertSame('First paragraph', $presentation['sections'][0]['text']);
+        $this->assertSame('Second paragraph', $presentation['sections'][1]['text']);
+    }
+
+    public function testBuildPresentationReturnsUnavailableWhenSourceCannotBeResolved(): void
+    {
+        $builder = new ReaderPresentationBuilder($this->projectRoot);
+
+        $presentation = $builder->buildPresentation('', '', '../outside.rtf', null);
+
+        $this->assertFalse((bool) $presentation['available']);
+        $this->assertSame('../outside.rtf', $presentation['source_label']);
+        $this->assertNull($presentation['html']);
+        $this->assertSame([], $presentation['sections']);
+        $this->assertSame(0, $presentation['paragraph_count']);
+        $this->assertSame(0, $presentation['word_count']);
+        $this->assertSame('Original source file is currently unavailable for this item.', $presentation['notice']);
+    }
+
+    public function testBuildPresentationLoadsSectionTextFromXmlParagraphNodes(): void
+    {
+        $sourcePath = $this->projectRoot . DIRECTORY_SEPARATOR . 'scrivener' . DIRECTORY_SEPARATOR . 'Draft' . DIRECTORY_SEPARATOR . 'chapter.xml';
+        mkdir(dirname($sourcePath), 0777, true);
+        file_put_contents(
+            $sourcePath,
+            '<Root><Paragraph Type="quote"><TEXT>  Hello world  </TEXT></Paragraph><Paragraph><TEXT>Second</TEXT><TEXT>line</TEXT></Paragraph></Root>',
+        );
+
+        $builder = new ReaderPresentationBuilder($this->projectRoot);
+        $presentation = $builder->buildPresentation('', '', 'chapter.xml', null);
+
+        $this->assertTrue((bool) $presentation['available']);
+        $this->assertSame('chapter.xml', $presentation['source_label']);
+        $this->assertNull($presentation['html']);
+        $this->assertSame(2, $presentation['paragraph_count']);
+        $this->assertSame('Hello world', $presentation['sections'][0]['text']);
+        $this->assertSame('quote', $presentation['sections'][0]['type']);
+        $this->assertSame('Second line', $presentation['sections'][1]['text']);
+    }
+
+    public function testBuildPresentationFallsBackToTopLevelTextNodesWhenNoParagraphNodesExist(): void
+    {
+        $sourcePath = $this->projectRoot . DIRECTORY_SEPARATOR . 'scrivener' . DIRECTORY_SEPARATOR . 'Notes' . DIRECTORY_SEPARATOR . 'summary.xml';
+        mkdir(dirname($sourcePath), 0777, true);
+        file_put_contents($sourcePath, '<Root><text>Alpha section</text><TEXT>Beta summary</TEXT></Root>');
+
+        $builder = new ReaderPresentationBuilder($this->projectRoot);
+        $presentation = $builder->buildPresentation('', '', 'Notes/summary.xml', null);
+
+        $this->assertTrue((bool) $presentation['available']);
+        $this->assertSame('Notes/summary.xml', $presentation['source_label']);
+        $this->assertSame(2, $presentation['paragraph_count']);
+        $this->assertSame('Alpha section', $presentation['sections'][0]['text']);
+        $this->assertSame('Beta summary', $presentation['sections'][1]['text']);
+    }
+
+    public function testBuildPresentationReturnsUnavailableWhenSourceContainsNoReadableContent(): void
+    {
+        $sourcePath = $this->projectRoot . DIRECTORY_SEPARATOR . 'scrivener' . DIRECTORY_SEPARATOR . 'empty.xml';
+        mkdir(dirname($sourcePath), 0777, true);
+        file_put_contents($sourcePath, '<Root><Paragraph/></Root>');
+
+        $builder = new ReaderPresentationBuilder($this->projectRoot);
+        $presentation = $builder->buildPresentation('', '', 'empty.xml', null);
+
+        $this->assertFalse((bool) $presentation['available']);
+        $this->assertSame('empty.xml', $presentation['source_label']);
+        $this->assertSame([], $presentation['sections']);
+        $this->assertSame('No readable text blocks were found in this source file.', $presentation['notice']);
+    }
+
     private function removeDirectory(string $path): void
     {
         if (!is_dir($path)) {
