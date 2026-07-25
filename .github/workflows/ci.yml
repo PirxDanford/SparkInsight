@@ -86,8 +86,8 @@ jobs:
 
       - name: Check code coverage threshold
         run: |
-          # Extract coverage percentage from coverage.txt
-          COVERAGE=$(grep -oP '^\s+Code Coverage\s+:\s+\K[0-9.]+(?=%)' coverage.txt || grep -oP '[0-9]+\.[0-9]+(?=%)' coverage.txt | tail -1)
+          # Extract line coverage percentage from coverage.txt summary
+          COVERAGE=$(grep -oP '^\s*Lines:\s+\K[0-9]+(?:\.[0-9]+)?(?=%)' coverage.txt | head -1)
           
           if [ -z "$COVERAGE" ]; then
             echo "⚠️  Warning: Could not extract coverage percentage from coverage.txt"
@@ -136,7 +136,7 @@ jobs:
               return;
             }
             const coverageText = fs.readFileSync('coverage.txt', 'utf8');
-            const coverage = coverageText.match(/Classes.*?\s+([0-9.]+)%/);
+            const coverage = coverageText.match(/Lines:\s+([0-9.]+)%/);
             const coveragePercent = coverage ? coverage[1] : 'unknown';
             
             github.rest.issues.createComment({
