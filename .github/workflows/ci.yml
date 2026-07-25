@@ -13,7 +13,7 @@ on:
 
 env:
   PHP_VERSION: '8.5'
-  COVERAGE_THRESHOLD: 67
+  COVERAGE_THRESHOLD: 80
 
 permissions:
   contents: read
