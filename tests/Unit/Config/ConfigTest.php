@@ -106,6 +106,7 @@ class ConfigTest extends TestCase
         $_ENV['OAUTH_GOOGLE_CLIENT_SECRET'] = 'secret';
         $_ENV['OAUTH_LINKEDIN_CLIENT_ID'] = '789';
         $_ENV['OAUTH_LINKEDIN_CLIENT_SECRET'] = 'secret';
+        $_ENV['DB_DRIVER'] = 'pdo_mysql';
         $_ENV['DB_HOST'] = 'db.example.com';
 
         $config = Config::fromEnvironment();
@@ -151,6 +152,7 @@ class ConfigTest extends TestCase
 
     public function testGetDatabaseConfig(): void
     {
+        $_ENV['DB_DRIVER'] = 'pdo_mysql';
         $_ENV['DB_HOST'] = 'testdb';
         $_ENV['DB_PORT'] = '3307';
 
