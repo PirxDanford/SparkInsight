@@ -1651,4 +1651,41 @@ class DashboardControllerTest extends TestCase
         $this->assertStringContainsString('attachment; filename="book-one-excerpt-', $result->getHeaderLine('Content-Disposition'));
         $this->assertSame('%PDF-1.7 test', (string) $result->getBody());
     }
+
+    public function testBuildEmptyQueuePaginationNormalizesPageAndPerPage(): void
+    {
+        $method = new \ReflectionMethod($this->controller, 'buildEmptyQueuePagination');
+
+        $pagination = $method->invoke($this->controller, [
+            'page' => 0,
+            'per_page' => -5,
+        ]);
+
+        $this->assertSame(1, $pagination['page']);
+        $this->assertSame(1, $pagination['per_page']);
+        $this->assertSame(0, $pagination['total']);
+        $this->assertSame(1, $pagination['total_pages']);
+        $this->assertFalse($pagination['has_prev']);
+        $this->assertFalse($pagination['has_next']);
+        $this->assertNull($pagination['prev_page']);
+        $this->assertNull($pagination['next_page']);
+    }
+
+    public function testNormalizeReviewStatusFallsBackToOpenForUnknownValues(): void
+    {
+        $method = new \ReflectionMethod($this->controller, 'normalizeReviewStatus');
+
+        $this->assertSame('open', $method->invoke($this->controller, 'invalid_state'));
+        $this->assertSame('needs_author_review', $method->invoke($this->controller, 'needs_author_review'));
+    }
+
+    public function testSafeTimestampReturnsNullForInvalidAndMissingValues(): void
+    {
+        $method = new \ReflectionMethod($this->controller, 'safeTimestamp');
+
+        $this->assertNull($method->invoke($this->controller, ''));
+        $this->assertNull($method->invoke($this->controller, 'No Due Date'));
+        $this->assertNull($method->invoke($this->controller, 'not-a-date'));
+        $this->assertIsInt($method->invoke($this->controller, '2026-07-25 12:00:00'));
+    }
 }

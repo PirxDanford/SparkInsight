@@ -886,6 +886,32 @@ SQL
         $this->deleteDirectoryRecursively($directory);
     }
 
+    public function testHasReviewerRoleRecognizesArrayJsonAndFallbackStringValues(): void
+    {
+        $method = new \ReflectionMethod($this->service, 'hasReviewerRole');
+
+        $this->assertTrue($method->invoke($this->service, ['reviewer', 'author']));
+        $this->assertFalse($method->invoke($this->service, ['author']));
+
+        $this->assertTrue($method->invoke($this->service, '["reviewer","admin"]'));
+        $this->assertFalse($method->invoke($this->service, '["author","admin"]'));
+
+        $this->assertTrue($method->invoke($this->service, 'role=reviewer;state=active'));
+        $this->assertFalse($method->invoke($this->service, 'role=author;state=active'));
+        $this->assertFalse($method->invoke($this->service, null));
+    }
+
+    public function testPickClosestPositionByExpectedOffsetSelectsBestCandidate(): void
+    {
+        $method = new \ReflectionMethod($this->service, 'pickClosestPositionByExpectedOffset');
+
+        $this->assertSame(0, $method->invoke($this->service, [], 10, 100, 100));
+        $this->assertSame(5, $method->invoke($this->service, [5, 40, 80], null, 100, 100));
+
+        // oldStart at 50% of old content should map close to 50% of new content.
+        $this->assertSame(52, $method->invoke($this->service, [12, 52, 91], 50, 100, 100));
+    }
+
     private function deleteDirectoryRecursively(string $directory): void
     {
         $items = scandir($directory);

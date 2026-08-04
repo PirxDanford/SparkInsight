@@ -9,6 +9,7 @@ use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\Result;
 use PHPUnit\Framework\TestCase;
 use SparkInsight\Service\UserService;
+use RuntimeException;
 
 class UserServiceTest extends TestCase
 {
@@ -340,6 +341,124 @@ class UserServiceTest extends TestCase
         $result = $this->userService->updateUserDisplayName(4, str_repeat('a', 256));
 
         $this->assertFalse($result);
+    }
+
+    public function testGetUserByEmailReturnsUser(): void
+    {
+        $userData = [
+            'id' => 9,
+            'provider' => 'github',
+            'provider_id' => 'oid-9',
+            'email' => 'person@example.com',
+            'name' => 'Person Example',
+            'display_name' => 'Display Person',
+            'avatar' => null,
+            'roles' => '["admin","reviewer"]',
+            'status' => 'active',
+            'invitation_used' => null,
+            'last_login' => '2026-01-01 00:00:00',
+            'created_at' => '2026-01-01 00:00:00',
+            'updated_at' => '2026-01-01 00:00:00',
+        ];
+
+        $resultMock = $this->createMock(Result::class);
+        $resultMock->method('fetchAssociative')->willReturn($userData);
+
+        $this->connection->expects($this->once())
+            ->method('executeQuery')
+            ->with('SELECT * FROM users WHERE email = ? LIMIT 1', ['person@example.com'])
+            ->willReturn($resultMock);
+
+        $user = $this->userService->getUserByEmail('person@example.com');
+
+        $this->assertSame(9, $user['id']);
+        $this->assertSame('Display Person', $user['display_name']);
+        $this->assertSame(['admin', 'reviewer'], $user['roles']);
+    }
+
+    public function testGetUserByEmailReturnsNullWhenNotFound(): void
+    {
+        $resultMock = $this->createMock(Result::class);
+        $resultMock->method('fetchAssociative')->willReturn(false);
+
+        $this->connection->expects($this->once())
+            ->method('executeQuery')
+            ->with('SELECT * FROM users WHERE email = ? LIMIT 1', ['missing@example.com'])
+            ->willReturn($resultMock);
+
+        $user = $this->userService->getUserByEmail('missing@example.com');
+
+        $this->assertNull($user);
+    }
+
+    public function testGetLinkedOAuthProvidersReturnsRows(): void
+    {
+        $rows = [
+            [
+                'provider' => 'github',
+                'provider_user_id' => 'gh_1',
+                'provider_email' => 'gh@example.com',
+                'linked_at' => '2026-01-01 10:00:00',
+                'last_used_at' => '2026-01-02 10:00:00',
+            ],
+            [
+                'provider' => 'google',
+                'provider_user_id' => 'gg_2',
+                'provider_email' => 'gg@example.com',
+                'linked_at' => '2026-01-03 10:00:00',
+                'last_used_at' => '2026-01-04 10:00:00',
+            ],
+        ];
+
+        $resultMock = $this->createMock(Result::class);
+        $resultMock->method('fetchAllAssociative')->willReturn($rows);
+
+        $this->connection->expects($this->once())
+            ->method('executeQuery')
+            ->with(
+                'SELECT provider, provider_user_id, provider_email, linked_at, last_used_at FROM oauth_identities WHERE user_id = ? ORDER BY linked_at ASC',
+                [7]
+            )
+            ->willReturn($resultMock);
+
+        $providers = $this->userService->getLinkedOAuthProviders(7);
+
+        $this->assertSame($rows, $providers);
+    }
+
+    public function testGetLinkedOAuthProvidersReturnsEmptyArrayWhenQueryFails(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('executeQuery')
+            ->willThrowException(new RuntimeException('table missing'));
+
+        $providers = $this->userService->getLinkedOAuthProviders(7);
+
+        $this->assertSame([], $providers);
+    }
+
+    public function testLinkOAuthProviderInsertsIdentityAndReturnsTrue(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('executeStatement')
+            ->with(
+                'INSERT INTO oauth_identities (user_id, provider, provider_user_id, provider_email, linked_at, last_used_at) VALUES (?, ?, ?, ?, ?, ?)',
+                $this->callback(function ($params) {
+                    return is_array($params)
+                        && count($params) === 6
+                        && $params[0] === 11
+                        && $params[1] === 'github'
+                        && $params[2] === 'gh-11'
+                        && $params[3] === 'dev@example.com'
+                        && is_string($params[4])
+                        && is_string($params[5]);
+                })
+            )
+            ->willReturn(1);
+
+        $result = $this->userService->linkOAuthProvider(11, 'github', 'gh-11', 'dev@example.com');
+
+        $this->assertTrue($result);
     }
 
     public function testUpdateUserRoles(): void

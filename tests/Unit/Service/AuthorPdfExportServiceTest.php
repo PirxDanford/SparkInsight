@@ -63,6 +63,25 @@ RTF;
         $this->assertStringNotContainsString('rel="noopener noreferrer"', $html);
     }
 
+    public function testBuildItemFallbackHtmlBuildsReadableDocumentBody(): void
+    {
+        $service = new AuthorPdfExportService(getcwd());
+        $method = new \ReflectionMethod($service, 'buildItemFallbackHtml');
+
+        $html = (string) $method->invoke($service, [
+            'title' => 'Fallback Chapter',
+            'book_title' => 'Fallback Book',
+            'content_text' => "First fallback paragraph.\n\nSecond fallback paragraph.",
+            'content_rtf' => '',
+            'source' => 'scrivener/fallback.txt',
+            'metadata' => null,
+        ]);
+
+        $this->assertStringContainsString('Fallback Chapter', $html);
+        $this->assertStringContainsString('Fallback Book', $html);
+        $this->assertStringContainsString('reader-text-content', $html);
+    }
+
     public function testPdfSanitizerPreservesReadableLinks(): void
     {
         $service = new AuthorPdfExportService(getcwd());
