@@ -86,12 +86,30 @@ All contributions should include test coverage appropriate for the change.
 
 - Composer script: `composer test`
 - Direct PHPUnit (PowerShell-friendly): `php .\vendor\bin\phpunit --configuration phpunit.xml.dist`
+- Composer install simulation: `composer test:install-sim`
+
+`composer test:install-sim` validates that a separate consumer project can resolve this package through Composer before Packagist registration and tags. This check is also enforced in CI.
 
 ### Run coverage
 
 - Text report: `composer coverage`
 - HTML report: `composer coverage-html`
+- Guardrail-only recheck (uses existing `coverage.xml`): `composer coverage:guard`
+- v1 readiness check (must have zero exceptions): `composer coverage:guard:v1`
 - Coverage HTML is generated into `coverage-report/` and should stay uncommitted.
+
+Method coverage guardrail policy:
+
+- Every method in `src/` must be executed by tests.
+- A method may remain uncovered only with a documented exception entry in `docs/coverage-method-exceptions.json`.
+- Exceptions are only allowed before version `1.0.0`.
+- Every exception must include:
+   - `method` in the form `src/Path/File.php::methodName`
+   - `reason` with specific technical rationale
+   - `owner` responsible for follow-up
+- `versionPolicy.allowedBeforeVersion` in `docs/coverage-method-exceptions.json` defines the global cutoff version for exceptions.
+- At version `1.0.0` and newer, any exception entry fails the guardrail.
+- Stale exceptions (method now covered) also fail CI and must be removed from the exception ledger.
 
 Coverage expectations:
 
@@ -144,7 +162,7 @@ Each pull request should include:
 Before requesting review:
 
 1. Rebase or merge the latest target branch.
-2. Run tests and confirm they pass locally.
+2. Run tests and confirm they pass locally (`composer test` and `composer test:install-sim`).
 3. Update docs if behavior or workflow changed.
 4. Keep changes scoped to one concern per PR when possible.
 

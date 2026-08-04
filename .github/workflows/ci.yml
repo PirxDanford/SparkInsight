@@ -68,6 +68,9 @@ jobs:
       - name: Validate composer.json
         run: composer validate --strict
 
+      - name: Verify Composer install simulation
+        run: composer test:install-sim
+
       - name: Check PHP syntax
         run: |
           echo "Checking PHP syntax..."
@@ -81,8 +84,12 @@ jobs:
         run: |
           php vendor/bin/phpunit \
             --coverage-clover=coverage.xml \
+            --coverage-xml=tmp/coverage-xml \
             --coverage-text=coverage.txt \
             --coverage-html=coverage-report
+
+      - name: Enforce method coverage guardrail
+        run: php tools/ci/check_method_coverage.php tmp/coverage-xml docs/coverage-method-exceptions.json dev-main
 
       - name: Check code coverage threshold
         run: |

@@ -270,7 +270,44 @@ If a provider redirects back with an error, verify the `.env` values, the provid
 
 ## Composer deployment
 
-The project is prepared for composer-based deployment. On a webserver, you can install from GitHub with a repository entry in `composer.json` or by using `composer create-project` once the package is published.
+The project is prepared for composer-based deployment.
+
+### Pre-release install simulation (before Packagist/tag)
+
+Run this from the repository root to verify that Composer can consume SparkInsight from a separate project context:
+
+```bash
+composer test:install-sim
+```
+
+This command runs a local consumer-project simulation using a path repository and fails if dependency resolution does not work.
+
+### Coverage guardrail for method-level test execution
+
+SparkInsight enforces a method-level coverage guardrail in CI and local contributor workflows:
+
+```bash
+composer coverage
+```
+
+This command now:
+
+1. Runs PHPUnit with text + Clover coverage output.
+2. Verifies uncovered methods against `docs/coverage-method-exceptions.json`.
+
+Only documented exceptions with owner are allowed, and only before the configured cutoff version. Missing or stale exceptions fail the guardrail, and all exceptions are blocked starting at the configured cutoff version (`1.0.0`).
+
+### Production/public install after first tag + Packagist registration
+
+After `sparkinsight/sparkinsight` is registered and tagged (for example `v1.0.0`), install with:
+
+```bash
+composer create-project sparkinsight/sparkinsight:^1.0 sparkinsight
+```
+
+### Install directly from GitHub (without Packagist)
+
+If Packagist is not used yet, install from GitHub by defining a VCS repository in the consumer `composer.json` and requiring the desired branch/tag.
 
 ## Import and migration documentation
 
