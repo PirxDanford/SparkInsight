@@ -1,0 +1,38 @@
+.gitignore
+.agent.md
+winget-packages
+scrivener/*
+.github/agents
+.phpunit.cache
+.vscode
+coverage-report/
+tests/coverage/
+coverage_output.txt
+phpunit_output.txt
+phpunit-debug-output.txt
+phpunit-output.txt
+phpunit-warnings.xml
+ECM-googledocs-example.md
+
+# Local PHP dev config
+.env
+
+# Composer dependencies
+vendor/
+
+# Static analysis and formatter caches
+tmp/phpstan/
+.php-cs-fixer.cache
+
+# Generated production prep artifacts
+deployment/production-prep/output/
+
+# Local temporary test runner artifacts
+_tmp_noenv_runner/
+
+# Generated coverage and guardrail artifacts
+coverage.xml
+tmp/coverage-xml/
+tmp/coverage-xml-strict/
+tmp/generated-coverage-exceptions.json
+tmp/strict-guardrail.txt
