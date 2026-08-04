@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SparkInsightTest\Unit\Service;
 
+use League\OAuth2\Client\Token\AccessToken;
 use PHPUnit\Framework\TestCase;
 use SparkInsight\Config\Config;
 use SparkInsight\Service\OAuthProviderFactory;
@@ -205,5 +206,66 @@ class OAuthProviderFactoryTest extends TestCase
 
         $this->expectException(\InvalidArgumentException::class);
         $factory->createProvider('github');
+    }
+
+    public function testFetchGitHubEmailReturnsPrimaryVerifiedThenFirstFallback(): void
+    {
+        $factory = new OAuthProviderFactory(
+            $this->config,
+            static function (string $provider, string $url, AccessToken $token): array {
+                TestCase::assertSame('github', $provider);
+                TestCase::assertSame('https://api.github.com/user/emails', $url);
+                TestCase::assertSame('token-value', $token->getToken());
+
+                return [
+                    ['email' => 'secondary@example.com', 'primary' => false, 'verified' => true],
+                    ['email' => 'primary@example.com', 'primary' => true, 'verified' => true],
+                ];
+            }
+        );
+
+        $method = new \ReflectionMethod($factory, 'fetchGitHubEmail');
+        $email = $method->invoke($factory, new AccessToken(['access_token' => 'token-value']));
+        $this->assertSame('primary@example.com', $email);
+
+        $fallbackFactory = new OAuthProviderFactory(
+            $this->config,
+            static fn (): array => [
+                ['email' => 'first@example.com', 'primary' => false, 'verified' => false],
+            ]
+        );
+        $fallbackMethod = new \ReflectionMethod($fallbackFactory, 'fetchGitHubEmail');
+        $fallbackEmail = $fallbackMethod->invoke($fallbackFactory, new AccessToken(['access_token' => 'token-value']));
+        $this->assertSame('first@example.com', $fallbackEmail);
+    }
+
+    public function testFetchLinkedInEmailReturnsNestedEmailAddressOrEmptyString(): void
+    {
+        $factory = new OAuthProviderFactory(
+            $this->config,
+            static function (string $provider, string $url, AccessToken $token): array {
+                TestCase::assertSame('linkedin', $provider);
+                TestCase::assertSame('https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))', $url);
+                TestCase::assertSame('token-value', $token->getToken());
+
+                return [
+                    'elements' => [
+                        ['handle~' => ['emailAddress' => 'li@example.com']],
+                    ],
+                ];
+            }
+        );
+
+        $method = new \ReflectionMethod($factory, 'fetchLinkedInEmail');
+        $email = $method->invoke($factory, new AccessToken(['access_token' => 'token-value']));
+        $this->assertSame('li@example.com', $email);
+
+        $emptyFactory = new OAuthProviderFactory(
+            $this->config,
+            static fn (): array => ['elements' => []]
+        );
+        $emptyMethod = new \ReflectionMethod($emptyFactory, 'fetchLinkedInEmail');
+        $emptyEmail = $emptyMethod->invoke($emptyFactory, new AccessToken(['access_token' => 'token-value']));
+        $this->assertSame('', $emptyEmail);
     }
 }

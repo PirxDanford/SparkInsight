@@ -14,9 +14,18 @@ final class OAuthProviderFactory implements OAuthProviderFactoryInterface
 {
     private Config $config;
 
-    public function __construct(Config $config)
+    /**
+     * @var null|callable(string, string, AccessToken): mixed
+     */
+    private $authenticatedResponseFetcher;
+
+    /**
+     * @param null|callable(string, string, AccessToken): mixed $authenticatedResponseFetcher
+     */
+    public function __construct(Config $config, ?callable $authenticatedResponseFetcher = null)
     {
         $this->config = $config;
+        $this->authenticatedResponseFetcher = $authenticatedResponseFetcher;
     }
 
     public function createProvider(string $provider): GenericProvider
@@ -155,13 +164,7 @@ final class OAuthProviderFactory implements OAuthProviderFactoryInterface
 
     private function fetchGitHubEmail(AccessToken $token): string
     {
-        $request = $this->createProvider('github')->getAuthenticatedRequest(
-            'GET',
-            'https://api.github.com/user/emails',
-            $token,
-        );
-
-        $response = $this->createProvider('github')->getParsedResponse($request);
+        $response = $this->fetchAuthenticatedProviderResponse('github', 'https://api.github.com/user/emails', $token);
         if (!is_array($response)) {
             return '';
         }
@@ -177,13 +180,11 @@ final class OAuthProviderFactory implements OAuthProviderFactoryInterface
 
     private function fetchLinkedInEmail(AccessToken $token): string
     {
-        $request = $this->createProvider('linkedin')->getAuthenticatedRequest(
-            'GET',
+        $response = $this->fetchAuthenticatedProviderResponse(
+            'linkedin',
             'https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))',
             $token,
         );
-
-        $response = $this->createProvider('linkedin')->getParsedResponse($request);
         if (!is_array($response)) {
             return '';
         }
@@ -194,5 +195,17 @@ final class OAuthProviderFactory implements OAuthProviderFactoryInterface
         }
 
         return $element['handle~']['emailAddress'] ?? '';
+    }
+
+    private function fetchAuthenticatedProviderResponse(string $provider, string $url, AccessToken $token): mixed
+    {
+        if ($this->authenticatedResponseFetcher !== null) {
+            return ($this->authenticatedResponseFetcher)($provider, $url, $token);
+        }
+
+        $providerClient = $this->createProvider($provider);
+        $request = $providerClient->getAuthenticatedRequest('GET', $url, $token);
+
+        return $providerClient->getParsedResponse($request);
     }
 }
