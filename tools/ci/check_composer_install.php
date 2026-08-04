@@ -17,7 +17,7 @@ final class ComposerInstallSimulation
     public function __construct()
     {
         $this->repoRoot = realpath(__DIR__ . '/../../') ?: __DIR__ . '/../../';
-        $this->simDir = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR)
+        $this->simDir = mb_rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR)
             . DIRECTORY_SEPARATOR
             . 'sparkinsight-composer-install-sim';
     }
@@ -31,9 +31,9 @@ final class ComposerInstallSimulation
             sprintf(
                 '%s --working-dir=%s update --no-interaction --no-scripts --no-progress',
                 'composer',
-                escapeshellarg($this->simDir)
+                escapeshellarg($this->simDir),
             ),
-            $this->simDir
+            $this->simDir,
         );
 
         $lockFile = $this->simDir . DIRECTORY_SEPARATOR . 'composer.lock';
@@ -70,7 +70,7 @@ final class ComposerInstallSimulation
             $this->deleteDirectory($this->simDir);
         }
 
-        if (!mkdir($concurrentDirectory = $this->simDir, 0777, true) && !is_dir($concurrentDirectory)) {
+        if (!mkdir($concurrentDirectory = $this->simDir, 0o777, true) && !is_dir($concurrentDirectory)) {
             throw new RuntimeException('Could not create simulation directory: ' . $this->simDir);
         }
     }

@@ -14,13 +14,11 @@ final class OAuthProviderFactory implements OAuthProviderFactoryInterface
 {
     private Config $config;
 
-    /**
-     * @var null|callable(string, string, AccessToken): mixed
-     */
+    /** @var callable(string, string, AccessToken): mixed|null */
     private $authenticatedResponseFetcher;
 
     /**
-     * @param null|callable(string, string, AccessToken): mixed $authenticatedResponseFetcher
+     * @param callable(string, string, AccessToken): mixed|null $authenticatedResponseFetcher
      */
     public function __construct(Config $config, ?callable $authenticatedResponseFetcher = null)
     {

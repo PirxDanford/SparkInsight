@@ -66,7 +66,7 @@ final class MethodCoverageGuardrail
             if ($exceptionsForbiddenByVersion) {
                 fwrite(
                     STDERR,
-                    "\nExceptions are not allowed for version {$this->currentVersion} (allowed only before {$this->exceptionsAllowedBeforeVersion}):\n"
+                    "\nExceptions are not allowed for version {$this->currentVersion} (allowed only before {$this->exceptionsAllowedBeforeVersion}):\n",
                 );
                 foreach (array_keys($this->exceptionsByMethod) as $method) {
                     fwrite(STDERR, ' - ' . $method . PHP_EOL);
@@ -75,7 +75,7 @@ final class MethodCoverageGuardrail
 
             fwrite(
                 STDERR,
-                "\nMethod coverage guardrail failed. Cover these methods or document valid exceptions in {$this->exceptionsFile}.\n"
+                "\nMethod coverage guardrail failed. Cover these methods or document valid exceptions in {$this->exceptionsFile}.\n",
             );
 
             return 1;
@@ -85,13 +85,15 @@ final class MethodCoverageGuardrail
         $totalExceptions = count($this->exceptionsByMethod);
         fwrite(
             STDOUT,
-            "Method coverage guardrail passed for version {$this->currentVersion}. Uncovered methods: {$totalUncovered}. Active exceptions: {$totalExceptions}.\n"
+            "Method coverage guardrail passed for version {$this->currentVersion}. Uncovered methods: {$totalUncovered}. Active exceptions: {$totalExceptions}.\n",
         );
 
         return 0;
     }
 
-    /** @return list<string> */
+    /**
+     * @return list<string>
+     */
     private function extractUncoveredMethods(): array
     {
         if (is_dir($this->coverageInput)) {
@@ -105,7 +107,9 @@ final class MethodCoverageGuardrail
         return $this->extractUncoveredMethodsFromCloverFile($this->coverageInput);
     }
 
-    /** @return list<string> */
+    /**
+     * @return list<string>
+     */
     private function extractUncoveredMethodsFromCloverFile(string $coverageFile): array
     {
         $xml = simplexml_load_file($coverageFile);
@@ -145,7 +149,9 @@ final class MethodCoverageGuardrail
         return $methods;
     }
 
-    /** @return list<string> */
+    /**
+     * @return list<string>
+     */
     private function extractUncoveredMethodsFromPhpUnitXmlDirectory(string $coverageDirectory): array
     {
         $iterator = new RecursiveIteratorIterator(
@@ -191,7 +197,7 @@ final class MethodCoverageGuardrail
                     }
 
                     foreach ($methodNodes as $methodNode) {
-                        $methodName = trim((string) ($methodNode['name'] ?? ''));
+                        $methodName = mb_trim((string) ($methodNode['name'] ?? ''));
                         $executable = (int) ($methodNode['executable'] ?? 0);
                         $coverage = (float) ($methodNode['coverage'] ?? 0.0);
 
@@ -211,7 +217,9 @@ final class MethodCoverageGuardrail
         return $methods;
     }
 
-    /** @return array<string, array{reason:string,owner:string}> */
+    /**
+     * @return array<string, array{reason:string,owner:string}>
+     */
     private function loadAndValidateExceptions(): array
     {
         if (!is_file($this->exceptionsFile)) {
@@ -234,7 +242,7 @@ final class MethodCoverageGuardrail
         }
 
         $allowedBeforeRaw = isset($versionPolicy['allowedBeforeVersion'])
-            ? trim((string) $versionPolicy['allowedBeforeVersion'])
+            ? mb_trim((string) $versionPolicy['allowedBeforeVersion'])
             : '';
 
         if ($allowedBeforeRaw === '') {
@@ -250,20 +258,16 @@ final class MethodCoverageGuardrail
                 throw new RuntimeException("Exception entry #{$index} must be an object.");
             }
 
-            $method = isset($entry['method']) ? trim((string) $entry['method']) : '';
-            $reason = isset($entry['reason']) ? trim((string) $entry['reason']) : '';
-            $owner = isset($entry['owner']) ? trim((string) $entry['owner']) : '';
+            $method = isset($entry['method']) ? mb_trim((string) $entry['method']) : '';
+            $reason = isset($entry['reason']) ? mb_trim((string) $entry['reason']) : '';
+            $owner = isset($entry['owner']) ? mb_trim((string) $entry['owner']) : '';
 
             if ($method === '' || $reason === '' || $owner === '') {
-                throw new RuntimeException(
-                    "Exception entry #{$index} must define non-empty method, reason, and owner fields."
-                );
+                throw new RuntimeException("Exception entry #{$index} must define non-empty method, reason, and owner fields.");
             }
 
-            if (strlen($reason) < 20) {
-                throw new RuntimeException(
-                    "Exception entry for {$method} has an insufficient reason; provide a specific justification."
-                );
+            if (mb_strlen($reason) < 20) {
+                throw new RuntimeException("Exception entry for {$method} has an insufficient reason; provide a specific justification.");
             }
 
             if (isset($out[$method])) {
@@ -286,12 +290,12 @@ final class MethodCoverageGuardrail
 
     private function normalizeVersion(string $value): string
     {
-        $trimmed = trim($value);
+        $trimmed = mb_trim($value);
         if ($trimmed === '') {
             throw new RuntimeException('Version value cannot be empty.');
         }
 
-        $lower = strtolower($trimmed);
+        $lower = mb_strtolower($trimmed);
         if (
             $lower === 'dev'
             || $lower === 'development'
@@ -311,9 +315,7 @@ final class MethodCoverageGuardrail
             return $matches[1];
         }
 
-        throw new RuntimeException(
-            "Invalid version '{$value}'. Use semantic version (for example 1.0.0) or a dev marker such as dev-main."
-        );
+        throw new RuntimeException("Invalid version '{$value}'. Use semantic version (for example 1.0.0) or a dev marker such as dev-main.");
     }
 
     private function toRepoRelativePath(string $absolutePath): string
@@ -321,24 +323,24 @@ final class MethodCoverageGuardrail
         $normalized = str_replace('\\', '/', $absolutePath);
 
         $needle = '/src/';
-        $position = stripos($normalized, $needle);
+        $position = mb_stripos($normalized, $needle);
         if ($position === false) {
             return basename($normalized);
         }
 
-        return ltrim(substr($normalized, $position + 1), '/');
+        return mb_ltrim(mb_substr($normalized, $position + 1), '/');
     }
 
     private function toRepoRelativePathFromPhpUnitFileNode(SimpleXMLElement $fileNode): string
     {
-        $path = trim((string) ($fileNode['path'] ?? ''));
-        $name = trim((string) ($fileNode['name'] ?? ''));
+        $path = mb_trim((string) ($fileNode['path'] ?? ''));
+        $name = mb_trim((string) ($fileNode['name'] ?? ''));
 
         if ($name === '') {
             return '';
         }
 
-        $path = trim(str_replace('\\', '/', $path), '/');
+        $path = mb_trim(str_replace('\\', '/', $path), '/');
 
         if ($path === '') {
             return 'src/' . $name;
