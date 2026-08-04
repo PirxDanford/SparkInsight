@@ -167,6 +167,8 @@ The former cross-phase security checklist has been retired. Security controls ar
 - [ ] Close blocking production findings and defer only non-blocking follow-up work to `v1.0.1+`
 - [ ] Re-run required GitHub Actions checks after final production hardening changes
 - [ ] Record evidence links/notes for latest green GitHub Actions runs and production validation in the release PR/issue
+- [ ] Eliminate all method-coverage exceptions so the exception ledger is empty before `v1.0.0` tagging
+- [ ] Delete the method-coverage exception framework and enforce strict uncovered-method test checks at all times
 - [ ] Tag `v1.0.0` only when production validation is good and required GitHub Actions checks are green
 
 #### Post-Release Maintenance

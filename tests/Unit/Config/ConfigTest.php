@@ -117,6 +117,63 @@ class ConfigTest extends TestCase
         $this->assertEquals('db.example.com', $config->getDatabaseConfig()['host']);
     }
 
+    public function testFromEnvironmentLoadsDotEnvWhenFileExists(): void
+    {
+        $tempDir = sys_get_temp_dir() . '/sparkinsight_config_test_' . bin2hex(random_bytes(8));
+        mkdir($tempDir);
+
+        $keysToClear = [
+            'APP_ENV',
+            'APP_URL',
+            'OAUTH_GITHUB_CLIENT_ID',
+            'OAUTH_GITHUB_CLIENT_SECRET',
+            'OAUTH_GOOGLE_CLIENT_ID',
+            'OAUTH_GOOGLE_CLIENT_SECRET',
+            'OAUTH_LINKEDIN_CLIENT_ID',
+            'OAUTH_LINKEDIN_CLIENT_SECRET',
+            'DB_DRIVER',
+            'DB_HOST',
+            'DB_PORT',
+            'DB_NAME',
+            'DB_USER',
+            'DB_PASSWORD',
+            'DB_CHARSET',
+        ];
+
+        foreach ($keysToClear as $key) {
+            unset($_ENV[$key], $_SERVER[$key]);
+        }
+
+        $envFile = $tempDir . '/.env';
+        $envContent = implode("\n", [
+            'APP_ENV=staging',
+            'APP_URL=https://dotenv.example.test/',
+            'OAUTH_GITHUB_CLIENT_ID=gh-client',
+            'OAUTH_GITHUB_CLIENT_SECRET=gh-secret',
+            'DB_DRIVER=pdo_sqlite',
+            'DB_NAME=tmp-dotenv.sqlite',
+        ]) . "\n";
+
+        file_put_contents($envFile, $envContent);
+
+        try {
+            $config = Config::fromEnvironment($tempDir);
+
+            $this->assertEquals('staging', $config->get('app_env'));
+            $this->assertEquals('https://dotenv.example.test', $config->get('app_url'));
+            $this->assertEquals('gh-client', $config->getProviderConfig('github')['client_id']);
+            $this->assertEquals('gh-secret', $config->getProviderConfig('github')['client_secret']);
+            $this->assertEquals('pdo_sqlite', $config->getDatabaseConfig()['driver']);
+            $this->assertEquals('tmp-dotenv.sqlite', $config->getDatabaseConfig()['path']);
+        } finally {
+            if (is_file($envFile)) {
+                unlink($envFile);
+            }
+
+            rmdir($tempDir);
+        }
+    }
+
     public function testGetProviderConfig(): void
     {
         $_ENV['OAUTH_GITHUB_CLIENT_ID'] = '123';
