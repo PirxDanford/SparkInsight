@@ -1,0 +1,619 @@
+{
+  "policy": "All uncovered methods must have a documented exception with owner and version-bounded allowance.",
+  "versionPolicy": {
+    "allowedBeforeVersion": "1.0.0",
+    "note": "Exceptions are development-only and must be eliminated before tagging v1.0.0."
+  },
+  "exceptions": [
+    {
+      "method": "src/Command/BootstrapAdminCommand.php::execute",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Command/BootstrapAdminCommand.php::execute and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Command/CheckEnvironmentCommand.php::execute",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Command/CheckEnvironmentCommand.php::execute and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Command/GenerateInvitationCommand.php::execute",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Command/GenerateInvitationCommand.php::execute and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Command/InitializeDbCommand.php::execute",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Command/InitializeDbCommand.php::execute and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Command/ListContentImportsCommand.php::execute",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Command/ListContentImportsCommand.php::execute and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Command/ListUsersCommand.php::execute",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Command/ListUsersCommand.php::execute and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Command/MigrateDbCommand.php::execute",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Command/MigrateDbCommand.php::execute and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Command/PurgeContentImportsCommand.php::buildBatchWhereClause",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Command/PurgeContentImportsCommand.php::buildBatchWhereClause and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Command/PurgeContentImportsCommand.php::execute",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Command/PurgeContentImportsCommand.php::execute and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Command/PurgeExpiredInvitationsCommand.php::execute",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Command/PurgeExpiredInvitationsCommand.php::execute and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Command/ScrivenerImportCommand.php::execute",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Command/ScrivenerImportCommand.php::execute and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/AdminController.php::buildInvitationsSectionData",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/AdminController.php::buildInvitationsSectionData and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/AdminController.php::createInvitation",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/AdminController.php::createInvitation and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/AdminController.php::dashboard",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/AdminController.php::dashboard and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/AdminController.php::deleteInvitation",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/AdminController.php::deleteInvitation and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/AdminController.php::saveSettings",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/AdminController.php::saveSettings and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/AdminController.php::settings",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/AdminController.php::settings and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/AdminController.php::updateUserDisplayName",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/AdminController.php::updateUserDisplayName and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/AdminController.php::updateUserRoles",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/AdminController.php::updateUserRoles and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/AdminController.php::users",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/AdminController.php::users and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/AuthController.php::buildProviderOptions",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/AuthController.php::buildProviderOptions and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/AuthController.php::callback",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/AuthController.php::callback and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::applyAuthorQueueFilters",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::applyAuthorQueueFilters and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::applyReviewerQueueFilters",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::applyReviewerQueueFilters and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::author",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::author and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::authorFeedbackStatusForReview",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::authorFeedbackStatusForReview and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::authorItem",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::authorItem and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::authorLocationStatusForReview",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::authorLocationStatusForReview and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::authorNextStepForStatus",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::authorNextStepForStatus and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::authorResolutionContextsForReview",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::authorResolutionContextsForReview and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::authorVersionLinkageForReview",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::authorVersionLinkageForReview and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::buildAuthorExportItems",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::buildAuthorExportItems and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::buildAuthorItem",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::buildAuthorItem and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::buildAuthorMetrics",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::buildAuthorMetrics and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::buildAuthorParentOptions",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::buildAuthorParentOptions and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::buildAuthorQueue",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::buildAuthorQueue and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::buildAuthorQueueContext",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::buildAuthorQueueContext and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::buildReviewItem",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::buildReviewItem and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::buildReviewerMetrics",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::buildReviewerMetrics and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::buildReviewerOtherItemsByState",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::buildReviewerOtherItemsByState and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::buildReviewerQueue",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::buildReviewerQueue and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::buildReviewerQueueContext",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::buildReviewerQueueContext and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::exportAuthorPdf",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::exportAuthorPdf and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::extractClientIp",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::extractClientIp and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::extractScrivenerQueueMetadata",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::extractScrivenerQueueMetadata and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::formatContentStatusLabel",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::formatContentStatusLabel and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::injectQueueDirectoryStructure",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::injectQueueDirectoryStructure and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::labelForResolutionDecision",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::labelForResolutionDecision and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::normalizeAnchorContainerPath",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::normalizeAnchorContainerPath and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::normalizeAnchorOffset",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::normalizeAnchorOffset and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::normalizeAuthorExportIds",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::normalizeAuthorExportIds and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::normalizeAuthorQueueFilters",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::normalizeAuthorQueueFilters and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::normalizeRequiresAction",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::normalizeRequiresAction and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::normalizeReviewerQueueFilters",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::normalizeReviewerQueueFilters and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::recordAuthorExportEvent",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::recordAuthorExportEvent and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::renderDashboard",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::renderDashboard and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::resolveAuthorReview",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::resolveAuthorReview and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::resolveReadableSourcePath",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::resolveReadableSourcePath and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::review",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::review and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::reviewItem",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::reviewItem and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::reviewStateKeyForLabel",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::reviewStateKeyForLabel and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::sanitizeAuthorQueueQueryString",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::sanitizeAuthorQueueQueryString and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::sanitizeReviewerQueueQueryString",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::sanitizeReviewerQueueQueryString and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::sortAuthorQueueItems",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::sortAuthorQueueItems and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::sortReviewerQueueItems",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::sortReviewerQueueItems and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::submitReview",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::submitReview and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Controller/DashboardController.php::toneForContentStatus",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Controller/DashboardController.php::toneForContentStatus and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/AppSettingsService.php::normalizeHours",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/AppSettingsService.php::normalizeHours and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/AppSettingsService.php::normalizeRoles",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/AppSettingsService.php::normalizeRoles and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/AuthorPdfExportService.php::__construct",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/AuthorPdfExportService.php::__construct and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/AuthorPdfExportService.php::appendStyleAttribute",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/AuthorPdfExportService.php::appendStyleAttribute and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/AuthorPdfExportService.php::buildItemFallbackHtml",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/AuthorPdfExportService.php::buildItemFallbackHtml and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/AuthorPdfExportService.php::buildItemHtml",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/AuthorPdfExportService.php::buildItemHtml and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/AuthorPdfExportService.php::buildPdfReaderContentHtml",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/AuthorPdfExportService.php::buildPdfReaderContentHtml and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/AuthorPdfExportService.php::ensureFontPath",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/AuthorPdfExportService.php::ensureFontPath and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/AuthorPdfExportService.php::estimateParagraphLineCount",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/AuthorPdfExportService.php::estimateParagraphLineCount and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/AuthorPdfExportService.php::generate",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/AuthorPdfExportService.php::generate and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/AuthorPdfExportService.php::prepareRuntimeFontPath",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/AuthorPdfExportService.php::prepareRuntimeFontPath and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/AuthorPdfExportService.php::shouldKeepParagraphTogether",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/AuthorPdfExportService.php::shouldKeepParagraphTogether and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/ContentImportService.php::assignImportedContentToReviewers",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/ContentImportService.php::assignImportedContentToReviewers and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/ContentImportService.php::buildScrivenerVersionLabel",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/ContentImportService.php::buildScrivenerVersionLabel and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/ContentImportService.php::deriveTitleFromSourceOrLabel",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/ContentImportService.php::deriveTitleFromSourceOrLabel and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/ContentImportService.php::discoverScrivenerProjects",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/ContentImportService.php::discoverScrivenerProjects and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/ContentImportService.php::extractTextLinesFromXml",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/ContentImportService.php::extractTextLinesFromXml and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/ContentImportService.php::extractTitle",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/ContentImportService.php::extractTitle and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/ContentImportService.php::findAllOccurrences",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/ContentImportService.php::findAllOccurrences and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/ContentImportService.php::importFdxContent",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/ContentImportService.php::importFdxContent and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/ContentImportService.php::importFdxDirectory",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/ContentImportService.php::importFdxDirectory and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/ContentImportService.php::importLegacyFdxDirectory",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/ContentImportService.php::importLegacyFdxDirectory and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/ContentImportService.php::importScrivenerDirectory",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/ContentImportService.php::importScrivenerDirectory and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/ContentImportService.php::insertScrivenerItem",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/ContentImportService.php::insertScrivenerItem and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/ContentImportService.php::parseScrivenerProjectItems",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/ContentImportService.php::parseScrivenerProjectItems and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/ContentImportService.php::readBinderTitle",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/ContentImportService.php::readBinderTitle and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/ContentImportService.php::remapReviewAnchor",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/ContentImportService.php::remapReviewAnchor and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/ContentImportService.php::remapReviewerAnchorsForUpdatedScrivenerVersion",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/ContentImportService.php::remapReviewerAnchorsForUpdatedScrivenerVersion and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/ContentImportService.php::resolveImportRootNode",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/ContentImportService.php::resolveImportRootNode and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/ContentImportService.php::resolveImportedBookTitle",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/ContentImportService.php::resolveImportedBookTitle and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/ContentImportService.php::resolveScrivxPath",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/ContentImportService.php::resolveScrivxPath and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/ContentImportService.php::rollbackImport",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/ContentImportService.php::rollbackImport and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/ContentImportService.php::toProjectRelativePath",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/ContentImportService.php::toProjectRelativePath and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/InvitationService.php::getInvitationCount",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/InvitationService.php::getInvitationCount and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/InvitationService.php::getInvitations",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/InvitationService.php::getInvitations and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/MigrationRunner.php::executeSqlStatements",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/MigrationRunner.php::executeSqlStatements and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/MigrationRunner.php::getMigrationFiles",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/MigrationRunner.php::getMigrationFiles and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/MigrationRunner.php::getMigrationVersion",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/MigrationRunner.php::getMigrationVersion and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/MigrationRunner.php::rollbackLastMigration",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/MigrationRunner.php::rollbackLastMigration and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/OAuthProviderFactory.php::fetchAuthenticatedProviderResponse",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/OAuthProviderFactory.php::fetchAuthenticatedProviderResponse and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/OAuthProviderFactory.php::fetchGitHubEmail",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/OAuthProviderFactory.php::fetchGitHubEmail and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/OAuthProviderFactory.php::fetchLinkedInEmail",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/OAuthProviderFactory.php::fetchLinkedInEmail and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/OAuthProviderFactory.php::getUserProfile",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/OAuthProviderFactory.php::getUserProfile and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/UserService.php::updateUserDisplayName",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/UserService.php::updateUserDisplayName and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/UserSession.php::__construct",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/UserSession.php::__construct and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Service/UserSession.php::clear",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Service/UserSession.php::clear and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Support/ReaderPresentationBuilder.php::buildPresentation",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Support/ReaderPresentationBuilder.php::buildPresentation and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Support/ReaderPresentationBuilder.php::buildReaderSectionLabel",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Support/ReaderPresentationBuilder.php::buildReaderSectionLabel and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Support/ReaderPresentationBuilder.php::buildReaderSectionsFromPlainText",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Support/ReaderPresentationBuilder.php::buildReaderSectionsFromPlainText and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Support/ReaderPresentationBuilder.php::convertRtfToHtml",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Support/ReaderPresentationBuilder.php::convertRtfToHtml and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Support/ReaderPresentationBuilder.php::extractReaderSections",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Support/ReaderPresentationBuilder.php::extractReaderSections and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Support/ReaderPresentationBuilder.php::extractScrivenerQueueMetadata",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Support/ReaderPresentationBuilder.php::extractScrivenerQueueMetadata and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Support/ReaderPresentationBuilder.php::resolveReadableSourcePathFromMetadata",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Support/ReaderPresentationBuilder.php::resolveReadableSourcePathFromMetadata and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Support/ReaderPresentationBuilder.php::restoreRtfHyperlinks",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Support/ReaderPresentationBuilder.php::restoreRtfHyperlinks and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    },
+    {
+      "method": "src/Support/ReaderPresentationBuilder.php::stripRtfDestinationGroups",
+      "reason": "Strict PHPUnit method coverage remains below 100% for src/Support/ReaderPresentationBuilder.php::stripRtfDestinationGroups and needs focused path-completion tests before this temporary exception can be retired.",
+      "owner": "core-maintainer"
+    }
+  ]
+}

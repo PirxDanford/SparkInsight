@@ -37,7 +37,13 @@
       "php -S localhost:8000 -t public public/index.php"
     ],
     "test": "php vendor/bin/phpunit --configuration phpunit.xml.dist",
-    "coverage": "php vendor/bin/phpunit --configuration phpunit.xml.dist --coverage-text --colors=never",
+    "test:install-sim": "php tools/ci/check_composer_install.php",
+    "coverage": [
+      "php vendor/bin/phpunit --configuration phpunit.xml.dist --coverage-text --coverage-clover=coverage.xml --coverage-xml=tmp/coverage-xml --colors=never",
+      "php tools/ci/check_method_coverage.php tmp/coverage-xml docs/coverage-method-exceptions.json dev-main"
+    ],
+    "coverage:guard": "php tools/ci/check_method_coverage.php tmp/coverage-xml docs/coverage-method-exceptions.json dev-main",
+    "coverage:guard:v1": "php tools/ci/check_method_coverage.php tmp/coverage-xml docs/coverage-method-exceptions.json 1.0.0",
     "coverage-html": "php vendor/bin/phpunit --configuration phpunit.xml.dist --coverage-html coverage-report"
   },
   "minimum-stability": "stable",
