@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+set -eu
+
+php tools/ci/hook_pre_commit.php

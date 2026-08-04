@@ -38,6 +38,12 @@
     ],
     "test": "php vendor/bin/phpunit --configuration phpunit.xml.dist",
     "test:install-sim": "php tools/ci/check_composer_install.php",
+    "hooks:install": "git config core.hooksPath .githooks",
+    "hooks:pre-commit": "php tools/ci/hook_pre_commit.php",
+    "hooks:pre-push": [
+      "php vendor/bin/phpunit --configuration phpunit.xml.dist --coverage-xml=tmp/coverage-xml --colors=never",
+      "php tools/ci/check_method_coverage.php tmp/coverage-xml docs/coverage-method-exceptions.json dev-main"
+    ],
     "coverage": [
       "php vendor/bin/phpunit --configuration phpunit.xml.dist --coverage-text --coverage-clover=coverage.xml --coverage-xml=tmp/coverage-xml --colors=never",
       "php tools/ci/check_method_coverage.php tmp/coverage-xml docs/coverage-method-exceptions.json dev-main"

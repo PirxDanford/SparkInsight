@@ -25,6 +25,8 @@ This project follows a quality-first approach for all changes:
 3. Configure required environment values in `.env`.
 4. Install dependencies:
    - `composer install`
+5. Enable repository-managed Git hooks (recommended):
+   - `composer hooks:install`
 5. Start the local server:
    - `composer start`
 
@@ -87,6 +89,22 @@ All contributions should include test coverage appropriate for the change.
 - Composer script: `composer test`
 - Direct PHPUnit (PowerShell-friendly): `php .\vendor\bin\phpunit --configuration phpunit.xml.dist`
 - Composer install simulation: `composer test:install-sim`
+
+### Local Git hooks
+
+SparkInsight ships repository-managed hooks in `.githooks/`.
+
+- `pre-commit` runs: `composer hooks:pre-commit`
+- `pre-push` runs: `composer hooks:pre-push`
+
+Install once per clone:
+
+- `composer hooks:install`
+
+Temporary bypass (for emergencies only):
+
+- `SKIP_GIT_HOOKS=1 git commit ...`
+- `SKIP_GIT_HOOKS=1 git push ...`
 
 `composer test:install-sim` validates that a separate consumer project can resolve this package through Composer before Packagist registration and tags. This check is also enforced in CI.
 

@@ -1,0 +1,13 @@
+#!/usr/bin/env sh
+set -eu
+
+if [ "${SKIP_GIT_HOOKS:-0}" = "1" ]; then
+  echo "[pre-push] SKIP_GIT_HOOKS=1 set, skipping checks."
+  exit 0
+fi
+
+echo "[pre-push] Running PHPUnit with coverage xml for guardrail..."
+php vendor/bin/phpunit --configuration phpunit.xml.dist --coverage-xml=tmp/coverage-xml --colors=never
+
+echo "[pre-push] Enforcing method coverage guardrail..."
+php tools/ci/check_method_coverage.php tmp/coverage-xml docs/coverage-method-exceptions.json dev-main
