@@ -112,6 +112,79 @@ class AppSettingsServiceTest extends TestCase
         $this->assertArrayNotHasKey('unknown_setting', $all);
     }
 
+    public function testGetImportCronScheduleReturnsPersistedTrimmedValue(): void
+    {
+        $result = $this->createMock(Result::class);
+        $result->method('fetchAssociative')->willReturn([
+            'setting_value' => ' 0 4 * * * ',
+            'value_type' => 'string',
+        ]);
+
+        $this->connection->expects($this->once())
+            ->method('executeQuery')
+            ->with(
+                'SELECT setting_value, value_type FROM app_settings WHERE setting_key = ?',
+                ['import_cron_schedule'],
+            )
+            ->willReturn($result);
+
+        $this->assertSame('0 4 * * *', $this->service->getImportCronSchedule());
+    }
+
+    public function testGetImportCronScheduleFallsBackToDefaultWhenPersistedValueIsEmpty(): void
+    {
+        $result = $this->createMock(Result::class);
+        $result->method('fetchAssociative')->willReturn([
+            'setting_value' => '   ',
+            'value_type' => 'string',
+        ]);
+
+        $this->connection->expects($this->once())
+            ->method('executeQuery')
+            ->with(
+                'SELECT setting_value, value_type FROM app_settings WHERE setting_key = ?',
+                ['import_cron_schedule'],
+            )
+            ->willReturn($result);
+
+        $this->assertSame('0 2 * * *', $this->service->getImportCronSchedule());
+    }
+
+    public function testGetInvitationCleanupCronScheduleReturnsPersistedTrimmedValue(): void
+    {
+        $result = $this->createMock(Result::class);
+        $result->method('fetchAssociative')->willReturn([
+            'setting_value' => ' 45 5 * * * ',
+            'value_type' => 'string',
+        ]);
+
+        $this->connection->expects($this->once())
+            ->method('executeQuery')
+            ->with(
+                'SELECT setting_value, value_type FROM app_settings WHERE setting_key = ?',
+                ['invitation_cleanup_cron_schedule'],
+            )
+            ->willReturn($result);
+
+        $this->assertSame('45 5 * * *', $this->service->getInvitationCleanupCronSchedule());
+    }
+
+    public function testGetInvitationCleanupCronScheduleFallsBackToDefaultWhenSettingMissing(): void
+    {
+        $result = $this->createMock(Result::class);
+        $result->method('fetchAssociative')->willReturn(false);
+
+        $this->connection->expects($this->once())
+            ->method('executeQuery')
+            ->with(
+                'SELECT setting_value, value_type FROM app_settings WHERE setting_key = ?',
+                ['invitation_cleanup_cron_schedule'],
+            )
+            ->willReturn($result);
+
+        $this->assertSame('30 2 * * *', $this->service->getInvitationCleanupCronSchedule());
+    }
+
     public function testSaveFromAdminInputUpsertsNormalizedValues(): void
     {
         $calls = [];
