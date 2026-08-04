@@ -187,7 +187,7 @@ The former cross-phase security checklist has been retired. Security controls ar
 - [ ] Move deleted reviewer notes to a separate archive table (instead of hard delete) and provide an author-facing option to review deleted notes.
 - [ ] Re-introduce author-side range context expansion in a usable reviewer-style embedded reader view, with neat in-text highlight and surrounding content (replace the current non-usable expansion approach).
 - [ ] In the author panel provide a zip file upload for scrivener backups, with a pull down for prepared books, also provide an option to create and delete books (deletion of non empty books with a second confirmation), the import should point out if the scrivener backup is healthy and stop if not
-- [ ] Add a push-button maintenance interface in Admin Settings so one-time maintenance tasks can be triggered without shell access.
+- [ ] Add a push-button maintenance interface in Admin Settings so one-time maintenance tasks can be triggered without shell access, to fully implement ADR 0008.
 - [ ] Add contributor-facing backlog item and implementation guide for optional future Facebook/Meta OAuth support
 - [ ] Add account-linking UX for multi-provider identities (same-email conflict messaging, provider management UI)
 - [x] Created RFC 0013 to formalize v1.1 reviewer cross-device scope.
