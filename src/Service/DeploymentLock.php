@@ -20,7 +20,7 @@ final class DeploymentLock
      */
     public function withLock(string $operationId, callable $callback): mixed
     {
-        $lockPath = rtrim($this->deployRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '.deploy' . DIRECTORY_SEPARATOR . 'update.lock';
+        $lockPath = mb_rtrim($this->deployRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '.deploy' . DIRECTORY_SEPARATOR . 'update.lock';
         $metadataPath = $lockPath . '.json';
         $this->ensureDirectory(dirname($lockPath));
 

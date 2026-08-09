@@ -25,7 +25,8 @@ final class ReleaseActivationService
      */
     public function activate(string $releaseId, ?string $operationId = null): array
     {
-        $releaseRoot = rtrim($this->deployRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '.deploy' . DIRECTORY_SEPARATOR . 'releases' . DIRECTORY_SEPARATOR . $releaseId;
+        $releaseRoot = mb_rtrim($this->deployRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '.deploy' . DIRECTORY_SEPARATOR . 'releases' . DIRECTORY_SEPARATOR . $releaseId;
+
         return $this->activateFromRoot($releaseId, $releaseRoot, $operationId);
     }
 

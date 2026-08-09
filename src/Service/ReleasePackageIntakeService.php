@@ -34,6 +34,7 @@ final class ReleasePackageIntakeService
     public function intake(string $uploadedPackagePath, string $publicKeyPath, ?string $operationId = null): array
     {
         $operationId ??= 'package-' . bin2hex(random_bytes(8));
+
         return $this->deploymentLock->withLock($operationId, function () use ($uploadedPackagePath, $publicKeyPath, $operationId): array {
             if (!is_file($uploadedPackagePath)) {
                 throw new RuntimeException('Uploaded package file not found: ' . $uploadedPackagePath);
@@ -43,7 +44,7 @@ final class ReleasePackageIntakeService
                 throw new RuntimeException('Trusted release public key not found: ' . $publicKeyPath);
             }
 
-            $packageDirectory = rtrim($this->deployRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '.deploy' . DIRECTORY_SEPARATOR . 'uploads';
+            $packageDirectory = mb_rtrim($this->deployRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '.deploy' . DIRECTORY_SEPARATOR . 'uploads';
             $packagePath = $packageDirectory . DIRECTORY_SEPARATOR . $operationId . '.zip';
             $this->ensureDirectory($packageDirectory);
 
@@ -54,12 +55,14 @@ final class ReleasePackageIntakeService
             $packageHash = hash_file('sha256', $packagePath);
             if ($packageHash === false) {
                 @unlink($packagePath);
+
                 throw new RuntimeException('Could not hash stored package: ' . $packagePath);
             }
 
             $publicKey = (string) file_get_contents($publicKeyPath);
             if ($publicKey === '') {
                 @unlink($packagePath);
+
                 throw new RuntimeException('Trusted release public key file is empty: ' . $publicKeyPath);
             }
 

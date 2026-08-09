@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace SparkInsight\Service;
 
+use FilesystemIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use RuntimeException;
 
 final class ReleaseRootPublisher
 {
-    /**
-     * @var array<int, string>
-     */
+    /** @var array<int, string> */
     private const MANAGED_ROOT_PATHS = [
         'public',
         'src',
@@ -26,8 +27,8 @@ final class ReleaseRootPublisher
 
     public function publish(string $releaseRoot, string $projectRoot): void
     {
-        $normalizedReleaseRoot = rtrim($releaseRoot, DIRECTORY_SEPARATOR);
-        $normalizedProjectRoot = rtrim($projectRoot, DIRECTORY_SEPARATOR);
+        $normalizedReleaseRoot = mb_rtrim($releaseRoot, DIRECTORY_SEPARATOR);
+        $normalizedProjectRoot = mb_rtrim($projectRoot, DIRECTORY_SEPARATOR);
 
         if (!is_dir($normalizedReleaseRoot)) {
             throw new RuntimeException('Release root does not exist for publish: ' . $normalizedReleaseRoot);
@@ -71,9 +72,9 @@ final class ReleaseRootPublisher
             return;
         }
 
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::CHILD_FIRST,
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST,
         );
 
         foreach ($iterator as $item) {
@@ -97,13 +98,13 @@ final class ReleaseRootPublisher
 
     private function copyDirectory(string $sourceDir, string $targetDir): void
     {
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($sourceDir, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::SELF_FIRST,
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($sourceDir, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST,
         );
 
         foreach ($iterator as $item) {
-            $relativePath = substr($item->getPathname(), strlen(rtrim($sourceDir, DIRECTORY_SEPARATOR)) + 1);
+            $relativePath = mb_substr($item->getPathname(), mb_strlen(mb_rtrim($sourceDir, DIRECTORY_SEPARATOR)) + 1);
             $targetPath = $targetDir . DIRECTORY_SEPARATOR . $relativePath;
 
             if ($item->isDir()) {

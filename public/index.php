@@ -94,7 +94,6 @@ $app->get('/demo', [$authController, 'demo']);
 $app->get('/auth/{provider}', [$authController, 'login']);
 $app->get('/callback/{provider}', [$authController, 'callback']);
 
-
 $app->get('/dashboard/admin', [$adminController, 'dashboard']);
 $app->get('/dashboard/admin/users', [$adminController, 'users']);
 $app->get('/dashboard/admin/invitations', [$adminController, 'invitations']);

@@ -53,11 +53,13 @@ final class DeploymentStateStore
 
         if (is_file($path) && !unlink($path)) {
             @unlink($temporaryPath);
+
             throw new RuntimeException('Could not replace existing deployment state: ' . $path);
         }
 
         if (!rename($temporaryPath, $path)) {
             @unlink($temporaryPath);
+
             throw new RuntimeException('Could not move deployment state into place: ' . $path);
         }
     }
@@ -89,19 +91,19 @@ final class DeploymentStateStore
     {
         $operationId = $this->validateOperationId($operationId);
 
-        return rtrim($this->deployRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '.deploy' . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR . $operationId . '.jsonl';
+        return mb_rtrim($this->deployRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '.deploy' . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR . $operationId . '.jsonl';
     }
 
     private function operationPath(string $operationId, string $subDirectory): string
     {
         $operationId = $this->validateOperationId($operationId);
 
-        return rtrim($this->deployRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '.deploy' . DIRECTORY_SEPARATOR . $subDirectory . DIRECTORY_SEPARATOR . $operationId . '.json';
+        return mb_rtrim($this->deployRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '.deploy' . DIRECTORY_SEPARATOR . $subDirectory . DIRECTORY_SEPARATOR . $operationId . '.json';
     }
 
     private function validateOperationId(string $operationId): string
     {
-        $operationId = trim($operationId);
+        $operationId = mb_trim($operationId);
         if ($operationId === '') {
             throw new RuntimeException('Operation ID must not be empty.');
         }

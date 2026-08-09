@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace SparkInsight\Service;
 
+use FilesystemIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use RuntimeException;
 
 final class ReleaseFinalizationService
@@ -31,7 +34,7 @@ final class ReleaseFinalizationService
         }
 
         if ($previous !== null) {
-            $previousRoot = rtrim($this->deployRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '.deploy' . DIRECTORY_SEPARATOR . 'releases' . DIRECTORY_SEPARATOR . $previous;
+            $previousRoot = mb_rtrim($this->deployRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '.deploy' . DIRECTORY_SEPARATOR . 'releases' . DIRECTORY_SEPARATOR . $previous;
             $this->removeDirectory($previousRoot);
         }
 
@@ -50,9 +53,9 @@ final class ReleaseFinalizationService
             return;
         }
 
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::CHILD_FIRST,
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST,
         );
 
         foreach ($iterator as $item) {

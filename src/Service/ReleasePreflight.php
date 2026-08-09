@@ -25,22 +25,22 @@ final class ReleasePreflight
             }
         }
 
-        $entrypoint = rtrim($releaseRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'index.php';
+        $entrypoint = mb_rtrim($releaseRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'index.php';
         if (!is_file($entrypoint)) {
             $problems[] = 'Missing application entrypoint: ' . $entrypoint;
         }
 
-        $autoload = rtrim($releaseRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
+        $autoload = mb_rtrim($releaseRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
         if (!is_file($autoload)) {
             $problems[] = 'Missing Composer autoload file: ' . $autoload;
         }
 
-        $composerLock = rtrim($releaseRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'composer.lock';
+        $composerLock = mb_rtrim($releaseRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'composer.lock';
         if (!is_file($composerLock)) {
             $problems[] = 'Missing composer.lock: ' . $composerLock;
         }
 
-        if (!is_dir(rtrim($releaseRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'database' . DIRECTORY_SEPARATOR . 'migrations')) {
+        if (!is_dir(mb_rtrim($releaseRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'database' . DIRECTORY_SEPARATOR . 'migrations')) {
             $problems[] = 'Missing migration directory.';
         }
 

@@ -9,13 +9,14 @@ use RuntimeException;
 final class ReleaseManifest
 {
     public const FORMAT = 'sparkinsight-release-v1';
+
     public const APPLICATION = 'sparkinsight/sparkinsight';
 
     /**
+     * @param array<int, string> $requiredExtensions
      * @param array<int, array{path: string, size: int, sha256: string}> $files
      * @param array<int, string> $payloadFiles
      * @param array<int, string> $deletePaths
-     * @param array<int, string> $requiredExtensions
      */
     private function __construct(
         private readonly string $packageId,
@@ -234,7 +235,7 @@ final class ReleaseManifest
      */
     private static function assertStringField(array $manifest, string $field, string $expected): void
     {
-        if (!isset($manifest[$field]) || !is_string($manifest[$field]) || trim($manifest[$field]) !== $expected) {
+        if (!isset($manifest[$field]) || !is_string($manifest[$field]) || mb_trim($manifest[$field]) !== $expected) {
             throw new RuntimeException($field . ' must be ' . $expected . '.');
         }
     }
@@ -244,11 +245,11 @@ final class ReleaseManifest
      */
     private static function readStringField(array $manifest, string $field): string
     {
-        if (!isset($manifest[$field]) || !is_string($manifest[$field]) || trim($manifest[$field]) === '') {
+        if (!isset($manifest[$field]) || !is_string($manifest[$field]) || mb_trim($manifest[$field]) === '') {
             throw new RuntimeException($field . ' is required and must be a non-empty string.');
         }
 
-        return trim($manifest[$field]);
+        return mb_trim($manifest[$field]);
     }
 
     /**
@@ -277,7 +278,7 @@ final class ReleaseManifest
             throw new RuntimeException($field . ' must be a string when present.');
         }
 
-        $value = trim($manifest[$field]);
+        $value = mb_trim($manifest[$field]);
         if ($value === '') {
             return null;
         }
@@ -301,11 +302,11 @@ final class ReleaseManifest
 
         $values = [];
         foreach ($manifest[$field] as $value) {
-            if (!is_string($value) || trim($value) === '') {
+            if (!is_string($value) || mb_trim($value) === '') {
                 throw new RuntimeException($field . ' contains an invalid entry.');
             }
 
-            $values[] = trim($value);
+            $values[] = mb_trim($value);
         }
 
         if (count($values) !== count(array_unique($values))) {
@@ -325,7 +326,7 @@ final class ReleaseManifest
             throw new RuntimeException($field . ' must be a SHA-256 hex string.');
         }
 
-        return strtolower($value);
+        return mb_strtolower($value);
     }
 
     /**
@@ -341,7 +342,7 @@ final class ReleaseManifest
             throw new RuntimeException($field . ' must be a SHA-256 hex string when present.');
         }
 
-        return strtolower(trim($manifest[$field]));
+        return mb_strtolower(mb_trim($manifest[$field]));
     }
 
     /**
@@ -379,7 +380,7 @@ final class ReleaseManifest
 
             $path = self::readStringField($entry, 'path');
             $normalizedPath = $pathPolicy->normalize($path);
-            $lowerPath = strtolower($normalizedPath);
+            $lowerPath = mb_strtolower($normalizedPath);
             if (isset($seenPaths[$lowerPath])) {
                 throw new RuntimeException('files contains a duplicate or case-colliding path: ' . $normalizedPath);
             }
@@ -415,12 +416,12 @@ final class ReleaseManifest
         $paths = [];
         $seenPaths = [];
         foreach ($manifest[$field] as $entry) {
-            if (!is_string($entry) || trim($entry) === '') {
+            if (!is_string($entry) || mb_trim($entry) === '') {
                 throw new RuntimeException($field . ' contains an invalid path entry.');
             }
 
             $normalizedPath = $pathPolicy->ensureAllowedPayloadPath($entry);
-            $lowerPath = strtolower($normalizedPath);
+            $lowerPath = mb_strtolower($normalizedPath);
             if (isset($seenPaths[$lowerPath])) {
                 throw new RuntimeException($field . ' contains a duplicate or case-colliding path: ' . $normalizedPath);
             }

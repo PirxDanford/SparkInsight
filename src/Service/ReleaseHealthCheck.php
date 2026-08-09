@@ -6,6 +6,7 @@ namespace SparkInsight\Service;
 
 use Doctrine\DBAL\Connection;
 use RuntimeException;
+use Throwable;
 
 final class ReleaseHealthCheck
 {
@@ -27,7 +28,7 @@ final class ReleaseHealthCheck
 
         try {
             $this->connection->executeQuery('SELECT 1');
-        } catch (\Throwable $throwable) {
+        } catch (Throwable $throwable) {
             $problems[] = 'Database health check failed: ' . $throwable->getMessage();
         }
 

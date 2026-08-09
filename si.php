@@ -8,12 +8,12 @@ use SparkInsight\Command\BuildReleasePackageCommand;
 use SparkInsight\Command\CheckEnvironmentCommand;
 use SparkInsight\Command\GenerateInvitationCommand;
 use SparkInsight\Command\InitializeDbCommand;
-use SparkInsight\Command\ReleaseDeployCommand;
 use SparkInsight\Command\ListContentImportsCommand;
 use SparkInsight\Command\ListUsersCommand;
 use SparkInsight\Command\MigrateDbCommand;
 use SparkInsight\Command\PurgeContentImportsCommand;
 use SparkInsight\Command\PurgeExpiredInvitationsCommand;
+use SparkInsight\Command\ReleaseDeployCommand;
 use SparkInsight\Command\ScrivenerImportCommand;
 use Symfony\Component\Console\Application;
 

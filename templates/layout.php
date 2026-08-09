@@ -10,19 +10,19 @@
 <body>
     <?php
     $user = isset($user) && is_array($user) ? $user : [];
-    $viewMeta = [
-        'Home' => ['label' => 'Home', 'icon' => '🏠'],
-        'Login' => ['label' => 'Login', 'icon' => '🔐'],
-        'Sign Up' => ['label' => 'Signup', 'icon' => '📝'],
-        'Author' => ['label' => 'Author', 'icon' => '✍️'],
-        'Review' => ['label' => 'Review', 'icon' => '🔎'],
-        'Admin' => ['label' => 'Admin', 'icon' => '🛠️'],
-    ];
-    $currentView = $viewMeta[$title ?? 'Home'] ?? [
-        'label' => (string) ($title ?? 'Home'),
-        'icon' => '📍',
-    ];
-    ?>
+$viewMeta = [
+    'Home' => ['label' => 'Home', 'icon' => '🏠'],
+    'Login' => ['label' => 'Login', 'icon' => '🔐'],
+    'Sign Up' => ['label' => 'Signup', 'icon' => '📝'],
+    'Author' => ['label' => 'Author', 'icon' => '✍️'],
+    'Review' => ['label' => 'Review', 'icon' => '🔎'],
+    'Admin' => ['label' => 'Admin', 'icon' => '🛠️'],
+];
+$currentView = $viewMeta[$title ?? 'Home'] ?? [
+    'label' => (string) ($title ?? 'Home'),
+    'icon' => '📍',
+];
+?>
     <header class="top-header">
         <div class="header-content">
             <div class="brand header-section">

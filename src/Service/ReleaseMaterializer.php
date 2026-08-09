@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace SparkInsight\Service;
 
+use FilesystemIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use RuntimeException;
 use ZipArchive;
 
 final class ReleaseMaterializer
 {
-    /**
-     * @var array<int, string>
-     */
+    /** @var array<int, string> */
     private const MANAGED_ROOT_PATHS = [
         'public',
         'src',
@@ -34,7 +35,7 @@ final class ReleaseMaterializer
     public function materialize(string $packagePath, string $publicKey, string $stagingRoot, ?string $baseReleaseRoot = null): array
     {
         $manifest = $this->inspector->inspect($packagePath, $publicKey);
-        $stagingReleaseRoot = rtrim($stagingRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $manifest->releaseId();
+        $stagingReleaseRoot = mb_rtrim($stagingRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $manifest->releaseId();
         $this->removeDirectory($stagingReleaseRoot);
         $this->ensureDirectory($stagingReleaseRoot);
 
@@ -109,13 +110,13 @@ final class ReleaseMaterializer
 
     private function copyDirectory(string $sourceDir, string $targetDir): void
     {
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($sourceDir, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::SELF_FIRST,
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($sourceDir, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST,
         );
 
         foreach ($iterator as $fileInfo) {
-            $relativePath = substr($fileInfo->getPathname(), strlen(rtrim($sourceDir, DIRECTORY_SEPARATOR)) + 1);
+            $relativePath = mb_substr($fileInfo->getPathname(), mb_strlen(mb_rtrim($sourceDir, DIRECTORY_SEPARATOR)) + 1);
             $targetPath = $targetDir . DIRECTORY_SEPARATOR . $relativePath;
 
             if ($fileInfo->isDir()) {
@@ -132,8 +133,8 @@ final class ReleaseMaterializer
 
     private function copyManagedPaths(string $sourceRoot, string $targetRoot): void
     {
-        $normalizedSourceRoot = rtrim($sourceRoot, DIRECTORY_SEPARATOR);
-        $normalizedTargetRoot = rtrim($targetRoot, DIRECTORY_SEPARATOR);
+        $normalizedSourceRoot = mb_rtrim($sourceRoot, DIRECTORY_SEPARATOR);
+        $normalizedTargetRoot = mb_rtrim($targetRoot, DIRECTORY_SEPARATOR);
 
         foreach (self::MANAGED_ROOT_PATHS as $relativePath) {
             $sourcePath = $normalizedSourceRoot . DIRECTORY_SEPARATOR . $relativePath;
@@ -170,9 +171,9 @@ final class ReleaseMaterializer
             return;
         }
 
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::CHILD_FIRST,
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST,
         );
 
         foreach ($iterator as $item) {

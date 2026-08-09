@@ -5,17 +5,15 @@ declare(strict_types=1);
 namespace SparkInsight\Controller;
 
 use Doctrine\DBAL\Connection;
+use FilesystemIterator;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Message\UploadedFileInterface;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use RuntimeException;
 use Slim\Views\PhpRenderer;
-use SparkInsight\Command\CheckEnvironmentCommand;
-use SparkInsight\Command\GenerateInvitationCommand;
-use SparkInsight\Command\ListContentImportsCommand;
-use SparkInsight\Command\MigrateDbCommand;
-use SparkInsight\Command\PurgeContentImportsCommand;
-use SparkInsight\Command\PurgeExpiredInvitationsCommand;
 use SparkInsight\Command\ReleaseDeployCommand;
-use SparkInsight\Command\ScrivenerImportCommand;
 use SparkInsight\Config\Config;
 use SparkInsight\Service\AppSettingsService;
 use SparkInsight\Service\CurrentPointerStore;
@@ -24,7 +22,6 @@ use SparkInsight\Service\ReleaseManifest;
 use SparkInsight\Service\ReleasePackageIntakeService;
 use SparkInsight\Service\UserService;
 use SparkInsight\Service\UserSession;
-use Psr\Http\Message\UploadedFileInterface;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -34,6 +31,7 @@ use Throwable;
 final class AdminController
 {
     private const ALLOWED_ADMIN_SECTIONS = ['users', 'invitations', 'settings', 'actions'];
+
     private const RELEASE_INCLUDE_PATHS = [
         'public',
         'src',
@@ -253,8 +251,8 @@ final class AdminController
         $tempPackagePath = $tempDirectory . DIRECTORY_SEPARATOR . 'uploaded-package.zip';
 
         try {
-            if (!mkdir($tempDirectory, 0700, true) && !is_dir($tempDirectory)) {
-                throw new \RuntimeException('Could not create a temporary upload directory.');
+            if (!mkdir($tempDirectory, 0o700, true) && !is_dir($tempDirectory)) {
+                throw new RuntimeException('Could not create a temporary upload directory.');
             }
 
             $packageFile->moveTo($tempPackagePath);
@@ -414,7 +412,7 @@ final class AdminController
     private function executeReleaseDeployOperation(string $operationId): array
     {
         if (preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{1,63}$/', $operationId) !== 1) {
-            throw new \RuntimeException('Operation id contains invalid characters.');
+            throw new RuntimeException('Operation id contains invalid characters.');
         }
 
         $projectDirectory = realpath(__DIR__ . '/../../') ?: (__DIR__ . '/../../');
@@ -447,12 +445,12 @@ final class AdminController
     {
         $files = [];
         foreach (self::RELEASE_INCLUDE_PATHS as $relativePath) {
-            $absolutePath = rtrim($projectRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $relativePath;
+            $absolutePath = mb_rtrim($projectRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $relativePath;
 
             if (is_dir($absolutePath)) {
-                $iterator = new \RecursiveIteratorIterator(
-                    new \RecursiveDirectoryIterator($absolutePath, \FilesystemIterator::SKIP_DOTS),
-                    \RecursiveIteratorIterator::SELF_FIRST,
+                $iterator = new RecursiveIteratorIterator(
+                    new RecursiveDirectoryIterator($absolutePath, FilesystemIterator::SKIP_DOTS),
+                    RecursiveIteratorIterator::SELF_FIRST,
                 );
 
                 foreach ($iterator as $fileInfo) {
@@ -504,7 +502,7 @@ final class AdminController
      */
     private function buildManifestFileRecord(string $projectRoot, string $absolutePath): array
     {
-        $relativePath = str_replace('\\', '/', substr($absolutePath, strlen(rtrim($projectRoot, DIRECTORY_SEPARATOR)) + 1));
+        $relativePath = str_replace('\\', '/', mb_substr($absolutePath, mb_strlen(mb_rtrim($projectRoot, DIRECTORY_SEPARATOR)) + 1));
         $hash = hash_file('sha256', $absolutePath);
 
         return [
@@ -518,7 +516,7 @@ final class AdminController
     {
         $resolvedRoot = realpath($root);
         $normalizedRoot = $resolvedRoot !== false ? $resolvedRoot : $root;
-        $releaseId = basename(rtrim($normalizedRoot, DIRECTORY_SEPARATOR));
+        $releaseId = basename(mb_rtrim($normalizedRoot, DIRECTORY_SEPARATOR));
 
         if ($releaseId === '' || $releaseId === '.' || $releaseId === '..' || $releaseId === DIRECTORY_SEPARATOR) {
             return 'release-' . bin2hex(random_bytes(4));
@@ -540,7 +538,7 @@ final class AdminController
         }
 
         $constraint = $decoded['require']['php'] ?? null;
-        if (!is_string($constraint) || trim($constraint) === '') {
+        if (!is_string($constraint) || mb_trim($constraint) === '') {
             return '8.1.0';
         }
 
@@ -805,18 +803,18 @@ final class AdminController
         ];
 
         if (!isset($commands[$action])) {
-            throw new \RuntimeException('Unsupported maintenance action: ' . $action);
+            throw new RuntimeException('Unsupported maintenance action: ' . $action);
         }
 
         if ($action === 'content_purge_import') {
             $confirmation = mb_strtoupper(mb_trim((string) ($data['confirm_purge'] ?? '')));
             $batchId = mb_trim((string) ($data['import_batch_id'] ?? ''));
             if ($batchId === '') {
-                throw new \RuntimeException('Import batch ID is required for purge.');
+                throw new RuntimeException('Import batch ID is required for purge.');
             }
 
             if ($confirmation !== 'PURGE') {
-                throw new \RuntimeException('Type PURGE to confirm destructive import purge.');
+                throw new RuntimeException('Type PURGE to confirm destructive import purge.');
             }
         }
 
@@ -825,7 +823,7 @@ final class AdminController
         $commandName = (string) ($commandInput['command'] ?? '');
 
         if ($commandName === '') {
-            throw new \RuntimeException('Maintenance action has no command configured.');
+            throw new RuntimeException('Maintenance action has no command configured.');
         }
 
         $commandArgs = [PHP_BINARY, $projectDirectory . DIRECTORY_SEPARATOR . 'si.php', '--no-ansi'];
@@ -837,13 +835,13 @@ final class AdminController
             }
 
             if (is_bool($value) && $value) {
-                $commandArgs[] = '--' . ltrim((string) $name, '-');
+                $commandArgs[] = '--' . mb_ltrim((string) $name, '-');
                 continue;
             }
 
             if (is_array($value)) {
                 foreach ($value as $item) {
-                    $commandArgs[] = '--' . ltrim((string) $name, '-');
+                    $commandArgs[] = '--' . mb_ltrim((string) $name, '-');
                     if ($item !== '' && $item !== null) {
                         $commandArgs[] = (string) $item;
                     }
@@ -852,7 +850,7 @@ final class AdminController
                 continue;
             }
 
-            $commandArgs[] = '--' . ltrim((string) $name, '-');
+            $commandArgs[] = '--' . mb_ltrim((string) $name, '-');
             $commandArgs[] = (string) $value;
         }
 
@@ -865,7 +863,7 @@ final class AdminController
         $pipes = [];
         $process = proc_open($commandLine, $descriptors, $pipes, $projectDirectory);
         if (!is_resource($process)) {
-            throw new \RuntimeException('Could not start maintenance command process.');
+            throw new RuntimeException('Could not start maintenance command process.');
         }
 
         fclose($pipes[0]);
@@ -874,7 +872,7 @@ final class AdminController
         fclose($pipes[1]);
         fclose($pipes[2]);
         $exitCode = proc_close($process);
-        $combinedOutput = trim((string) $stdout . ($stderr !== '' ? PHP_EOL . $stderr : ''));
+        $combinedOutput = mb_trim((string) $stdout . ($stderr !== '' ? PHP_EOL . $stderr : ''));
 
         return [
             'label' => (string) $commandConfig['label'],
@@ -955,7 +953,7 @@ final class AdminController
 
     private function isAjaxRequest(Request $request): bool
     {
-        return strtolower($request->getHeaderLine('X-Requested-With')) === 'xmlhttprequest';
+        return mb_strtolower($request->getHeaderLine('X-Requested-With')) === 'xmlhttprequest';
     }
 
     private function respondAdminActionError(Request $request, Response $response, string $message, int $status): Response

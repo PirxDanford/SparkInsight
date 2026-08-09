@@ -9,7 +9,7 @@ $projectRoot = dirname(__DIR__);
 $deployRoot = $projectRoot . '/.deploy';
 $tokenPath = $deployRoot . '/init-token.txt';
 $hasTokenProtection = is_file($tokenPath);
-$expectedToken = $hasTokenProtection ? trim((string) file_get_contents($tokenPath)) : '';
+$expectedToken = $hasTokenProtection ? mb_trim((string) file_get_contents($tokenPath)) : '';
 $providedToken = (string) ($_GET['token'] ?? $_POST['token'] ?? '');
 
 if ($hasTokenProtection && $expectedToken !== '' && !hash_equals($expectedToken, $providedToken)) {
@@ -79,7 +79,7 @@ function deployPackageFromUpload(string $projectRoot, string $deployRoot): array
         throw new RuntimeException('Trusted release key file is empty.');
     }
 
-    $operationId = 'init-web-' . date('YmdHis') . '-' . substr(bin2hex(random_bytes(6)), 0, 12);
+    $operationId = 'init-web-' . date('YmdHis') . '-' . mb_substr(bin2hex(random_bytes(6)), 0, 12);
     $uploadsDir = $deployRoot . '/uploads';
     ensureDirectory($uploadsDir);
 
@@ -113,11 +113,11 @@ function deployPackageFromUpload(string $projectRoot, string $deployRoot): array
         $currentRelease = $pointer['current'];
         $liveManifestSha256Path = $deployRoot . '/live-manifest-sha256.txt';
 
-        $stagingDir = $deployRoot . '/staging/' . $releaseId . '-' . substr(bin2hex(random_bytes(6)), 0, 12);
+        $stagingDir = $deployRoot . '/staging/' . $releaseId . '-' . mb_substr(bin2hex(random_bytes(6)), 0, 12);
         ensureDirectory($stagingDir);
 
         if ($packageType === 'patch') {
-            $expectedBaseManifestSha256 = strtolower(trim((string) ($manifest['base_manifest_sha256'] ?? '')));
+            $expectedBaseManifestSha256 = mb_strtolower(mb_trim((string) ($manifest['base_manifest_sha256'] ?? '')));
             if ($expectedBaseManifestSha256 === '' || preg_match('/^[a-f0-9]{64}$/i', $expectedBaseManifestSha256) !== 1) {
                 throw new RuntimeException('Patch package is missing a valid base_manifest_sha256.');
             }
@@ -127,7 +127,7 @@ function deployPackageFromUpload(string $projectRoot, string $deployRoot): array
                 throw new RuntimeException('Patch package requires a previously deployed base manifest hash. Deploy a full package first.');
             }
 
-            if (!hash_equals($expectedBaseManifestSha256, strtolower($liveManifestSha256))) {
+            if (!hash_equals($expectedBaseManifestSha256, mb_strtolower($liveManifestSha256))) {
                 throw new RuntimeException('Patch base does not match the currently live deployment. Build patch against the currently live package manifest.');
             }
 
@@ -189,7 +189,7 @@ function deployPackageFromUpload(string $projectRoot, string $deployRoot): array
 
         publishReleaseToProjectRoot($targetReleaseDir, $projectRoot);
 
-        writeLiveManifestSha256($liveManifestSha256Path, strtolower($manifestSha256));
+        writeLiveManifestSha256($liveManifestSha256Path, mb_strtolower($manifestSha256));
 
         writePointer(
             $deployRoot . '/current.json',
@@ -404,12 +404,12 @@ function decodeAndValidateManifest(string $manifestJson): array
         throw new RuntimeException('Manifest package_type must be full or patch.');
     }
 
-    $releaseId = trim((string) ($decoded['release_id'] ?? ''));
+    $releaseId = mb_trim((string) ($decoded['release_id'] ?? ''));
     if ($releaseId === '' || preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{1,63}$/', $releaseId) !== 1) {
         throw new RuntimeException('Manifest release_id is invalid.');
     }
 
-    $minimumPhp = trim((string) ($decoded['minimum_php'] ?? ''));
+    $minimumPhp = mb_trim((string) ($decoded['minimum_php'] ?? ''));
     if ($minimumPhp === '' || !version_compare(PHP_VERSION, $minimumPhp, '>=')) {
         throw new RuntimeException('This package requires PHP ' . $minimumPhp . ' or newer.');
     }
@@ -441,7 +441,7 @@ function decodeAndValidateManifest(string $manifestJson): array
 
         $path = normalizePayloadPath((string) ($file['path'] ?? ''));
         $size = $file['size'] ?? null;
-        $sha256 = strtolower((string) ($file['sha256'] ?? ''));
+        $sha256 = mb_strtolower((string) ($file['sha256'] ?? ''));
         if (!is_int($size) || $size < 0) {
             throw new RuntimeException('Manifest file size is invalid for: ' . $path);
         }
@@ -521,7 +521,7 @@ function validateZipAgainstManifest(ZipArchive $zip, array $manifest): void
         }
 
         $entry = (string) $stat['name'];
-        $lower = strtolower($entry);
+        $lower = mb_strtolower($entry);
         if (isset($seen[$lower])) {
             throw new RuntimeException('Duplicate ZIP entry detected: ' . $entry);
         }
@@ -607,23 +607,25 @@ function writePointer(string $path, ?string $current, ?string $previous, ?string
 
     if (is_file($path) && !unlink($path)) {
         @unlink($tmpPath);
+
         throw new RuntimeException('Could not replace existing current pointer file.');
     }
 
     if (!rename($tmpPath, $path)) {
         @unlink($tmpPath);
+
         throw new RuntimeException('Could not move new current pointer file into place.');
     }
 }
 
 function normalizePayloadPath(string $path): string
 {
-    $path = trim(str_replace('\\', '/', $path));
+    $path = mb_trim(str_replace('\\', '/', $path));
     if ($path === '') {
         throw new RuntimeException('Path must not be empty.');
     }
 
-    if (str_starts_with($path, '/') || str_starts_with($path, '\\') || preg_match('/^[A-Za-z]:\\//', $path) === 1) {
+    if (str_starts_with($path, '/') || str_starts_with($path, '\\') || preg_match('/^[A-Za-z]:\//', $path) === 1) {
         throw new RuntimeException('Absolute paths are not allowed: ' . $path);
     }
 
@@ -647,7 +649,7 @@ function normalizePayloadPath(string $path): string
 
 function isReservedPath(string $path): bool
 {
-    $lower = strtolower($path);
+    $lower = mb_strtolower($path);
     $reservedExact = [
         '.env',
         '.deploy',
@@ -679,7 +681,7 @@ function ensureDirectory(string $directory): void
         return;
     }
 
-    if (!mkdir($directory, 0777, true) && !is_dir($directory)) {
+    if (!mkdir($directory, 0o777, true) && !is_dir($directory)) {
         throw new RuntimeException('Could not create directory: ' . $directory);
     }
 }
@@ -692,8 +694,8 @@ function copyDirectory(string $source, string $target): void
     );
 
     foreach ($iterator as $item) {
-        $relative = substr($item->getPathname(), strlen(rtrim($source, '/\\')) + 1);
-        $targetPath = rtrim($target, '/\\') . '/' . str_replace('\\', '/', $relative);
+        $relative = mb_substr($item->getPathname(), mb_strlen(mb_rtrim($source, '/\\')) + 1);
+        $targetPath = mb_rtrim($target, '/\\') . '/' . str_replace('\\', '/', $relative);
 
         if ($item->isDir()) {
             ensureDirectory($targetPath);
@@ -728,10 +730,10 @@ function publishReleaseToProjectRoot(string $releaseRoot, string $projectRoot): 
     ];
 
     foreach ($managedPaths as $relativePath) {
-        $targetPath = rtrim($projectRoot, '/\\') . '/' . $relativePath;
+        $targetPath = mb_rtrim($projectRoot, '/\\') . '/' . $relativePath;
         removePathRecursive($targetPath);
 
-        $sourcePath = rtrim($releaseRoot, '/\\') . '/' . $relativePath;
+        $sourcePath = mb_rtrim($releaseRoot, '/\\') . '/' . $relativePath;
         if (is_dir($sourcePath)) {
             copyDirectory($sourcePath, $targetPath);
             continue;
@@ -745,7 +747,7 @@ function publishReleaseToProjectRoot(string $releaseRoot, string $projectRoot): 
         }
     }
 
-    if (!is_file(rtrim($projectRoot, '/\\') . '/public/index.php')) {
+    if (!is_file(mb_rtrim($projectRoot, '/\\') . '/public/index.php')) {
         throw new RuntimeException('Published project root is missing public/index.php.');
     }
 }
@@ -820,6 +822,7 @@ function restoreEnvIfChanged(string $envPath, array $snapshot): void
     if ($snapshot['exists'] === false) {
         if (is_file($envPath)) {
             @unlink($envPath);
+
             throw new RuntimeException('Root .env was unexpectedly created during deployment and has been removed.');
         }
 
@@ -858,7 +861,7 @@ function readLiveManifestSha256(string $path): ?string
         return null;
     }
 
-    $value = strtolower(trim((string) file_get_contents($path)));
+    $value = mb_strtolower(mb_trim((string) file_get_contents($path)));
     if ($value === '' || preg_match('/^[a-f0-9]{64}$/', $value) !== 1) {
         return null;
     }
@@ -872,7 +875,7 @@ function writeLiveManifestSha256(string $path, string $sha256): void
         throw new RuntimeException('Invalid manifest hash value for live hash tracking.');
     }
 
-    if (file_put_contents($path, strtolower($sha256) . PHP_EOL, LOCK_EX) === false) {
+    if (file_put_contents($path, mb_strtolower($sha256) . PHP_EOL, LOCK_EX) === false) {
         throw new RuntimeException('Could not write live manifest hash file.');
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SparkInsight\Command;
 
+use RuntimeException;
 use SparkInsight\Service\BookPackageBuilder;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -11,6 +12,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Throwable;
 
 final class BuildBookPackageCommand extends Command
 {
@@ -43,7 +45,7 @@ final class BuildBookPackageCommand extends Command
         try {
             $builder = new BookPackageBuilder();
             $result = $builder->buildBookPackage($packagePath, $sourceRoot, $privateKeyPath, $bookTitle);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $io->error($e->getMessage());
 
             return Command::FAILURE;
@@ -58,11 +60,11 @@ final class BuildBookPackageCommand extends Command
 
     private function resolvePackagePath(string $packagePathArg): string
     {
-        $trimmed = trim($packagePathArg);
+        $trimmed = mb_trim($packagePathArg);
         if ($trimmed === '') {
             $outputDirectory = __DIR__ . '/../../build';
             if (!is_dir($outputDirectory) && !mkdir($outputDirectory, 0o700, true) && !is_dir($outputDirectory)) {
-                throw new \RuntimeException('Could not create output directory: ' . $outputDirectory);
+                throw new RuntimeException('Could not create output directory: ' . $outputDirectory);
             }
 
             return $outputDirectory . DIRECTORY_SEPARATOR . 'book-package-' . date('Ymd-His') . '.zip';

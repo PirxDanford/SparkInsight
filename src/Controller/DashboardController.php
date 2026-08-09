@@ -9,8 +9,9 @@ use Doctrine\DBAL\Connection;
 use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use Slim\Views\PhpRenderer;
 use Psr\Http\Message\UploadedFileInterface;
+use RuntimeException;
+use Slim\Views\PhpRenderer;
 use SparkInsight\Service\AuthorPdfExportService;
 use SparkInsight\Service\BookPackageImportService;
 use SparkInsight\Service\UserSession;
@@ -591,8 +592,8 @@ final class DashboardController
         $tempPackagePath = $tempDirectory . DIRECTORY_SEPARATOR . 'uploaded-book-package.zip';
 
         try {
-            if (!mkdir($tempDirectory, 0700, true) && !is_dir($tempDirectory)) {
-                throw new \RuntimeException('Could not create a temporary upload directory.');
+            if (!mkdir($tempDirectory, 0o700, true) && !is_dir($tempDirectory)) {
+                throw new RuntimeException('Could not create a temporary upload directory.');
             }
 
             $packageFile->moveTo($tempPackagePath);

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace SparkInsight\Service;
 
-use DateTimeImmutable;
 use Doctrine\DBAL\Connection;
+use FilesystemIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use RuntimeException;
 use ZipArchive;
 
@@ -69,7 +71,7 @@ class BookPackageImportService
                         throw new RuntimeException('Book package is missing payload entry: ' . $entryName);
                     }
 
-                    $relativePath = ltrim(substr($entryName, strlen('payload/book-source/')), '/');
+                    $relativePath = mb_ltrim(mb_substr($entryName, mb_strlen('payload/book-source/')), '/');
                     $targetPath = $sourceRoot . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
                     $targetDirectory = dirname($targetPath);
                     if (!is_dir($targetDirectory) && !mkdir($targetDirectory, 0o700, true) && !is_dir($targetDirectory)) {
@@ -123,13 +125,13 @@ class BookPackageImportService
             return $directory . DIRECTORY_SEPARATOR . 'book.scrivx';
         }
 
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::SELF_FIRST,
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST,
         );
 
         foreach ($iterator as $fileInfo) {
-            if ($fileInfo->isFile() && strtolower($fileInfo->getExtension()) === 'scrivx') {
+            if ($fileInfo->isFile() && mb_strtolower($fileInfo->getExtension()) === 'scrivx') {
                 return $fileInfo->getPathname();
             }
         }
@@ -143,9 +145,9 @@ class BookPackageImportService
             return;
         }
 
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::CHILD_FIRST,
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST,
         );
 
         foreach ($iterator as $fileInfo) {

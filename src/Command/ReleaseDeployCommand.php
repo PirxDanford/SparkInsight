@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace SparkInsight\Command;
 
 use Doctrine\DBAL\DriverManager;
+use FilesystemIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use RuntimeException;
 use SparkInsight\Config\Config;
 use SparkInsight\Service\CurrentPointerStore;
 use SparkInsight\Service\DeploymentLock;
@@ -13,13 +17,14 @@ use SparkInsight\Service\ReleaseActivationService;
 use SparkInsight\Service\ReleaseFinalizationService;
 use SparkInsight\Service\ReleaseHealthCheck;
 use SparkInsight\Service\ReleaseMaterializer;
-use SparkInsight\Service\ReleaseRootPublisher;
 use SparkInsight\Service\ReleasePreflight;
+use SparkInsight\Service\ReleaseRootPublisher;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Throwable;
 
 final class ReleaseDeployCommand extends Command
 {
@@ -37,7 +42,7 @@ final class ReleaseDeployCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $operationId = trim((string) $input->getOption('operation-id'));
+        $operationId = mb_trim((string) $input->getOption('operation-id'));
         if ($operationId === '') {
             $io->error('The --operation-id option is required.');
 
@@ -45,7 +50,7 @@ final class ReleaseDeployCommand extends Command
         }
 
         $projectRoot = (string) $input->getOption('project-root');
-        $projectRoot = rtrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $projectRoot), DIRECTORY_SEPARATOR);
+        $projectRoot = mb_rtrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $projectRoot), DIRECTORY_SEPARATOR);
         $publicKeyPath = (string) $input->getOption('public-key');
 
         if (!is_file($publicKeyPath)) {
@@ -61,7 +66,7 @@ final class ReleaseDeployCommand extends Command
         try {
             $config = Config::fromEnvironment();
             $connection = DriverManager::getConnection($config->getDatabaseConfig());
-        } catch (\Throwable $throwable) {
+        } catch (Throwable $throwable) {
             $io->error('Could not connect to the configured database: ' . $throwable->getMessage());
 
             return Command::FAILURE;
@@ -79,7 +84,7 @@ final class ReleaseDeployCommand extends Command
             $result = $deploymentLock->withLock($operationId, function () use ($operationId, $stateStore, $pointerStore, $materializer, $rootPublisher, $preflight, $activation, $healthCheck, $finalization, $publicKeyPath, $projectRoot, &$activationResult): array {
                 $state = $stateStore->read($operationId);
                 if ($state === null) {
-                    throw new \RuntimeException('No deployment state exists for operation id: ' . $operationId);
+                    throw new RuntimeException('No deployment state exists for operation id: ' . $operationId);
                 }
 
                 if (($state['state'] ?? '') === 'deployed') {
@@ -92,7 +97,7 @@ final class ReleaseDeployCommand extends Command
 
                 $packagePath = (string) ($state['package_path'] ?? '');
                 if ($packagePath === '' || !is_file($packagePath)) {
-                    throw new \RuntimeException('Package path in state is missing or not readable.');
+                    throw new RuntimeException('Package path in state is missing or not readable.');
                 }
 
                 $liveManifestSha256Path = $projectRoot . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, self::LIVE_MANIFEST_SHA256_FILE);
@@ -100,18 +105,18 @@ final class ReleaseDeployCommand extends Command
                 $pointer = $pointerStore->read();
                 $baseReleaseRoot = null;
                 if (($state['package_type'] ?? '') === 'patch') {
-                    $liveManifestSha256 = is_file($liveManifestSha256Path) ? trim((string) file_get_contents($liveManifestSha256Path)) : '';
+                    $liveManifestSha256 = is_file($liveManifestSha256Path) ? mb_trim((string) file_get_contents($liveManifestSha256Path)) : '';
                     if ($liveManifestSha256 === '' || preg_match('/^[a-f0-9]{64}$/i', $liveManifestSha256) !== 1) {
-                        throw new \RuntimeException('Patch deployment requires a live manifest hash from a previously deployed package. Deploy a full package first.');
+                        throw new RuntimeException('Patch deployment requires a live manifest hash from a previously deployed package. Deploy a full package first.');
                     }
 
-                    $expectedBaseManifestSha256 = mb_strtolower(trim((string) ($state['base_manifest_sha256'] ?? '')));
+                    $expectedBaseManifestSha256 = mb_strtolower(mb_trim((string) ($state['base_manifest_sha256'] ?? '')));
                     if ($expectedBaseManifestSha256 === '' || preg_match('/^[a-f0-9]{64}$/i', $expectedBaseManifestSha256) !== 1) {
-                        throw new \RuntimeException('Patch deployment state is missing a valid base manifest hash. Re-upload the package.');
+                        throw new RuntimeException('Patch deployment state is missing a valid base manifest hash. Re-upload the package.');
                     }
 
                     if (!hash_equals($expectedBaseManifestSha256, mb_strtolower($liveManifestSha256))) {
-                        throw new \RuntimeException('Patch base does not match the currently live deployment. Build the patch against the manifest of the live package.');
+                        throw new RuntimeException('Patch base does not match the currently live deployment. Build the patch against the manifest of the live package.');
                     }
 
                     $baseReleaseRoot = $projectRoot;
@@ -151,9 +156,9 @@ final class ReleaseDeployCommand extends Command
                     'created_at' => date(DATE_ATOM),
                 ]);
 
-                $packageManifestSha256 = mb_strtolower(trim((string) ($state['manifest_sha256'] ?? '')));
+                $packageManifestSha256 = mb_strtolower(mb_trim((string) ($state['manifest_sha256'] ?? '')));
                 if ($packageManifestSha256 === '' || preg_match('/^[a-f0-9]{64}$/i', $packageManifestSha256) !== 1) {
-                    throw new \RuntimeException('Deployment state is missing package manifest hash. Re-upload the package.');
+                    throw new RuntimeException('Deployment state is missing package manifest hash. Re-upload the package.');
                 }
 
                 $this->writeLiveManifestSha256($liveManifestSha256Path, $packageManifestSha256);
@@ -196,11 +201,11 @@ final class ReleaseDeployCommand extends Command
                     'status' => 'deployed',
                 ];
             });
-        } catch (\Throwable $throwable) {
+        } catch (Throwable $throwable) {
             if (is_array($activationResult) && isset($activationResult['previous']) && is_string($activationResult['previous']) && $activationResult['previous'] !== '') {
                 try {
                     $pointerStore->write($activationResult['previous'], null, $operationId);
-                } catch (\Throwable) {
+                } catch (Throwable) {
                 }
             }
 
@@ -211,7 +216,7 @@ final class ReleaseDeployCommand extends Command
                     'error' => $throwable->getMessage(),
                     'created_at' => date(DATE_ATOM),
                 ]);
-            } catch (\Throwable) {
+            } catch (Throwable) {
             }
 
             $io->error($throwable->getMessage());
@@ -235,11 +240,11 @@ final class ReleaseDeployCommand extends Command
     {
         $directory = dirname($path);
         if (!is_dir($directory) && !mkdir($directory, 0o700, true) && !is_dir($directory)) {
-            throw new \RuntimeException('Could not create live manifest hash directory: ' . $directory);
+            throw new RuntimeException('Could not create live manifest hash directory: ' . $directory);
         }
 
         if (file_put_contents($path, $sha256 . PHP_EOL, LOCK_EX) === false) {
-            throw new \RuntimeException('Could not write live manifest hash file: ' . $path);
+            throw new RuntimeException('Could not write live manifest hash file: ' . $path);
         }
     }
 
@@ -264,6 +269,7 @@ final class ReleaseDeployCommand extends Command
     {
         if (is_file($directory)) {
             @unlink($directory);
+
             return;
         }
 
@@ -271,9 +277,9 @@ final class ReleaseDeployCommand extends Command
             return;
         }
 
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::CHILD_FIRST,
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST,
         );
 
         foreach ($iterator as $item) {

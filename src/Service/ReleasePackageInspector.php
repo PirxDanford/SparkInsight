@@ -73,17 +73,17 @@ final class ReleasePackageInspector
             }
 
             $entryName = (string) $stat['name'];
-            if ($entryName === '' || isset($seenEntries[strtolower($entryName)])) {
+            if ($entryName === '' || isset($seenEntries[mb_strtolower($entryName)])) {
                 throw new RuntimeException('Duplicate ZIP entry detected: ' . $entryName);
             }
-            $seenEntries[strtolower($entryName)] = true;
+            $seenEntries[mb_strtolower($entryName)] = true;
 
             if ($entryName === 'manifest.json' || $entryName === 'manifest.sig') {
                 continue;
             }
 
             if (str_ends_with($entryName, '/')) {
-                $directoryName = rtrim(substr($entryName, strlen('payload/')), '/');
+                $directoryName = mb_rtrim(mb_substr($entryName, mb_strlen('payload/')), '/');
                 if (!str_starts_with($entryName, 'payload/')) {
                     throw new RuntimeException('Unexpected directory entry in package: ' . $entryName);
                 }
@@ -99,7 +99,7 @@ final class ReleasePackageInspector
                 throw new RuntimeException('Unexpected ZIP entry outside payload: ' . $entryName);
             }
 
-            $payloadPath = substr($entryName, strlen('payload/'));
+            $payloadPath = mb_substr($entryName, mb_strlen('payload/'));
             $normalizedPayloadPath = $this->pathPolicy->ensureAllowedPayloadPath($payloadPath);
             $expectedArchiveEntry = 'payload/' . $normalizedPayloadPath;
 

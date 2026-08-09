@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit(1);
 }
 
-$providedKey = isset($_POST['key']) ? trim((string) $_POST['key']) : '';
+$providedKey = isset($_POST['key']) ? mb_trim((string) $_POST['key']) : '';
 if ($providedKey === '' || !$recoveryKeyManager->verify($providedKey)) {
     http_response_code(403);
     header('Content-Type: text/plain; charset=UTF-8');

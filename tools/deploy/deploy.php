@@ -18,9 +18,7 @@ final class DeployMirror
 
     private bool $emitOutput;
 
-    /**
-     * @var array<int, string>
-     */
+    /** @var array<int, string> */
     private array $includePaths = [
         '.htaccess',
         'index.php',
@@ -156,7 +154,7 @@ final class DeployMirror
      */
     private function buildFileRecord(string $baseDir, string $absolutePath): array
     {
-        $relativePath = str_replace('\\', '/', substr($absolutePath, strlen(rtrim($baseDir, DIRECTORY_SEPARATOR)) + 1));
+        $relativePath = str_replace('\\', '/', mb_substr($absolutePath, mb_strlen(mb_rtrim($baseDir, DIRECTORY_SEPARATOR)) + 1));
 
         return [
             'path' => $relativePath,
@@ -369,7 +367,7 @@ final class DeployMirror
         );
 
         foreach ($iterator as $fileInfo) {
-            $relativePath = substr($fileInfo->getPathname(), strlen(rtrim($sourceDir, DIRECTORY_SEPARATOR)) + 1);
+            $relativePath = mb_substr($fileInfo->getPathname(), mb_strlen(mb_rtrim($sourceDir, DIRECTORY_SEPARATOR)) + 1);
             $targetPath = $targetDir . DIRECTORY_SEPARATOR . $relativePath;
 
             if ($fileInfo->isDir()) {
@@ -387,10 +385,10 @@ final class DeployMirror
     private function buildStatePayload(array $manifest, array $diff, array $envState): array
     {
         $report = $diff['report'] + $envState;
-        $report['source_lock_hash'] = $report['source_lock_hash'] ?? 'unknown';
-        $report['target_lock_hash'] = $report['target_lock_hash'] ?? 'unknown';
-        $report['source_commit'] = $report['source_commit'] ?? 'unknown';
-        $report['target_commit'] = $report['target_commit'] ?? 'unknown';
+        $report['source_lock_hash'] ??= 'unknown';
+        $report['target_lock_hash'] ??= 'unknown';
+        $report['source_commit'] ??= 'unknown';
+        $report['target_commit'] ??= 'unknown';
 
         return [
             'generated_at' => date(DATE_ATOM),
@@ -445,6 +443,7 @@ final class DeployMirror
         usort($changeFiles, static fn (string $left, string $right): int => strcmp($right, $left));
         foreach ($changeFiles as $changeFile) {
             @unlink($changeFile);
+
             return;
         }
     }
@@ -544,7 +543,7 @@ final class DeployMirror
                 return null;
             }
 
-            return trim((string) $output[0]);
+            return mb_trim((string) $output[0]);
         } finally {
             chdir($originalCwd);
         }
@@ -561,7 +560,7 @@ final class DeployMirror
 
     private function isAbsolutePath(string $path): bool
     {
-        return str_starts_with($path, DIRECTORY_SEPARATOR) || preg_match('/^[A-Za-z]:\\\\/', $path) === 1;
+        return str_starts_with($path, DIRECTORY_SEPARATOR) || preg_match('/^[A-Za-z]:\\\/', $path) === 1;
     }
 }
 
@@ -579,7 +578,7 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
         : 'production';
     $stateDir = isset($options['state-dir']) && is_string($options['state-dir']) && $options['state-dir'] !== ''
         ? $options['state-dir']
-        : '.deploy' . DIRECTORY_SEPARATOR . trim($targetDir, DIRECTORY_SEPARATOR);
+        : '.deploy' . DIRECTORY_SEPARATOR . mb_trim($targetDir, DIRECTORY_SEPARATOR);
 
     try {
         $deploy = new DeployMirror($repoRoot, $targetDir, $stateDir);

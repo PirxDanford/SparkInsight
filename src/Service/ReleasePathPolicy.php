@@ -10,9 +10,7 @@ final class ReleasePathPolicy
 {
     private const MAX_PATH_LENGTH = 240;
 
-    /**
-     * @var array<int, string>
-     */
+    /** @var array<int, string> */
     private const RESERVED_EXACT = [
         '.env',
         '.deploy',
@@ -23,22 +21,20 @@ final class ReleasePathPolicy
         'manifest.sig',
     ];
 
-    /**
-     * @var array<int, string>
-     */
+    /** @var array<int, string> */
     private const RESERVED_PREFIXES = [
         '.deploy/',
     ];
 
     public function normalize(string $path): string
     {
-        $path = trim(str_replace('\\', '/', $path));
+        $path = mb_trim(str_replace('\\', '/', $path));
 
         if ($path === '') {
             throw new RuntimeException('Path must not be empty.');
         }
 
-        if (strlen($path) > self::MAX_PATH_LENGTH) {
+        if (mb_strlen($path) > self::MAX_PATH_LENGTH) {
             throw new RuntimeException('Path is too long.');
         }
 
@@ -73,7 +69,7 @@ final class ReleasePathPolicy
         $normalized = $this->normalize($path);
 
         if (str_starts_with($normalized, 'payload/')) {
-            $normalized = substr($normalized, 8);
+            $normalized = mb_substr($normalized, 8);
         }
 
         if ($this->isReservedPath($normalized)) {
@@ -85,12 +81,12 @@ final class ReleasePathPolicy
 
     private function isAbsolutePath(string $path): bool
     {
-        return str_starts_with($path, '/') || str_starts_with($path, '\\') || preg_match('/^[A-Za-z]:\\//', $path) === 1;
+        return str_starts_with($path, '/') || str_starts_with($path, '\\') || preg_match('/^[A-Za-z]:\//', $path) === 1;
     }
 
     private function isReservedPath(string $path): bool
     {
-        $lower = strtolower($path);
+        $lower = mb_strtolower($path);
 
         if (in_array($lower, self::RESERVED_EXACT, true)) {
             return true;

@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace SparkInsight\Service;
 
+use FilesystemIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use RuntimeException;
+use Throwable;
 use ZipArchive;
 
 final class ReleasePackageBuilder
@@ -102,12 +106,12 @@ final class ReleasePackageBuilder
      */
     private function resolvePatchBase(?string $baseRoot, ?string $basePackagePath): array
     {
-        $basePackagePath = $basePackagePath !== null ? trim($basePackagePath) : null;
+        $basePackagePath = $basePackagePath !== null ? mb_trim($basePackagePath) : null;
         if ($basePackagePath !== null && $basePackagePath !== '') {
             return $this->readBaseFromPackageOrManifest($basePackagePath);
         }
 
-        $normalizedBaseRoot = rtrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, (string) $baseRoot), DIRECTORY_SEPARATOR);
+        $normalizedBaseRoot = mb_rtrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, (string) $baseRoot), DIRECTORY_SEPARATOR);
         if ($normalizedBaseRoot === '' || !is_dir($normalizedBaseRoot)) {
             throw new RuntimeException('Patch base root does not exist: ' . (string) $baseRoot . '. Provide --base-package with a previous release ZIP/manifest or --base-root with an exact local copy of the currently deployed release.');
         }
@@ -140,7 +144,7 @@ final class ReleasePackageBuilder
         }
 
         $manifestJson = null;
-        if (strtolower(pathinfo($basePackagePath, PATHINFO_EXTENSION)) === 'zip') {
+        if (mb_strtolower(pathinfo($basePackagePath, PATHINFO_EXTENSION)) === 'zip') {
             if (!class_exists(ZipArchive::class)) {
                 throw new RuntimeException('ZipArchive extension is required to read base package ZIPs.');
             }
@@ -174,7 +178,6 @@ final class ReleasePackageBuilder
     }
 
     /**
-     * @param array<int, string> $requiredExtensions
      * @param array<int, array{path: string, size: int, sha256: string}> $files
      * @return array{manifest_path: string, signature_path: string, package_path: string, manifest_json: string}
      */
@@ -219,9 +222,10 @@ final class ReleasePackageBuilder
             if (!$zip->close()) {
                 throw new RuntimeException('Could not finalize package ZIP.');
             }
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             $zip->close();
             @unlink($packagePath);
+
             throw $exception;
         }
 
@@ -280,11 +284,11 @@ final class ReleasePackageBuilder
     {
         $files = [];
         foreach ($this->includePaths as $relativePath) {
-            $absolutePath = rtrim($root, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $relativePath;
+            $absolutePath = mb_rtrim($root, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $relativePath;
             if (is_dir($absolutePath)) {
-                $iterator = new \RecursiveIteratorIterator(
-                    new \RecursiveDirectoryIterator($absolutePath, \FilesystemIterator::SKIP_DOTS),
-                    \RecursiveIteratorIterator::SELF_FIRST,
+                $iterator = new RecursiveIteratorIterator(
+                    new RecursiveDirectoryIterator($absolutePath, FilesystemIterator::SKIP_DOTS),
+                    RecursiveIteratorIterator::SELF_FIRST,
                 );
 
                 foreach ($iterator as $fileInfo) {
@@ -310,7 +314,7 @@ final class ReleasePackageBuilder
 
     private function buildFileRecord(string $root, string $absolutePath): array
     {
-        $relativePath = str_replace('\\', '/', substr($absolutePath, strlen(rtrim($root, DIRECTORY_SEPARATOR)) + 1));
+        $relativePath = str_replace('\\', '/', mb_substr($absolutePath, mb_strlen(mb_rtrim($root, DIRECTORY_SEPARATOR)) + 1));
         $normalizedPath = $this->pathPolicy->normalize($relativePath);
 
         return [
@@ -338,7 +342,7 @@ final class ReleasePackageBuilder
     {
         $resolvedRoot = realpath($root);
         $normalizedRoot = $resolvedRoot !== false ? $resolvedRoot : $root;
-        $releaseId = basename(rtrim($normalizedRoot, DIRECTORY_SEPARATOR));
+        $releaseId = basename(mb_rtrim($normalizedRoot, DIRECTORY_SEPARATOR));
 
         if ($releaseId === '' || $releaseId === '.' || $releaseId === '..' || $releaseId === DIRECTORY_SEPARATOR) {
             return 'release-' . bin2hex(random_bytes(4));
@@ -385,7 +389,7 @@ final class ReleasePackageBuilder
         }
 
         $constraint = $decoded['require']['php'] ?? null;
-        if (!is_string($constraint) || trim($constraint) === '') {
+        if (!is_string($constraint) || mb_trim($constraint) === '') {
             return '8.1.0';
         }
 

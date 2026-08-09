@@ -68,18 +68,20 @@ final class CurrentPointerStore
 
         if (is_file($path) && !unlink($path)) {
             @unlink($temporaryPath);
+
             throw new RuntimeException('Could not replace current pointer document: ' . $path);
         }
 
         if (!rename($temporaryPath, $path)) {
             @unlink($temporaryPath);
+
             throw new RuntimeException('Could not move current pointer document into place: ' . $path);
         }
     }
 
     private function pointerPath(): string
     {
-        return rtrim($this->deployRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '.deploy' . DIRECTORY_SEPARATOR . 'current.json';
+        return mb_rtrim($this->deployRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '.deploy' . DIRECTORY_SEPARATOR . 'current.json';
     }
 
     private function ensureDirectory(string $directory): void

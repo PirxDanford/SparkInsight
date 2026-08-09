@@ -276,9 +276,9 @@ ob_start();
             'filter_role' => $invitationFilters['role'] ?? '',
             'filter_status' => $invitationFilters['status'] ?? '',
         ], static fn ($value) => $value !== '');
-        $baseQuery = http_build_query($paginationParams);
-        $queryPrefix = $baseQuery !== '' ? '/dashboard/admin?' . $baseQuery . '&' : '/dashboard/admin?';
-        ?>
+$baseQuery = http_build_query($paginationParams);
+$queryPrefix = $baseQuery !== '' ? '/dashboard/admin?' . $baseQuery . '&' : '/dashboard/admin?';
+?>
 
         <?php if ($invitationTotalPages > 1) { ?>
             <div class="pagination-controls">

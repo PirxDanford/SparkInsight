@@ -50,6 +50,7 @@ final class RecoveryKeyManager
         }
 
         $decoded = json_decode((string) file_get_contents($path), true);
+
         return is_array($decoded) ? $decoded : null;
     }
 
@@ -87,13 +88,14 @@ final class RecoveryKeyManager
 
         if (!rename($temporaryPath, $path)) {
             @unlink($temporaryPath);
+
             throw new RuntimeException('Could not store recovery state.');
         }
     }
 
     private function recoveryPath(): string
     {
-        return rtrim($this->deployRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '.deploy' . DIRECTORY_SEPARATOR . 'recovery.json';
+        return mb_rtrim($this->deployRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '.deploy' . DIRECTORY_SEPARATOR . 'recovery.json';
     }
 
     private function ensureDirectory(string $directory): void

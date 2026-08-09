@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace SparkInsight\Service;
 
+use FilesystemIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use RuntimeException;
+use SimpleXMLElement;
+use Throwable;
 use ZipArchive;
 
 final class BookPackageBuilder
@@ -67,7 +72,7 @@ final class BookPackageBuilder
 
             foreach ($filesToAdd as $relativePath) {
                 $absolutePath = $sourceDirectory . DIRECTORY_SEPARATOR . $relativePath;
-                $entryName = 'payload/book-source/' . ltrim($relativePath, '/');
+                $entryName = 'payload/book-source/' . mb_ltrim($relativePath, '/');
                 if (!$zip->addFile($absolutePath, $entryName)) {
                     throw new RuntimeException('Could not add book payload file to package ZIP: ' . $relativePath);
                 }
@@ -76,9 +81,10 @@ final class BookPackageBuilder
             if (!$zip->close()) {
                 throw new RuntimeException('Could not finalize book package ZIP.');
             }
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             $zip->close();
             @unlink($packagePath);
+
             throw $exception;
         }
 
@@ -124,7 +130,7 @@ final class BookPackageBuilder
         ];
     }
 
-    private function collectBinderItems(?\SimpleXMLElement $xml, array &$imported, string $rootTitle): void
+    private function collectBinderItems(?SimpleXMLElement $xml, array &$imported, string $rootTitle): void
     {
         if ($xml === null) {
             return;
@@ -135,9 +141,9 @@ final class BookPackageBuilder
         }
     }
 
-    private function collectBinderItem(\SimpleXMLElement $item, array &$imported, string $rootTitle): void
+    private function collectBinderItem(SimpleXMLElement $item, array &$imported, string $rootTitle): void
     {
-        $itemType = trim((string) ($item['Type'] ?? ''));
+        $itemType = mb_trim((string) ($item['Type'] ?? ''));
         if ($itemType === 'Folder') {
             foreach ($item->Children->BinderItem ?? [] as $child) {
                 $this->collectBinderItem($child, $imported, $rootTitle);
@@ -146,7 +152,7 @@ final class BookPackageBuilder
             return;
         }
 
-        $title = trim((string) ($item->Title ?? ''));
+        $title = mb_trim((string) ($item->Title ?? ''));
         if ($title === '') {
             return;
         }
@@ -156,7 +162,7 @@ final class BookPackageBuilder
         ];
     }
 
-    private function extractRootTitle(?\SimpleXMLElement $xml): ?string
+    private function extractRootTitle(?SimpleXMLElement $xml): ?string
     {
         if ($xml === null) {
             return null;
@@ -164,7 +170,7 @@ final class BookPackageBuilder
 
         $root = $xml->xpath('/ScrivenerProject/Binder/BinderItem[Title="The Book"]');
         if (is_array($root) && $root !== []) {
-            $title = trim((string) ($root[0]->Title ?? ''));
+            $title = mb_trim((string) ($root[0]->Title ?? ''));
             if ($title !== '') {
                 return $title;
             }
@@ -175,7 +181,7 @@ final class BookPackageBuilder
 
     private function normalizeDirectory(string $path): string
     {
-        return rtrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path), DIRECTORY_SEPARATOR);
+        return mb_rtrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path), DIRECTORY_SEPARATOR);
     }
 
     private function findScrivx(string $directory): ?string
@@ -184,13 +190,13 @@ final class BookPackageBuilder
             return $directory . '/book.scrivx';
         }
 
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::SELF_FIRST,
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST,
         );
 
         foreach ($iterator as $fileInfo) {
-            if ($fileInfo->isFile() && strtolower($fileInfo->getExtension()) === 'scrivx') {
+            if ($fileInfo->isFile() && mb_strtolower($fileInfo->getExtension()) === 'scrivx') {
                 return $fileInfo->getPathname();
             }
         }
@@ -201,14 +207,15 @@ final class BookPackageBuilder
     private function collectPayloadFiles(string $directory): array
     {
         $files = $this->collectFiles($directory);
-        return array_map(static fn (string $relativePath): string => 'payload/book-source/' . ltrim($relativePath, '/'), $files);
+
+        return array_map(static fn (string $relativePath): string => 'payload/book-source/' . mb_ltrim($relativePath, '/'), $files);
     }
 
     private function collectFiles(string $directory): array
     {
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::SELF_FIRST,
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST,
         );
 
         $files = [];
@@ -218,7 +225,7 @@ final class BookPackageBuilder
             }
 
             $absolutePath = $fileInfo->getPathname();
-            $relativePath = ltrim(substr($absolutePath, strlen($directory) + 1), '/');
+            $relativePath = mb_ltrim(mb_substr($absolutePath, mb_strlen($directory) + 1), '/');
             $files[] = str_replace('\\', '/', $relativePath);
         }
 

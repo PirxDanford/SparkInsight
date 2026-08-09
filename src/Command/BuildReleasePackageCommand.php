@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SparkInsight\Command;
 
+use RuntimeException;
 use SparkInsight\Service\ReleasePackageBuilder;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -11,6 +12,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Throwable;
 
 final class BuildReleasePackageCommand extends Command
 {
@@ -93,7 +95,7 @@ final class BuildReleasePackageCommand extends Command
             } else {
                 $result = $builder->buildFullPackage($packagePath, $privateKeyPath);
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $io->error($e->getMessage());
 
             return Command::FAILURE;
@@ -108,9 +110,10 @@ final class BuildReleasePackageCommand extends Command
 
     private function resolvePackagePath(string $packagePathArg, string $packageType): string
     {
-        $trimmed = trim($packagePathArg);
+        $trimmed = mb_trim($packagePathArg);
         if ($trimmed === '') {
             $outputDirectory = $this->defaultOutputDirectory ?? (__DIR__ . '/../../build');
+
             return $packageType === 'patch'
                 ? $this->generateNextPatchPath($outputDirectory)
                 : $this->generateTimestampedFullPath($outputDirectory);
@@ -129,10 +132,10 @@ final class BuildReleasePackageCommand extends Command
     private function generateNextPatchPath(string $outputDirectory): string
     {
         if (!is_dir($outputDirectory) && !mkdir($outputDirectory, 0o700, true) && !is_dir($outputDirectory)) {
-            throw new \RuntimeException('Could not create output directory: ' . $outputDirectory);
+            throw new RuntimeException('Could not create output directory: ' . $outputDirectory);
         }
 
-        $files = glob(rtrim($outputDirectory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'sparkinsight-patch-*.zip');
+        $files = glob(mb_rtrim($outputDirectory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'sparkinsight-patch-*.zip');
         $max = 0;
         if (is_array($files)) {
             foreach ($files as $file) {
@@ -145,18 +148,18 @@ final class BuildReleasePackageCommand extends Command
         $next = $max + 1;
         $fileName = sprintf('sparkinsight-patch-%06d.zip', $next);
 
-        return rtrim($outputDirectory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $fileName;
+        return mb_rtrim($outputDirectory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $fileName;
     }
 
     private function generateTimestampedFullPath(string $outputDirectory): string
     {
         if (!is_dir($outputDirectory) && !mkdir($outputDirectory, 0o700, true) && !is_dir($outputDirectory)) {
-            throw new \RuntimeException('Could not create output directory: ' . $outputDirectory);
+            throw new RuntimeException('Could not create output directory: ' . $outputDirectory);
         }
 
         $fileName = 'sparkinsight-full-' . date('Ymd-His') . '.zip';
 
-        return rtrim($outputDirectory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $fileName;
+        return mb_rtrim($outputDirectory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $fileName;
     }
 
     private function resolvePatchOutputDirectory(string $packagePathArg, string $packageType): ?string
@@ -165,7 +168,7 @@ final class BuildReleasePackageCommand extends Command
             return null;
         }
 
-        $trimmed = trim($packagePathArg);
+        $trimmed = mb_trim($packagePathArg);
         if ($trimmed === '') {
             return $this->defaultOutputDirectory ?? (__DIR__ . '/../../build');
         }
@@ -181,7 +184,7 @@ final class BuildReleasePackageCommand extends Command
             return 0;
         }
 
-        $files = glob(rtrim($outputDirectory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'sparkinsight-patch-*.zip');
+        $files = glob(mb_rtrim($outputDirectory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'sparkinsight-patch-*.zip');
         if (!is_array($files)) {
             return 0;
         }
@@ -208,7 +211,7 @@ final class BuildReleasePackageCommand extends Command
             return $basePackage;
         }
 
-        $files = glob(rtrim($outputDirectory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'sparkinsight-patch-*.zip');
+        $files = glob(mb_rtrim($outputDirectory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'sparkinsight-patch-*.zip');
         if (!is_array($files) || $files === []) {
             return $basePackage;
         }
@@ -237,7 +240,7 @@ final class BuildReleasePackageCommand extends Command
         }
 
         if (!@unlink($path) && is_file($path)) {
-            throw new \RuntimeException('Could not remove existing patch artifact: ' . $path);
+            throw new RuntimeException('Could not remove existing patch artifact: ' . $path);
         }
     }
 }

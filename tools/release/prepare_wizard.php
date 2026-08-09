@@ -44,7 +44,7 @@ foreach ($requiredFiles as $relativePath) {
     $destination = $wizardRoot . '/' . $relativePath;
     $destinationDir = dirname($destination);
 
-    if (!is_dir($destinationDir) && !mkdir($destinationDir, 0777, true) && !is_dir($destinationDir)) {
+    if (!is_dir($destinationDir) && !mkdir($destinationDir, 0o777, true) && !is_dir($destinationDir)) {
         fwrite(STDERR, '[error] Failed to create directory: ' . $destinationDir . PHP_EOL);
         exit(1);
     }
@@ -72,9 +72,6 @@ fwrite(STDOUT, '[ok] Wizard FTP bundle prepared at .deploy/wizard' . PHP_EOL);
 fwrite(STDOUT, '[ok] Upload the contents of .deploy/wizard to the web root (preserve paths).' . PHP_EOL);
 fwrite(STDOUT, '[ok] Open /init?token=' . $token . ' on the target host to run first activation.' . PHP_EOL);
 
-/**
- * @param string $directory
- */
 function deleteDirectory(string $directory): void
 {
     $items = scandir($directory);
@@ -111,18 +108,18 @@ function copyDirectory(string $sourceDir, string $targetDir): void
     );
 
     foreach ($iterator as $item) {
-        $relativePath = substr($item->getPathname(), strlen(rtrim($sourceDir, DIRECTORY_SEPARATOR)) + 1);
+        $relativePath = mb_substr($item->getPathname(), mb_strlen(mb_rtrim($sourceDir, DIRECTORY_SEPARATOR)) + 1);
         $targetPath = $targetDir . DIRECTORY_SEPARATOR . $relativePath;
 
         if ($item->isDir()) {
-            if (!is_dir($targetPath) && !mkdir($targetPath, 0777, true) && !is_dir($targetPath)) {
+            if (!is_dir($targetPath) && !mkdir($targetPath, 0o777, true) && !is_dir($targetPath)) {
                 throw new RuntimeException('Failed to create directory: ' . $targetPath);
             }
             continue;
         }
 
         $targetPathDir = dirname($targetPath);
-        if (!is_dir($targetPathDir) && !mkdir($targetPathDir, 0777, true) && !is_dir($targetPathDir)) {
+        if (!is_dir($targetPathDir) && !mkdir($targetPathDir, 0o777, true) && !is_dir($targetPathDir)) {
             throw new RuntimeException('Failed to create directory: ' . $targetPathDir);
         }
 
