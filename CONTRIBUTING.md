@@ -30,7 +30,7 @@ This project follows a quality-first approach for all changes:
 5. Start the local server:
    - `composer start`
 
-For setup details, see `docs/Setup.md`.
+For setup details, see `docs/setup.md`.
 
 ## Development Workflow
 
@@ -55,10 +55,12 @@ Recommended loop:
 
 Reference guides:
 
-- TDD guide: `docs/TDD-Guide.md`
-- SOLID guide: `docs/SOLID-Principles.md`
+- TDD guide: `docs/tdd-guide.md`
+- SOLID guide: `docs/solid-principles.md`
 - Import operations guide: `docs/imports.md`
 - Migration operations guide: `docs/migrations.md`
+
+Documentation filenames should use lowercase kebab-case (for example `setup.md`, `tdd-guide.md`, `scrivener-setup.md`). The rationale is captured in ADR 0010.
 
 ## Commit Conventions
 

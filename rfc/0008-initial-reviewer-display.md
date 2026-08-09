@@ -23,7 +23,7 @@ Reviewers need a clean, functional UI to access assigned content, read it, and p
 7. Remember the reviewer's preferred panel visibility so the default matches how they like to read.
 8. Show comment history and status in reviewer history.
 	- Explicit author-attributed resolution identity/decision semantics are defined in RFC 0002.
-9. For v1.0.0, ensure a high-quality desktop reviewer experience; cross-device behavior (tablet and mobile) is deferred to RFC 0013 for v1.1.
+9. Ensure a high-quality desktop reviewer experience in the initial scope; cross-device behavior for tablet and mobile is deferred to RFC 0013.
 
 For local testing:
 - Run on local PHP server with sample content in database.
@@ -47,6 +47,6 @@ Provides the core reviewer experience to enable feedback collection.
 - Responsive CSS: https://developer.mozilla.org/en-US/docs/Learn/CSS/CSS_layout/Responsive_Design
 - RFC 0011: Quality-First Development Framework (implementation must include comprehensive tests)
 - RFC 0002: Author-driven review resolution workflow (author-attributed resolution semantics)
-- RFC 0013: Reviewer Cross-Device Experience (v1.1)
+- RFC 0013: Reviewer Cross-Device Experience
 - ADR 0006: Adopt Test-Driven Development (UI logic tested, comment submission verified)
 - ADR 0007: Apply SOLID Principles (separate concerns: display, data access, user interaction)

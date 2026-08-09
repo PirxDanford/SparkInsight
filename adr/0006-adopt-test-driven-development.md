@@ -29,7 +29,7 @@ Adopt Test-Driven Development (TDD) as the standard development practice for all
 
 ### Tooling
 
-- **PHPUnit 10.5+**: Unit and integration testing framework
+- **PHPUnit**: Composer-locked unit and integration testing framework
 - **SQLite in-memory**: Fast database for integration tests
 - **Coverage Reports**: Generated via `composer coverage` command
 - **CI/CD Integration**: Tests run on every commit; coverage must not decrease
@@ -57,7 +57,7 @@ Adopt Test-Driven Development (TDD) as the standard development practice for all
 
 - ADR 0007: SOLID Principles (complement TDD with testable architecture)
 - ADR 0003: Conventional Commits (document test-related changes: `test:`, `feat:`)
-- ADR 0004: PHP 8.5 & MariaDB (stable platform for reliable testing)
+- ADR 0004: Runtime and database platform (stable platform for reliable testing)
 
 ## Links
 

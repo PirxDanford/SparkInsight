@@ -32,7 +32,7 @@ Implementation of imports and migration tooling exists, but safe operation requi
 - `src/Command/MigrateDbCommand.php`
 - `database/migrations/`
 
-## Implementation (v1.0.0)
+## Implementation
 
 Completed 2026-07-12.
 

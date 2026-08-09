@@ -14,6 +14,7 @@ use SparkInsight\Controller\DashboardController;
 use SparkInsight\Service\AppSettingsService;
 use SparkInsight\Service\InvitationService;
 use SparkInsight\Service\OAuthProviderFactory;
+use SparkInsight\Service\ReleasePackageIntakeService;
 use SparkInsight\Service\UserService;
 use SparkInsight\Service\UserSession;
 
@@ -39,6 +40,7 @@ $connection = DriverManager::getConnection([
 $invitationService = new InvitationService($connection);
 $settingsService = new AppSettingsService($connection);
 $userService = new UserService($connection);
+$packageIntakeService = new ReleasePackageIntakeService(realpath(__DIR__ . '/..') ?: __DIR__ . '/..');
 
 $app = AppFactory::create();
 $app->addRoutingMiddleware();
@@ -46,7 +48,7 @@ $errorMiddleware = $app->addErrorMiddleware(true, true, true);
 
 $dashboardController = new DashboardController($view, $session, $connection);
 $authController = new AuthController($view, $providerFactory, $session, $invitationService, $userService);
-$adminController = new AdminController($view, $session, $userService, $invitationService, $settingsService, $config, $connection);
+$adminController = new AdminController($view, $session, $userService, $invitationService, $packageIntakeService, $settingsService, $config, $connection);
 
 $app->get('/style.css', static function ($request, $response) {
     $file = __DIR__ . '/style.css';
@@ -82,6 +84,8 @@ $app->post('/dashboard/review/{id:[0-9]+}', [$dashboardController, 'submitReview
 $app->get('/dashboard/author', [$dashboardController, 'author']);
 $app->get('/dashboard/author/{id:[0-9]+}', [$dashboardController, 'authorItem']);
 $app->post('/dashboard/author/{id:[0-9]+}/review/{reviewId:[0-9]+}/resolve', [$dashboardController, 'resolveAuthorReview']);
+$app->post('/dashboard/author/{id:[0-9]+}/delete', [$dashboardController, 'deleteAuthorBook']);
+$app->post('/dashboard/author/upload-book-package', [$dashboardController, 'uploadAuthorBookPackage']);
 $app->post('/dashboard/author/export', [$dashboardController, 'exportAuthorPdf']);
 $app->get('/login', [$authController, 'showLogin']);
 $app->get('/signup', [$authController, 'showSignUp']);
@@ -90,12 +94,17 @@ $app->get('/demo', [$authController, 'demo']);
 $app->get('/auth/{provider}', [$authController, 'login']);
 $app->get('/callback/{provider}', [$authController, 'callback']);
 
+
 $app->get('/dashboard/admin', [$adminController, 'dashboard']);
 $app->get('/dashboard/admin/users', [$adminController, 'users']);
 $app->get('/dashboard/admin/invitations', [$adminController, 'invitations']);
 $app->post('/dashboard/admin/invitations', [$adminController, 'createInvitation']);
 $app->get('/dashboard/admin/settings', [$adminController, 'settings']);
 $app->post('/dashboard/admin/settings', [$adminController, 'saveSettings']);
+$app->post('/dashboard/admin/packages', [$adminController, 'uploadReleasePackage']);
+$app->post('/dashboard/admin/packages/export-live-manifest', [$adminController, 'exportLiveManifest']);
+$app->post('/dashboard/admin/packages/deploy', [$adminController, 'deployReleasePackage']);
+$app->post('/dashboard/admin/maintenance', [$adminController, 'runMaintenanceAction']);
 $app->post('/dashboard/admin/users/{id}/status', [$adminController, 'updateUserStatus']);
 $app->post('/dashboard/admin/users/{id}/roles', [$adminController, 'updateUserRoles']);
 $app->post('/dashboard/admin/users/{id}/display-name', [$adminController, 'updateUserDisplayName']);

@@ -36,20 +36,24 @@
       "Composer\\Config::disableProcessTimeout",
       "php -S localhost:8000 -t public public/index.php"
     ],
+    "deploy": "php tools/deploy/deploy.php sync",
+    "deploy:status": "php tools/deploy/deploy.php status",
+    "release:keygen": "php tools/release/generate_keys.php",
+    "release:wizard": "php tools/release/prepare_wizard.php",
     "test": "php vendor/bin/phpunit --configuration phpunit.xml.dist",
     "test:install-sim": "php tools/ci/check_composer_install.php",
     "hooks:install": "git config core.hooksPath .githooks",
     "hooks:pre-commit": "php tools/ci/hook_pre_commit.php",
     "hooks:pre-push": [
       "php vendor/bin/phpunit --configuration phpunit.xml.dist --coverage-xml=tmp/coverage-xml --colors=never",
-      "php tools/ci/check_method_coverage.php tmp/coverage-xml docs/coverage-method-exceptions.json dev-main"
+      "php tools/ci/check_method_coverage.php tmp/coverage-xml"
     ],
     "coverage": [
       "php vendor/bin/phpunit --configuration phpunit.xml.dist --coverage-text --coverage-clover=coverage.xml --coverage-xml=tmp/coverage-xml --colors=never",
-      "php tools/ci/check_method_coverage.php tmp/coverage-xml docs/coverage-method-exceptions.json dev-main"
+      "php tools/ci/check_method_coverage.php tmp/coverage-xml"
     ],
-    "coverage:guard": "php tools/ci/check_method_coverage.php tmp/coverage-xml docs/coverage-method-exceptions.json dev-main",
-    "coverage:guard:v1": "php tools/ci/check_method_coverage.php tmp/coverage-xml docs/coverage-method-exceptions.json 1.0.0",
+    "coverage:guard": "php tools/ci/check_method_coverage.php tmp/coverage-xml",
+    "coverage:guard:v1": "php tools/ci/check_method_coverage.php tmp/coverage-xml",
     "coverage-html": "php vendor/bin/phpunit --configuration phpunit.xml.dist --coverage-html coverage-report"
   },
   "minimum-stability": "stable",

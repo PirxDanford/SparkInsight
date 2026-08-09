@@ -40,7 +40,7 @@ This release supports:
 - Google
 - LinkedIn
 
-For full provider app registration details (redirect URIs, production secret handling), see `docs/Setup.md`.
+For full provider app registration details (redirect URIs, production secret handling), see `docs/setup.md`.
 
 ## Composer deployment
 
@@ -56,10 +56,10 @@ If your hosting environment does not provide Composer access and only allows FTP
 
 Optional deployment diagnosis (for FTP-only servers):
 
-1. Set `DIAG_ACCESS_TOKEN` in `.env` to a temporary random value.
-2. Open `/install_diagnose.php?token=<your-token>` in the browser.
+1. Open `/install_diagnose.php` in the browser.
+2. If `DIAG_ACCESS_TOKEN` is set in `.env`, pass `?token=<your-token>`; otherwise the page is open for temporary validation.
 3. Review checks for PHP version, required extensions, `.env`, `vendor/`, and `composer.lock`.
-4. Remove `public/install_diagnose.php` or clear `DIAG_ACCESS_TOKEN` after validation.
+4. Remove `public/install_diagnose.php` after validation if you do not want a live diagnostics endpoint.
 
 Without Composer on the server, package updates must be prepared locally first and then uploaded again via FTP.
 
@@ -67,7 +67,7 @@ To reduce environment drift across hosting targets, use the production prep work
 
 ## Documentation
 
-See `docs/Setup.md` for more details on environment setup and running the app.
+See `docs/setup.md` for more details on environment setup and running the app.
 See `docs/scrivener-setup.md` for author-side Scrivener setup and backup workflow guidance.
 See `docs/imports.md` for Scrivener import workflow and import batch maintenance commands.
 See `docs/migrations.md` for migration runner usage, naming/version rules, and rollback guidance.

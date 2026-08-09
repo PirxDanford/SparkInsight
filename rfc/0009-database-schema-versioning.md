@@ -22,7 +22,7 @@ As the platform evolves, the database schema will need changes (new tables, colu
 2. **Migration Files**
    - Store migrations in `database/migrations/` directory.
    - Initial development naming: keep `001_initial_schema.sql` as the only numbered baseline; keep incremental chapter-era SQL as explicitly dev-only snapshots (for example, `dev_only_add_reviews_table.sql`).
-   - Post-`v1.0.0` release naming: use sequential numbered files for released upgrades (for example, `002_upgrade_v1_0_to_v1_1.sql`).
+   - After the first stable release, use sequential numbered files for released upgrades (for example, `002_release_upgrade.sql`).
    - Each file contains SQL for both upgrade (`UP`) and downgrade (`DOWN`) sections.
 
 3. **Migration Tool**

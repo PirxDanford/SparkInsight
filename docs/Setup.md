@@ -27,30 +27,187 @@
    composer install
    ```
 
-### Install without Composer on the server (FTP-only hosting)
+### Install and update without Composer on the server (RFC 14 package flow)
 
-If your server does not provide Composer and you can only deploy with FTP:
+If your server does not provide Composer and you deploy with FTP, follow this exact flow.
 
-1. Prepare a complete project copy locally, including `vendor/`.
-   - Use a release package that already contains dependencies, or
-   - Run `composer install` locally first, then upload that full directory.
-   - Keep `composer.lock` in the uploaded package to preserve exact dependency versions.
-2. Upload the full project via FTP.
-3. Point the host document root to `public/`.
-4. Create or upload `.env` on the server and set:
-   - `APP_URL` to your public base URL
-   - OAuth credentials for enabled providers
+If SparkInsight is already installed on the server, use only the patch/update steps in "Routine update steps" below. The "first activation" steps are one-time setup only.
+
+Required PHP extensions:
+
+- `sodium`
+- `zip` / `ZipArchive`
+
+Quick verification:
+
+- Windows:
+  ```bash
+  php -m | findstr /I "sodium zip"
+  ```
+- Linux/macOS:
+  ```bash
+  php -m | grep -Ei 'sodium|zip'
+  ```
+
+One-time first activation (new host only):
+
+1. Install dependencies locally:
+   ```bash
+   composer install
+   ```
+2. Generate signing keys once:
+   ```bash
+   composer release:keygen
+   ```
+   Fallback:
+   ```bash
+   php tools/release/generate_keys.php
+   ```
+3. Keep `.deploy/release-private.key` local only.
+4. Upload `.deploy/trusted-release-key.pub` to the server.
+5. Build a signed full package locally:
+   ```bash
+   php si.php package:build build/sparkinsight-full.zip --private-key .deploy/release-private.key --type full
+   ```
+6. Prepare the FTP wizard bundle once:
+   ```bash
+   composer release:wizard
+   ```
+   Fallback:
+   ```bash
+   php tools/release/prepare_wizard.php
+   ```
+7. Upload the contents of `.deploy/wizard` to the server web root.
+8. Open the printed `/init?token=...` URL in your browser.
+9. Upload the signed full package in `/init` and complete first activation.
+10. Open the site root and sign in.
+11. Remove `/init` from the server after successful activation.
+
+Routine update steps (already installed system):
+
+1. Build a signed package locally.
+   - Full package:
+     ```bash
+     php si.php package:build build/sparkinsight-full.zip --private-key .deploy/release-private.key --type full
+     ```
+   - Patch package:
+     ```bash
+     php si.php package:build build/sparkinsight-patch.zip --private-key .deploy/release-private.key --type patch --base-root .deploy/releases/<base-release-id>
+     ```
+       `base-release-id` is the currently active release id on the server (the `current` value in `.deploy/current.json`).
+       `--base-root` must point to a local directory that contains an exact copy of that active release content.
+       If the base root path is missing or not a real release tree, the generated patch can become effectively full-size.
+       If you do not have an exact local copy of the active release, build from a previously stored package artifact instead:
+       ```bash
+       php si.php package:build build/sparkinsight-patch.zip --private-key .deploy/release-private.key --type patch --base-package build/sparkinsight-full.zip
+       ```
+       `--base-package` accepts either a prior release ZIP (reads `manifest.json` inside) or a standalone manifest JSON file.
+   - Automatic patch filename (recommended for incremental ordering):
+     ```bash
+     php si.php package:build build --private-key .deploy/release-private.key --type patch --base-package build/sparkinsight-full.zip
+     ```
+     This creates `build/sparkinsight-patch-000001.zip`, then `...000002.zip`, and so on.
+       When patch ZIPs already exist in that output directory, SparkInsight automatically uses the latest numbered patch ZIP as the next patch base.
+       This keeps incremental chains aligned with numbered patch artifacts without changing your command each time.
+    - Reset local patch numbering and start over at `...000001.zip` (removes existing local patch ZIP + manifest sidecar files in the selected output directory):
+       ```bash
+       php si.php package:build build --private-key .deploy/release-private.key --type patch --base-package build/sparkinsight-full.zip --from-scratch
+       ```
+2. In Admin -> Packages, upload the package.
+3. SparkInsight deploys automatically after upload.
+4. Wait for the deployment result output in Admin.
+5. Open the app and verify login + key workflows.
+
+#### Rebase on current live release and clean patch backlog
+
+Use this whenever patch uploads start to feel slow, or as a daily cleanup routine.
+
+Goal:
+
+- stop growing a long patch chain;
+- make the currently live state your new baseline;
+- keep only the package artifacts you still need.
+
+Recommended flow (no mandatory full ZIP):
+
+1. In Admin -> Packages, click **Download Current Live Manifest**.
+   - This exports a manifest JSON of what is currently live on the server.
+   - Use this to rebase patch generation even if there were manual/live drift corrections.
+2. Build the next patch against that exported manifest:
+   ```bash
+   php si.php package:build build --private-key .deploy/release-private.key --type patch --base-package C:/path/to/sparkinsight-live-base-....manifest.json
+   ```
+3. Upload the patch in Admin -> Packages (auto-deploy).
+4. Verify the app (login + key workflows).
+5. Clean local patch artifacts you no longer need.
+   - Keep at least:
+     - last known good full ZIP (for emergency fallback);
+     - latest exported live-base manifest JSON;
+     - newest patches still relevant for rollback/testing.
+   - Remove/archive older patch ZIPs after the rebase patch is confirmed.
+
+Optional hard reset baseline:
+
+- If you want to collapse everything into one artifact periodically, deploy a new full package, then continue patching from that new baseline.
+
+Server-side note:
+
+- SparkInsight already clears `.deploy/releases` during deployment in the current flow.
+- If your host still accumulates old files under `.deploy/uploads`, `.deploy/state`, or `.deploy/logs`, prune old completed-operation files periodically (via FTP/file manager).
+- Never delete `.env`, `.deploy/current.json`, or trusted key files during cleanup.
+
+Practical cadence:
+
+- If you deploy many times per day, rebase to a new full package at end of day.
+- If changes are small and infrequent, rebase weekly is usually enough.
+
+Important:
+
+- Keep `.env` on the server and out of packages.
+- Set `APP_URL` and OAuth credentials directly on the server.
+
+#### First initialization without shell access (temporary password-gated flow)
+
+If you cannot run CLI/cron output reliably during first setup:
+
+1. Set `BOOTSTRAP_INIT_PASSWORD` in `.env` to a strong temporary value.
+2. Open `/bootstrap/init`.
+3. Unlock with the temporary password.
+4. Run actions in this order:
+   - Migration status
+   - Apply migrations
+   - Migration status (again)
+   - Create first admin invitation
+5. Open one generated provider invite link and complete OAuth signup for the first admin.
+6. Remove `BOOTSTRAP_INIT_PASSWORD` from `.env` immediately after bootstrap is complete.
+
+Safety notes:
+
+- Bootstrap init auto-disables by default once an admin exists.
+- `BOOTSTRAP_INIT_ALLOW_AFTER_ADMIN` should remain `0` unless you intentionally need a temporary emergency reopen.
+
+#### Confirm the server start page order before going live
+
+Some FTP hosts will serve `index.htm` or `index.html` before `index.php`, and a temporary placeholder page can hide the actual app entrypoint.
+
+1. Remove any temporary `index.htm` / `index.html` from the active web root once testing is finished.
+2. Confirm which start pages the host uses, ideally through the hosting panel or web server documentation.
+3. For Apache-style hosting, check for `DirectoryIndex` ordering in the root `.htaccess` or panel-managed settings.
+4. For nginx-style hosting, check the `index` directive in the server configuration or ask the host which filenames are prioritized.
+5. Verify that the real app entrypoint is served through the root `index.php` front controller after the placeholder page is removed.
+6. If you need a minimal probe, create a temporary one-line `index_check.php` in the web root, verify output, then remove it immediately.
 
 Optional diagnosis page for target environment:
 
-1. Add `DIAG_ACCESS_TOKEN=<temporary-random-token>` to `.env`.
-2. Open `/install_diagnose.php?token=<temporary-random-token>` in your browser.
+1. Open `/install_diagnose.php` in your browser.
+2. If `DIAG_ACCESS_TOKEN` is set in `.env`, pass `?token=<temporary-random-token>`; otherwise the page is open for temporary validation.
 3. Confirm the checks are `OK` for PHP version/extensions, `.env`, `vendor/`, and lockfile parsing.
-4. Remove `public/install_diagnose.php` or clear `DIAG_ACCESS_TOKEN` when done.
+4. Review the `Webserver context` section for values such as `SERVER_SOFTWARE`, `HTTP_HOST`, `DOCUMENT_ROOT`, `SCRIPT_FILENAME`, `SCRIPT_NAME`, and `REQUEST_URI`.
+5. Review the `Startpage clues` section. It is only conclusive when the diagnostics page is requested at `/`; a direct `/install_diagnose.php` request can still echo server context values, but it cannot prove the default start page by itself.
+6. Use the webserver context values to verify whether the host is Apache-style or nginx-style and whether the expected start page is being served.
+7. Remove `public/install_diagnose.php` after validation if you do not want a live diagnostics endpoint.
 
-For updates, repeat the same process: prepare locally, then upload via FTP.
-
-To keep releases reproducible across different target hosts, run the prep helper in `deployment/production-prep/` before uploading.
+For updates, repeat the package flow: build signed package locally, upload in Admin -> Packages, then execute `release:deploy`.
 
 ## Run locally
 
@@ -293,9 +450,9 @@ composer coverage
 This command now:
 
 1. Runs PHPUnit with text + Clover coverage output.
-2. Verifies uncovered methods against `docs/coverage-method-exceptions.json`.
+2. Fails if any executable method remains below 100% coverage.
 
-Only documented exceptions with owner are allowed, and only before the configured cutoff version. Missing or stale exceptions fail the guardrail, and all exceptions are blocked starting at the configured cutoff version (`1.0.0`).
+No exception ledger is used anymore. Every uncovered method must be covered by tests.
 
 ### Production/public install after first tag + Packagist registration
 

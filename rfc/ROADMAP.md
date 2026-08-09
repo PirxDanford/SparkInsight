@@ -1,6 +1,6 @@
 # RFC Roadmap & Tracker
 
-**Last Updated:** 2026-07-12
+**Last Updated:** 2026-08-09
 
 ## v1.0.0 Release Backlog
 
@@ -38,8 +38,8 @@ Implementation chapters are listed in dependency order, not in expected release 
 - **Chapter focus:** TDD, SOLID, quality enforcement
 - **Chapter note:** This chapter defines the quality gate for the entire `v1.0.0` release process.
 - **Chapter deliverables:**
-  - Added TDD guide: `docs/TDD-Guide.md`
-  - Added SOLID principles guide: `docs/SOLID-Principles.md`
+  - Added TDD guide: `docs/tdd-guide.md`
+  - Added SOLID principles guide: `docs/solid-principles.md`
   - Added test templates: `docs/test-templates/`
   - Refactored `GenerateInvitationCommand` for dependency injection and testability
   - Updated `InvitationService` SQL to use `CURRENT_TIMESTAMP` for SQLite compatibility
@@ -138,11 +138,21 @@ Implementation chapters are listed in dependency order, not in expected release 
 - **Chapter deliverables:**
   - Consolidated admin operations into a unified Admin dashboard experience, including user/invitation management and configurable user display names
   - Completed production-oriented authentication readiness, including validated Google and LinkedIn OAuth provider onboarding flows and setup documentation
-  - Finalized contribution and operations documentation for release readiness (`CONTRIBUTING.md`, `docs/scrivener-setup.md`, `docs/imports.md`, `docs/migrations.md`, `docs/Setup.md`)
+  - Finalized contribution and operations documentation for release readiness (`CONTRIBUTING.md`, `docs/scrivener-setup.md`, `docs/imports.md`, `docs/migrations.md`, `docs/setup.md`)
   - Implemented and enforced RFC 0010 quality gates in GitHub Actions, including commit-signing checks and CI enforcement for coverage, static analysis, style, and migration naming policy
   - Finalized Chapter 5 security completion evidence and retired the cross-phase checklist in favor of operational guidance in setup and contribution docs
   - Completed release-branch stabilization by collapsing migrations to the single release baseline (`database/migrations/001_initial_schema.sql`) and verifying schema/data-flow reproducibility
   - Confirmed Chapter 5 RFC status completion by marking RFCs 0003, 0004, 0005, 0010, and 0012 as implemented in roadmap/source tracking
+
+#### Security review sign-off notes (2026-07-12)
+
+The release sign-off review covered release-readiness controls, contributor enforcement, and deployment controls for Composer and FTP-style hosting. The review concluded that the controls were acceptable for the v1.0.0 release preparation, provided GitHub branch protection requires the relevant CI checks before merge or tagging.
+
+Operational requirements retained for cutover:
+- Protect `.env` and OAuth secrets on the target host.
+- Remove or disable install diagnostics immediately after validation.
+- Keep deployment-prep reports and latest green CI evidence with release sign-off notes.
+- Confirm branch protection requires CI before merging or tagging the release branch.
 
 ### Release Readiness
 
@@ -152,23 +162,24 @@ Implementation chapters are listed in dependency order, not in expected release 
 
 Chapter 5 security review was completed on 2026-07-12. It verified release-branch CI coverage, strict signed-commit enforcement on `release/*`, contributor quality-gate expectations, FTP deployment secret handling, migration rollback guidance, and deployment preparation evidence capture. Remaining release-readiness work is operational execution of those controls, not additional Chapter 5 security design.
 
-The former cross-phase security checklist has been retired. Security controls are now tracked directly in chapter completion evidence and maintained operationally in `docs/Setup.md` and `CONTRIBUTING.md`.
+The former cross-phase security checklist has been retired. Security controls are now tracked directly in chapter completion evidence and maintained operationally in `docs/setup.md` and `CONTRIBUTING.md`.
 
 #### Release Readiness Checklist
 
-- [ ] Implement and enable all important GitHub Actions checks for release confidence
-- [ ] Ensure required GitHub Actions checks are green on `release/v1.0.0`
-- [ ] Prepare release branch code for FTP production deployment
-- [ ] Validate install/bootstrap on production via FTP and confirm the app runs
-- [ ] Verify install/upgrade path behavior on FTP production deployment
+- [x] Implement and enable all important GitHub Actions checks for release confidence
+- [x] Ensure required GitHub Actions checks are green on `release/v1.0.0`
+- [x] Prepare release branch code for FTP production deployment
+- [x] Validate install/bootstrap on production via FTP and confirm the app runs
+- [x] Verify install/upgrade path behavior on FTP production deployment
 - [ ] Validate critical online flows (auth, import/migration, reviewer/author/admin)
 - [ ] Iterate fixes and redeploy until production behavior is stable
-- [ ] Confirm practical rollback path for FTP deployment is known and workable
+- [ ] Remove the legacy file-by-file FTP deployment path after RFC 0014 is validated
 - [ ] Close blocking production findings and defer only non-blocking follow-up work to `v1.0.1+`
 - [ ] Re-run required GitHub Actions checks after final production hardening changes
 - [ ] Record evidence links/notes for latest green GitHub Actions runs and production validation in the release PR/issue
 - [ ] Eliminate all method-coverage exceptions so the exception ledger is empty before `v1.0.0` tagging
 - [ ] Delete the method-coverage exception framework and enforce strict uncovered-method test checks at all times
+- [ ] Run a super-strict pre-release content-safety audit for all UI/media/text assets, explicitly screening for anything that could be interpreted as illegal or immoral before `v1.0.0` tagging - we want 0 findings, not even slightly ambigous ones
 - [ ] Tag `v1.0.0` only when production validation is good and required GitHub Actions checks are green
 
 #### Post-Release Maintenance
@@ -194,6 +205,10 @@ The former cross-phase security checklist has been retired. Security controls ar
 - [ ] Add account-linking UX for multi-provider identities (same-email conflict messaging, provider management UI)
 - [x] Created RFC 0013 to formalize v1.1 reviewer cross-device scope.
 
+## v2 Exploration
+
+- [ ] Consider extracting the package-recognition and upload-package preparation flow into standalone tooling so the same logic can be reused outside the web app, with possible native binaries for different target systems. RFC 0014 stays PHP-first for v1, and no fallback deployment path is planned.
+
 ---
 
 ## RFC Status Overview
@@ -202,7 +217,8 @@ The former cross-phase security checklist has been retired. Security controls ar
 |---|-------|--------|---------|----------|-------|
 | 0011 | Quality-First Development Framework | Implemented | 0 | **CRITICAL** | Foundation for all chapters (ADR 0006, ADR 0007) |
 | 0010 | GitHub Actions quality gates | Implemented | 5 | High | CI/CD enforces TDD & SOLID via PHPUnit, PHPStan, PHP-CS-Fixer, commit signing, and coverage checks (90%+ threshold) |
-| 0013 | Reviewer Cross-Device Experience (v1.1) | Draft | v1.1 | Medium | Defines tablet/mobile reviewer UX and acceptance criteria; keeps v1.0.0 desktop-focused |
+| 0014 | Package-Based Installation and Updates | Implemented | 5 | High | Implemented constrained-host package flow: signed full/patch packages, init wizard bundle, admin package intake with deploy, live-manifest base matching, recovery/finalization path, and numbered patch ergonomics |
+| 0013 | Reviewer Cross-Device Experience | Draft | v1.1 | Medium | Defines tablet/mobile reviewer UX and acceptance criteria; keeps v1.0.0 desktop-focused |
 | 0006 | User management & authentication | Implemented | 1 | High | Completed with invitation-based signup and OAuth login flows |
 | 0007 | Data importing method | Implemented | 2 | High | Implemented: `src/Service/ContentImportService.php`, `src/Command/ScrivenerImportCommand.php`, baseline schema in `database/migrations/001_initial_schema.sql` (dev snapshot retained as `database/migrations/dev_only_add_content_versions_and_reviews.sql`) |
 | 0009 | Database schema versioning | Implemented | 2 | High | Implemented: `src/Service/MigrationRunner.php`, `src/Command/MigrateDbCommand.php`, migrations in `database/migrations/` |

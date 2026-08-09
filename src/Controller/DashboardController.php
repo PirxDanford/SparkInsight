@@ -10,7 +10,9 @@ use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Views\PhpRenderer;
+use Psr\Http\Message\UploadedFileInterface;
 use SparkInsight\Service\AuthorPdfExportService;
+use SparkInsight\Service\BookPackageImportService;
 use SparkInsight\Service\UserSession;
 use SparkInsight\Support\ReaderPresentationBuilder;
 use Throwable;
@@ -26,6 +28,7 @@ final class DashboardController
         private readonly UserSession $session,
         private readonly Connection $connection,
         private readonly ?AuthorPdfExportService $authorPdfExportService = null,
+        private readonly ?BookPackageImportService $bookPackageImportService = null,
     ) {
     }
 
@@ -518,6 +521,95 @@ final class DashboardController
         );
 
         return $response->withHeader('Location', $itemUrl)->withStatus(302);
+    }
+
+    public function deleteAuthorBook(Request $request, Response $response, array $args): Response
+    {
+        if (!$this->session->isLoggedIn()) {
+            return $response->withHeader('Location', '/login')->withStatus(302);
+        }
+
+        $user = $this->session->getUser();
+        $roles = $this->getUserRoles($user);
+        if (!$this->canAuthor($roles)) {
+            return $response->withHeader('Location', '/dashboard')->withStatus(302);
+        }
+
+        $data = (array) ($request->getParsedBody() ?? []);
+        if (!is_array($data) || !$this->validateReviewSubmissionCsrf($data)) {
+            $this->session->setFlash('error', 'Delete request could not be verified. Please try again.');
+
+            return $response->withHeader('Location', '/dashboard/author')->withStatus(302);
+        }
+
+        $contentVersionId = max(0, (int) ($args['id'] ?? 0));
+        $confirmed = mb_strtolower(mb_trim((string) ($data['confirm_delete'] ?? ''))) === 'yes';
+        if ($contentVersionId <= 0 || !$confirmed) {
+            $this->session->setFlash('warning', 'Please confirm the deletion before continuing.');
+
+            return $response->withHeader('Location', '/dashboard/author')->withStatus(302);
+        }
+
+        $authorId = (int) ($user['id'] ?? 0);
+        $this->connection->executeStatement(
+            'DELETE FROM content_versions WHERE id = ? AND author_id = ?',
+            [$contentVersionId, $authorId],
+        );
+        $this->session->setFlash('success', 'Book deleted.');
+
+        return $response->withHeader('Location', '/dashboard/author')->withStatus(302);
+    }
+
+    public function uploadAuthorBookPackage(Request $request, Response $response): Response
+    {
+        if (!$this->session->isLoggedIn()) {
+            return $response->withHeader('Location', '/login')->withStatus(302);
+        }
+
+        $user = $this->session->getUser();
+        $roles = $this->getUserRoles($user);
+        if (!$this->canAuthor($roles)) {
+            return $response->withHeader('Location', '/dashboard')->withStatus(302);
+        }
+
+        $data = (array) ($request->getParsedBody() ?? []);
+        if (!$this->validateReviewSubmissionCsrf($data)) {
+            $this->session->setFlash('error', 'Invalid form submission. Please try again.');
+
+            return $response->withHeader('Location', '/dashboard/author')->withStatus(302);
+        }
+
+        $uploadedFiles = $request->getUploadedFiles();
+        $packageFile = $uploadedFiles['book_package'] ?? null;
+        if (!$packageFile instanceof UploadedFileInterface || $packageFile->getError() !== UPLOAD_ERR_OK) {
+            $this->session->setFlash('error', 'Select a valid book package ZIP before uploading.');
+
+            return $response->withHeader('Location', '/dashboard/author')->withStatus(302);
+        }
+
+        $tempDirectory = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'sparkinsight-book-upload-' . bin2hex(random_bytes(8));
+        $tempPackagePath = $tempDirectory . DIRECTORY_SEPARATOR . 'uploaded-book-package.zip';
+
+        try {
+            if (!mkdir($tempDirectory, 0700, true) && !is_dir($tempDirectory)) {
+                throw new \RuntimeException('Could not create a temporary upload directory.');
+            }
+
+            $packageFile->moveTo($tempPackagePath);
+            $importService = $this->bookPackageImportService ?? new BookPackageImportService($this->connection);
+            $result = $importService->importFromPackage($tempPackagePath, (int) ($user['id'] ?? 0));
+
+            $this->session->setFlash('success', sprintf('Book package uploaded and imported (%s).', (string) ($result['book_title'] ?: 'book')));
+        } catch (Throwable $e) {
+            $this->session->setFlash('error', 'Book package upload failed: ' . $e->getMessage());
+        } finally {
+            if (is_dir($tempDirectory)) {
+                @unlink($tempPackagePath);
+                @rmdir($tempDirectory);
+            }
+        }
+
+        return $response->withHeader('Location', '/dashboard/author')->withStatus(302);
     }
 
     public function exportAuthorPdf(Request $request, Response $response): Response

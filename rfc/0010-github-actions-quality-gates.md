@@ -24,11 +24,11 @@ Currently, there are no automated checks on commits or pull requests. Code quali
    - PHPUnit test execution
    - Code coverage reporting (when driver available)
    - Composer dependency validation
-   - Migration naming policy enforcement for `database/migrations/` (allow `001_initial_schema.sql` as the only initial-development numbered baseline, require `dev_only_*.sql` for chapter-era development snapshots, and reserve next numbered migrations for release upgrades like `002_upgrade_v1_0_to_v1_1.sql`)
+   - Migration naming policy enforcement for `database/migrations/` (allow `001_initial_schema.sql` as the only initial-development numbered baseline, require `dev_only_*.sql` for chapter-era development snapshots, and reserve next numbered migrations for release upgrades like `002_release_upgrade.sql`)
    - Basic security scans (e.g., via tools like PHPStan or Psalm if added later)
 
 3. Workflow structure:
-   - Use matrix builds for multiple PHP versions if needed (initially focus on PHP 8.5)
+   - Use matrix builds for multiple supported PHP runtimes if needed
    - Cache Composer dependencies and vendor folder
    - Store test results and coverage reports as artifacts
    - Fail the build on test failures or low coverage thresholds (configurable)
@@ -70,7 +70,7 @@ This RFC is the CI/CD implementation vehicle for **RFC 0011: Quality-First Devel
   - Code style checks (PSR-12 consistency)
   - Dependency quality validation
 
-## Implementation (v1.0.0)
+## Implementation
 
 Completed 2026-07-12. The following quality gates have been implemented:
 
@@ -93,8 +93,8 @@ Enhanced with:
 
 ### Tooling & Configuration
 
-- **PHPStan** (v1.12.33): Configured with max level type checking, baseline file for existing issues
-- **PHP-CS-Fixer** (v3.95.13): PSR-12 + PHP 8.1+ migration rules, ~90% of available fixers enabled
+- **PHPStan**: Configured with max level type checking and a baseline file for existing issues
+- **PHP-CS-Fixer**: Configured with PSR-12 and modern PHP migration rules
 - **Composer Dependencies:** Both tools added as `require-dev` dependencies
 - **Memory Optimization:** PHPStan runs with `--memory-limit=512M` to handle large codebase analysis
 
@@ -122,9 +122,9 @@ Enhanced with:
 - Baseline allows new contributions without regression while enabling incremental type safety improvements
 - Future work can remove items from baseline as code is refactored
 
-### Next Steps (v1.1+)
+### Next Steps
 
-- Upgrade to PHPStan 2.x (mentioned in output; offers level 10, ~50-70% less memory)
+- Upgrade to a newer PHPStan major release after compatibility validation
 - Add SARIF output for GitHub Security tab integration
 - Consider adding Psalm as complementary type checker
 - Expand to include mutation testing (Infection PHP)

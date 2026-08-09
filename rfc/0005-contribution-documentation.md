@@ -70,7 +70,7 @@ Clear documentation lowers the barrier to entry, ensures consistency, and foster
 - ADR 0007: Apply SOLID Principles
 - RFC 0011: Quality-First Development Framework
 
-## Implementation (v1.0.0)
+## Implementation
 
 Completed 2026-07-12.
 

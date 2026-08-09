@@ -5,7 +5,7 @@ This guide explains how authors should prepare Scrivener projects and backups so
 Use this guide together with:
 
 - `docs/imports.md` for CLI import execution and batch maintenance
-- `docs/Setup.md` for local/server environment setup
+- `docs/setup.md` for local/server environment setup
 
 ## Quick Start Checklist
 

@@ -1,12 +1,13 @@
 <?php
 $title = 'Sign Up';
 $user ??= null;
+require_once __DIR__ . '/partials/logo-system.php';
 ob_start();
 ?>
 <div class="hero-panel">
     <div class="hero-content">
         <div class="signup-brand">
-            <img class="signup-brand-mark" src="/assets/sparkinsight-logo.png" alt="SparkInsight Logo">
+            <?php renderSparkInsightLogo('brand', false); ?>
             <h1 class="hero-title">Sign Up</h1>
             <p class="hero-subtitle">Join SparkInsight</p>
         </div>

@@ -567,6 +567,17 @@ ob_start();
                 <p>Resolve reviewer feedback, keep binder hierarchy visible, and export selected items.</p>
             </div>
 
+            <form class="queue-filters" method="post" action="/dashboard/author/upload-book-package" enctype="multipart/form-data">
+                <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars((string) ($csrf_token ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
+                <label class="queue-filter-search" style="max-width: 30rem;">
+                    <span>Upload book package</span>
+                    <input type="file" name="book_package" accept=".zip" required>
+                </label>
+                <div class="queue-filter-actions">
+                    <button type="submit" class="button small">Import package</button>
+                </div>
+            </form>
+
             <form class="queue-filters" method="get" action="/dashboard/author">
                 <label class="queue-filter-search">
                     <span>Search</span>
@@ -700,6 +711,11 @@ ob_start();
                                                     </a>
                                                 <?php } else { ?>
                                                     <span class="queue-item-title-static <?php echo !empty($row['is_directory']) ? 'queue-item-title-directory' : 'queue-item-title-content'; ?>"><?php echo htmlspecialchars($displayTitle, ENT_QUOTES, 'UTF-8'); ?></span>
+                                                <?php } ?>
+                                                <?php if (empty($row['is_directory']) && !empty($row['is_openable'])) { ?>
+                                                    <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars((string) ($csrf_token ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
+                                                    <input type="hidden" name="confirm_delete" value="yes">
+                                                    <button type="submit" class="button small secondary" formaction="/dashboard/author/<?php echo (int) ($row['id'] ?? 0); ?>/delete" formmethod="post" onclick="return confirm('Delete this book entry? This cannot be undone.');" style="margin-left:0.75rem;">Delete</button>
                                                 <?php } ?>
                                                 <?php if (!empty($row['is_directory'])) { ?>
                                                     <span class="queue-folder-count-badge" title="Direct children in this folder"><?php echo $childFolderCount; ?> folders · <?php echo $childItemCount; ?> items</span>

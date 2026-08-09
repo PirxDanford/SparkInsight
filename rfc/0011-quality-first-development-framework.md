@@ -116,7 +116,7 @@ SparkInsight handles critical feedback workflows for manuscript review. Authors 
 - ADR 0006: Adopt Test-Driven Development (TDD)
 - ADR 0007: Apply SOLID Principles
 - ADR 0003: Conventional Commits and Semantic Versioning
-- ADR 0004: PHP 8.5 & MariaDB
+- ADR 0004: Runtime and database platform
 - ADR 0005: Slim and League OAuth2 Client
 
 ## Links

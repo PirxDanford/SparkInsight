@@ -55,7 +55,7 @@ Documentation must reference:
 - **ADR 0006**: Adopt Test-Driven Development (how authors can validate imports locally)
 - **ADR 0007**: Apply SOLID Principles (structured approach to import configuration)
 
-## Implementation (v1.0.0)
+## Implementation
 
 Completed 2026-07-12.
 

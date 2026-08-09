@@ -2,6 +2,7 @@
 $title = 'Login';
 $user ??= null;
 $providers = isset($providers) && is_array($providers) ? $providers : [];
+require_once __DIR__ . '/partials/logo-system.php';
 ob_start();
 ?>
 <div class="hero-panel">
@@ -15,13 +16,7 @@ ob_start();
 
             <div class="reading-scene" aria-hidden="true">
                 <div class="reading-glow"></div>
-                <div class="book-shell">
-                    <div class="book-spine"></div>
-                    <div class="book-page page-left"></div>
-                    <div class="book-page page-right"></div>
-                    <div class="book-turn turn-one"></div>
-                    <div class="book-turn turn-two"></div>
-                </div>
+                <?php renderSparkInsightLogo('hero'); ?>
                 <div class="reader-beam"></div>
             </div>
         </section>

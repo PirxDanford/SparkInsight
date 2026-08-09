@@ -34,5 +34,4 @@ _tmp_noenv_runner/
 coverage.xml
 tmp/coverage-xml/
 tmp/coverage-xml-strict/
-tmp/generated-coverage-exceptions.json
 tmp/strict-guardrail.txt

@@ -59,7 +59,7 @@ php vendor/bin/phpunit --filter testCreateUserWithValidEmail
 
 ## Need Help?
 
-1. Read `docs/TDD-Guide.md` for detailed TDD practices
+1. Read `docs/tdd-guide.md` for detailed TDD practices
 2. Look at existing tests in `tests/Unit/` for examples
 3. Check `tests/Integration/` for integration test patterns
 4. Ask during code review - reviewers can help improve test quality

@@ -1,14 +1,13 @@
 <?php
 $title = 'Home';
 $user ??= null; // Make user available in template
+require_once __DIR__ . '/partials/logo-system.php';
 ob_start();
 ?>
 <div class="hero-panel">
     <div class="hero-content">
-        <div class="logo-placeholder">
-            <div class="logo-circle">
-                <span class="logo-text">SI</span>
-            </div>
+        <div class="signup-brand">
+            <?php renderSparkInsightLogo('brand', false); ?>
             <h1 class="hero-title">SparkInsight</h1>
             <p class="hero-subtitle">Modern Review Workflows</p>
         </div>

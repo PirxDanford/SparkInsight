@@ -69,6 +69,59 @@ final class InvitationService
         return $deleted > 0;
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function getInvitationByCode(string $code): ?array
+    {
+        $result = $this->connection->executeQuery(
+            'SELECT invitations.*, u.name AS used_by_name, u.email AS used_by_email FROM invitations LEFT JOIN users u ON invitations.used_by = u.id WHERE invitations.code = ?',
+            [$code],
+        )->fetchAssociative();
+
+        if (!is_array($result)) {
+            return null;
+        }
+
+        $expiresAt = $result['expires_at'] ? new DateTime((string) $result['expires_at']) : null;
+        $status = 'pending';
+
+        if ($result['used_at'] !== null) {
+            $status = 'used';
+        } elseif ($expiresAt !== null && $expiresAt <= new DateTime()) {
+            $status = 'expired';
+        }
+
+        $usedByLabel = null;
+        if (!empty($result['used_by_name']) || !empty($result['used_by_email'])) {
+            $name = mb_trim((string) ($result['used_by_name'] ?? ''));
+            $email = mb_trim((string) ($result['used_by_email'] ?? ''));
+
+            if ($name !== '' && $email !== '') {
+                $usedByLabel = sprintf('%s <%s>', $name, $email);
+            } elseif ($name !== '') {
+                $usedByLabel = $name;
+            } elseif ($email !== '') {
+                $usedByLabel = $email;
+            }
+        }
+
+        return [
+            'id' => $result['id'],
+            'code' => $result['code'],
+            'email' => $result['email'],
+            'roles' => json_decode((string) ($result['roles'] ?? '[]'), true),
+            'used_by' => $result['used_by'],
+            'used_by_name' => $result['used_by_name'] ?? null,
+            'used_by_email' => $result['used_by_email'] ?? null,
+            'used_by_display' => $usedByLabel,
+            'used_at' => $result['used_at'],
+            'created_at' => $result['created_at'],
+            'expires_at' => $result['expires_at'],
+            'status' => $status,
+        ];
+    }
+
     public function getInvitations(array $filters = [], int $limit = 50, int $offset = 0): array
     {
         $where = [];

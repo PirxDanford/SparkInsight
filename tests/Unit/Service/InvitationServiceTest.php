@@ -204,4 +204,109 @@ class InvitationServiceTest extends TestCase
             'role' => 'reviewer',
         ], 50, 0);
     }
+
+    public function testGetInvitationByCodeReturnsNullWhenNotFound(): void
+    {
+        $resultMock = $this->createMock(Result::class);
+        $resultMock->method('fetchAssociative')->willReturn(false);
+
+        $this->connection->expects($this->once())
+            ->method('executeQuery')
+            ->with(
+                'SELECT invitations.*, u.name AS used_by_name, u.email AS used_by_email FROM invitations LEFT JOIN users u ON invitations.used_by = u.id WHERE invitations.code = ?',
+                ['missing-code']
+            )
+            ->willReturn($resultMock);
+
+        $this->assertNull($this->invitationService->getInvitationByCode('missing-code'));
+    }
+
+    public function testGetInvitationByCodeReturnsUsedStatusAndCombinedDisplayLabel(): void
+    {
+        $row = [
+            'id' => 8,
+            'code' => 'used-code',
+            'email' => 'invitee@example.com',
+            'roles' => '["admin"]',
+            'used_by' => 12,
+            'used_by_name' => 'Jane Admin',
+            'used_by_email' => 'jane@example.com',
+            'used_at' => '2026-01-03 12:00:00',
+            'created_at' => '2026-01-01 00:00:00',
+            'expires_at' => '2026-01-10 00:00:00',
+        ];
+
+        $resultMock = $this->createMock(Result::class);
+        $resultMock->method('fetchAssociative')->willReturn($row);
+
+        $this->connection->expects($this->once())
+            ->method('executeQuery')
+            ->willReturn($resultMock);
+
+        $invitation = $this->invitationService->getInvitationByCode('used-code');
+
+        $this->assertIsArray($invitation);
+        $this->assertSame('used', $invitation['status']);
+        $this->assertSame('Jane Admin <jane@example.com>', $invitation['used_by_display']);
+        $this->assertSame(['admin'], $invitation['roles']);
+    }
+
+    public function testGetInvitationByCodeReturnsExpiredStatusAndNameOnlyDisplayLabel(): void
+    {
+        $row = [
+            'id' => 9,
+            'code' => 'expired-code',
+            'email' => null,
+            'roles' => '["reviewer"]',
+            'used_by' => null,
+            'used_by_name' => 'Only Name',
+            'used_by_email' => '',
+            'used_at' => null,
+            'created_at' => '2025-01-01 00:00:00',
+            'expires_at' => '2025-01-02 00:00:00',
+        ];
+
+        $resultMock = $this->createMock(Result::class);
+        $resultMock->method('fetchAssociative')->willReturn($row);
+
+        $this->connection->expects($this->once())
+            ->method('executeQuery')
+            ->willReturn($resultMock);
+
+        $invitation = $this->invitationService->getInvitationByCode('expired-code');
+
+        $this->assertIsArray($invitation);
+        $this->assertSame('expired', $invitation['status']);
+        $this->assertSame('Only Name', $invitation['used_by_display']);
+    }
+
+    public function testGetInvitationByCodeReturnsPendingStatusAndEmailOnlyDisplayLabel(): void
+    {
+        $future = (new \DateTime('+3 days'))->format('Y-m-d H:i:s');
+        $row = [
+            'id' => 10,
+            'code' => 'pending-code',
+            'email' => null,
+            'roles' => '["author"]',
+            'used_by' => null,
+            'used_by_name' => '',
+            'used_by_email' => 'only-email@example.com',
+            'used_at' => null,
+            'created_at' => '2026-01-01 00:00:00',
+            'expires_at' => $future,
+        ];
+
+        $resultMock = $this->createMock(Result::class);
+        $resultMock->method('fetchAssociative')->willReturn($row);
+
+        $this->connection->expects($this->once())
+            ->method('executeQuery')
+            ->willReturn($resultMock);
+
+        $invitation = $this->invitationService->getInvitationByCode('pending-code');
+
+        $this->assertIsArray($invitation);
+        $this->assertSame('pending', $invitation['status']);
+        $this->assertSame('only-email@example.com', $invitation['used_by_display']);
+    }
 }

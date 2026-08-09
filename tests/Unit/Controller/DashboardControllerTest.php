@@ -7,6 +7,8 @@ namespace SparkInsightTest\Unit\Controller;
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use SparkInsight\Service\BookPackageImportService;
+use Psr\Http\Message\UploadedFileInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Slim\Psr7\Factory\ServerRequestFactory;
@@ -31,7 +33,24 @@ class DashboardControllerTest extends TestCase
         $this->session = new UserSession();
         $this->connection = $this->createMock(Connection::class);
         $this->pdfExportService = $this->createMock(AuthorPdfExportService::class);
-        $this->controller = new DashboardController($this->renderer, $this->session, $this->connection, $this->pdfExportService);
+        $bookPackageImportService = new class($this->connection) extends BookPackageImportService {
+            public function __construct(Connection $connection)
+            {
+                parent::__construct($connection);
+            }
+
+            public function importFromPackage(string $packagePath, int $authorId): array
+            {
+                return [
+                    'imported' => 1,
+                    'book_title' => 'Stubbed Book',
+                    'version_label_prefix' => 'draft',
+                    'source_format' => 'scrivener',
+                    'manifest' => [],
+                ];
+            }
+        };
+        $this->controller = new DashboardController($this->renderer, $this->session, $this->connection, $this->pdfExportService, $bookPackageImportService);
     }
 
     protected function tearDown(): void
@@ -478,6 +497,133 @@ class DashboardControllerTest extends TestCase
         $result = $this->controller->review($request, $response);
 
         $this->assertSame($response, $result);
+    }
+
+    public function testUploadAuthorBookPackageWithMissingFileShowsError(): void
+    {
+        $this->session->setUser(['id' => 1, 'name' => 'Author', 'roles' => ['author']]);
+
+        $request = $this->createMock(ServerRequestInterface::class);
+        $request->expects($this->once())
+            ->method('getParsedBody')
+            ->willReturn(['_csrf' => $this->session->getCsrfToken()]);
+        $request->expects($this->once())
+            ->method('getUploadedFiles')
+            ->willReturn([]);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->with('Location', '/dashboard/author')
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withStatus')
+            ->with(302)
+            ->willReturn($response);
+
+        $result = $this->controller->uploadAuthorBookPackage($request, $response);
+
+        $this->assertSame($response, $result);
+        $this->assertSame(['type' => 'error', 'message' => 'Select a valid book package ZIP before uploading.'], $this->session->getFlash());
+    }
+
+    public function testDeleteAuthorBookDeletesOwnedBookWithConfirmation(): void
+    {
+        $this->session->setUser(['id' => 4, 'name' => 'Author', 'roles' => ['author']]);
+
+        $request = $this->createMock(ServerRequestInterface::class);
+        $request->expects($this->once())
+            ->method('getParsedBody')
+            ->willReturn([
+                '_csrf' => $this->session->getCsrfToken(),
+                'confirm_delete' => 'yes',
+            ]);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->with('Location', '/dashboard/author')
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withStatus')
+            ->with(302)
+            ->willReturn($response);
+
+        $this->connection->expects($this->once())
+            ->method('executeStatement')
+            ->with(
+                'DELETE FROM content_versions WHERE id = ? AND author_id = ?',
+                [77, 4],
+            );
+
+        $result = $this->controller->deleteAuthorBook($request, $response, ['id' => '77']);
+
+        $this->assertSame($response, $result);
+        $this->assertSame(['type' => 'success', 'message' => 'Book deleted.'], $this->session->getFlash());
+    }
+
+    public function testDeleteAuthorBookRequiresConfirmationBeforeDelete(): void
+    {
+        $this->session->setUser(['id' => 4, 'name' => 'Author', 'roles' => ['author']]);
+
+        $request = $this->createMock(ServerRequestInterface::class);
+        $request->expects($this->once())
+            ->method('getParsedBody')
+            ->willReturn([
+                '_csrf' => $this->session->getCsrfToken(),
+                'confirm_delete' => 'no',
+            ]);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->with('Location', '/dashboard/author')
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withStatus')
+            ->with(302)
+            ->willReturn($response);
+
+        $this->connection->expects($this->never())->method('executeStatement');
+
+        $result = $this->controller->deleteAuthorBook($request, $response, ['id' => '77']);
+
+        $this->assertSame($response, $result);
+        $this->assertSame(['type' => 'warning', 'message' => 'Please confirm the deletion before continuing.'], $this->session->getFlash());
+    }
+
+    public function testUploadAuthorBookPackageSuccessSetsSuccessFlash(): void
+    {
+        $this->session->setUser(['id' => 1, 'name' => 'Author', 'roles' => ['author']]);
+
+        $uploadedFile = $this->createMock(UploadedFileInterface::class);
+        $uploadedFile->expects($this->once())->method('getError')->willReturn(UPLOAD_ERR_OK);
+        $uploadedFile->expects($this->once())
+            ->method('moveTo')
+            ->with($this->callback(static fn (string $path): bool => str_ends_with($path, 'uploaded-book-package.zip')));
+
+        $request = $this->createMock(ServerRequestInterface::class);
+        $request->expects($this->once())
+            ->method('getParsedBody')
+            ->willReturn(['_csrf' => $this->session->getCsrfToken()]);
+        $request->expects($this->once())
+            ->method('getUploadedFiles')
+            ->willReturn(['book_package' => $uploadedFile]);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->with('Location', '/dashboard/author')
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withStatus')
+            ->with(302)
+            ->willReturn($response);
+
+        $result = $this->controller->uploadAuthorBookPackage($request, $response);
+
+        $this->assertSame($response, $result);
+        $this->assertSame(['type' => 'success', 'message' => 'Book package uploaded and imported (Stubbed Book).'], $this->session->getFlash());
     }
 
     public function testAuthorsRendersForAuthor(): void

@@ -54,18 +54,60 @@ function shortValue(string $value): string
     return $value === '' ? '(empty)' : 'set';
 }
 
+/**
+ * @param array<int, string> $keys
+ */
+function printServerContext(array $keys): void
+{
+    echo 'Webserver context:' . PHP_EOL;
+    foreach ($keys as $key) {
+        $value = $_SERVER[$key] ?? '';
+        if (is_array($value)) {
+            $value = implode(', ', array_map(static fn ($item): string => (string) $item, $value));
+        }
+
+        $value = (string) $value;
+        printCheck($key, $value !== '', $value !== '' ? $value : '(empty)');
+    }
+}
+
+function printStartPageClues(): void
+{
+    echo 'Startpage clues:' . PHP_EOL;
+
+    $scriptName = (string) ($_SERVER['SCRIPT_NAME'] ?? '');
+    $phpSelf = (string) ($_SERVER['PHP_SELF'] ?? '');
+    $scriptFilename = (string) ($_SERVER['SCRIPT_FILENAME'] ?? '');
+    $requestUri = (string) ($_SERVER['REQUEST_URI'] ?? '');
+
+    printCheck('Active script', $scriptName !== '', $scriptName !== '' ? $scriptName : '(empty)');
+    printCheck('PHP self', $phpSelf !== '', $phpSelf !== '' ? $phpSelf : '(empty)');
+    printCheck('Script filename', $scriptFilename !== '', $scriptFilename !== '' ? $scriptFilename : '(empty)');
+    printCheck('Request URI', $requestUri !== '', $requestUri !== '' ? $requestUri : '(empty)');
+
+    $isRootRequest = $requestUri === '/' || $requestUri === '';
+    $servedThroughIndexPhp = str_ends_with($scriptName, '/index.php') || str_ends_with($phpSelf, '/index.php');
+
+    if ($isRootRequest) {
+        printCheck(
+            'index.php entrypoint',
+            $servedThroughIndexPhp,
+            $servedThroughIndexPhp
+                ? 'root request reached public/index.php'
+                : 'root request reached a different script; a placeholder startpage may still be active',
+        );
+
+        return;
+    }
+
+    echo '[OK] index.php entrypoint: direct probe request; use / to validate the default start page' . PHP_EOL;
+}
+
 $env = parseEnvFile($envPath);
 $token = $env['DIAG_ACCESS_TOKEN'] ?? '';
 $providedToken = $_GET['token'] ?? '';
 
-if ($token === '') {
-    http_response_code(403);
-    echo 'SparkInsight install diagnostics' . PHP_EOL;
-    echo 'Access denied: set DIAG_ACCESS_TOKEN in .env and call this URL with ?token=...' . PHP_EOL;
-    exit(1);
-}
-
-if (!hash_equals($token, (string) $providedToken)) {
+if ($token !== '' && !hash_equals($token, (string) $providedToken)) {
     http_response_code(403);
     echo 'SparkInsight install diagnostics' . PHP_EOL;
     echo 'Access denied: invalid token.' . PHP_EOL;
@@ -79,6 +121,26 @@ if ($hasVendorAutoload) {
 
 echo 'SparkInsight install diagnostics' . PHP_EOL;
 echo 'Generated at: ' . date(DATE_ATOM) . PHP_EOL;
+echo PHP_EOL;
+
+printServerContext([
+    'SERVER_SOFTWARE',
+    'SERVER_NAME',
+    'HTTP_HOST',
+    'DOCUMENT_ROOT',
+    'SCRIPT_FILENAME',
+    'SCRIPT_NAME',
+    'PHP_SELF',
+    'REQUEST_URI',
+    'REQUEST_METHOD',
+    'SERVER_ADDR',
+    'REMOTE_ADDR',
+    'HTTPS',
+]);
+
+echo PHP_EOL;
+printStartPageClues();
+
 echo PHP_EOL;
 
 $phpVersionOk = version_compare(PHP_VERSION, '8.1.0', '>=');
@@ -155,4 +217,6 @@ foreach ($requiredEnvKeys as $key) {
 }
 
 echo PHP_EOL;
-echo 'Note: Remove install_diagnose.php or clear DIAG_ACCESS_TOKEN after validation.' . PHP_EOL;
+echo $token !== ''
+    ? 'Note: DIAG_ACCESS_TOKEN is configured, so ?token=... is required while it remains set.' . PHP_EOL
+    : 'Note: DIAG_ACCESS_TOKEN is not set, so this page is open for temporary validation.' . PHP_EOL;
