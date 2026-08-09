@@ -45,7 +45,7 @@ final class ReleasePreflight
         }
 
         $freeDisk = @disk_free_space($releaseRoot);
-        if (is_float($freeDisk) ? $freeDisk <= 0 : $freeDisk === false || $freeDisk <= 0) {
+        if ($freeDisk === false || $freeDisk <= 0) {
             $problems[] = 'Unable to determine free disk space.';
         }
 

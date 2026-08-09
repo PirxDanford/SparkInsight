@@ -820,11 +820,7 @@ final class AdminController
 
         $commandConfig = $commands[$action];
         $commandInput = (array) $commandConfig['input'];
-        $commandName = (string) ($commandInput['command'] ?? '');
-
-        if ($commandName === '') {
-            throw new RuntimeException('Maintenance action has no command configured.');
-        }
+        $commandName = (string) $commandInput['command'];
 
         $commandArgs = [PHP_BINARY, $projectDirectory . DIRECTORY_SEPARATOR . 'si.php', '--no-ansi'];
         $commandArgs[] = $commandName;
@@ -842,7 +838,7 @@ final class AdminController
             if (is_array($value)) {
                 foreach ($value as $item) {
                     $commandArgs[] = '--' . mb_ltrim((string) $name, '-');
-                    if ($item !== '' && $item !== null) {
+                    if ($item !== '') {
                         $commandArgs[] = (string) $item;
                     }
                 }
@@ -896,13 +892,13 @@ final class AdminController
             return $this->respondAdminActionError($request, $response, 'Forbidden', 403);
         }
 
-        $data = $request->getParsedBody();
+        $data = (array) ($request->getParsedBody() ?? []);
         if (!$this->validateCsrfData($data)) {
             return $this->respondAdminActionError($request, $response, 'Invalid CSRF token.', 400);
         }
 
         $userId = (int) ($args['id'] ?? 0);
-        $status = $data['status'] ?? '';
+        $status = is_string($data['status'] ?? null) ? $data['status'] : '';
 
         if (!$userId || !in_array($status, ['active', 'disabled'], true)) {
             return $this->respondAdminActionError($request, $response, 'Invalid request', 400);
@@ -927,7 +923,7 @@ final class AdminController
             return $this->respondAdminActionError($request, $response, 'Forbidden', 403);
         }
 
-        $data = $request->getParsedBody();
+        $data = (array) ($request->getParsedBody() ?? []);
         if (!$this->validateCsrfData($data)) {
             return $this->respondAdminActionError($request, $response, 'Invalid CSRF token.', 400);
         }

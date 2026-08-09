@@ -8,6 +8,7 @@ use FilesystemIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
+use SplFileInfo;
 use Throwable;
 use ZipArchive;
 
@@ -178,7 +179,9 @@ final class ReleasePackageBuilder
     }
 
     /**
+     * @param array<string, mixed> $manifest
      * @param array<int, array{path: string, size: int, sha256: string}> $files
+     * @param array<int, string>|null $payloadFiles
      * @return array{manifest_path: string, signature_path: string, package_path: string, manifest_json: string}
      */
     private function writePackage(string $packagePath, string $privateKeyPath, array $manifest, array $files, ?array $payloadFiles = null): array
@@ -189,6 +192,9 @@ final class ReleasePackageBuilder
 
         $manifestJson = json_encode($manifest, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
         $privateKey = $this->readBinaryFile($privateKeyPath, 'private key');
+        if ($privateKey === '') {
+            throw new RuntimeException('Private key file is empty.');
+        }
         $signature = sodium_crypto_sign_detached($manifestJson, $privateKey);
 
         $packageDirectory = dirname($packagePath);
@@ -243,7 +249,16 @@ final class ReleasePackageBuilder
     }
 
     /**
-     * @param array<string, mixed> $manifestData
+     * @param array{
+     *   package_type: 'full'|'patch',
+     *   release_id: string,
+     *   files: array<int, array{path: string, size: int, sha256: string}>,
+     *   payload_files: array<int, string>,
+     *   delete: array<int, string>,
+     *   required_extensions: array<int, string>,
+     *   base_release_id?: string,
+     *   base_manifest_sha256?: string
+     * } $manifestData
      * @return array<string, mixed>
      */
     private function createManifest(array $manifestData): array
@@ -270,8 +285,10 @@ final class ReleasePackageBuilder
         ];
 
         if ($manifestData['package_type'] === 'patch') {
-            $manifest['base_release_id'] = $manifestData['base_release_id'];
-            $manifest['base_manifest_sha256'] = $manifestData['base_manifest_sha256'];
+            if (isset($manifestData['base_release_id'], $manifestData['base_manifest_sha256'])) {
+                $manifest['base_release_id'] = $manifestData['base_release_id'];
+                $manifest['base_manifest_sha256'] = $manifestData['base_manifest_sha256'];
+            }
         }
 
         return $manifest;
@@ -292,6 +309,10 @@ final class ReleasePackageBuilder
                 );
 
                 foreach ($iterator as $fileInfo) {
+                    if (!$fileInfo instanceof SplFileInfo) {
+                        continue;
+                    }
+
                     if (!$fileInfo->isFile()) {
                         continue;
                     }
@@ -312,6 +333,9 @@ final class ReleasePackageBuilder
         return $files;
     }
 
+    /**
+     * @return array{path: string, size: int, sha256: string}
+     */
     private function buildFileRecord(string $root, string $absolutePath): array
     {
         $relativePath = str_replace('\\', '/', mb_substr($absolutePath, mb_strlen(mb_rtrim($root, DIRECTORY_SEPARATOR)) + 1));

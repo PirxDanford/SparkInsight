@@ -18,6 +18,10 @@ final class ReleaseSignatureVerifier
         $signature = $this->decodeKeyMaterial($signature, 64, 'signature');
         $publicKey = $this->decodeKeyMaterial($publicKey, 32, 'public key');
 
+        if ($signature === '' || $publicKey === '') {
+            throw new RuntimeException('Signature and public key must not be empty.');
+        }
+
         return sodium_crypto_sign_verify_detached($signature, $message, $publicKey);
     }
 
@@ -51,7 +55,7 @@ final class ReleaseSignatureVerifier
         }
 
         // Raw binary inputs are valid and must not be altered.
-        if (mb_strlen($value, '8bit') === $expectedLength) {
+        if (mb_strlen($value) === $expectedLength) {
             return $value;
         }
 
@@ -61,8 +65,11 @@ final class ReleaseSignatureVerifier
         }
 
         $decoded = null;
-        if (preg_match('/^[A-Fa-f0-9]+$/', $trimmed) === 1 && mb_strlen($trimmed, '8bit') === $expectedLength * 2) {
-            $decoded = hex2bin($trimmed);
+        if (preg_match('/^[A-Fa-f0-9]+$/', $trimmed) === 1 && mb_strlen($trimmed) === $expectedLength * 2) {
+            $hexDecoded = hex2bin($trimmed);
+            if ($hexDecoded !== false) {
+                $decoded = $hexDecoded;
+            }
         } elseif (preg_match('/^[A-Za-z0-9+\/]+={0,2}$/', $trimmed) === 1) {
             $candidate = base64_decode($trimmed, true);
             if ($candidate !== false) {
@@ -70,7 +77,7 @@ final class ReleaseSignatureVerifier
             }
         }
 
-        if ($decoded === null || mb_strlen($decoded, '8bit') !== $expectedLength) {
+        if ($decoded === null || mb_strlen($decoded) !== $expectedLength) {
             throw new RuntimeException('Invalid ' . $label . ' length; expected ' . $expectedLength . ' bytes.');
         }
 

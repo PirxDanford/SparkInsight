@@ -9,6 +9,7 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
 use SimpleXMLElement;
+use SplFileInfo;
 use Throwable;
 use ZipArchive;
 
@@ -43,6 +44,9 @@ final class BookPackageBuilder
 
         $manifestJson = json_encode($manifest, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
         $privateKey = $this->readBinaryFile($privateKeyPath, 'private key');
+        if ($privateKey === '') {
+            throw new RuntimeException('Private key file is empty.');
+        }
         $signature = sodium_crypto_sign_detached($manifestJson, $privateKey);
 
         $packageDirectory = dirname($packagePath);
@@ -101,6 +105,9 @@ final class BookPackageBuilder
         ];
     }
 
+    /**
+     * @return array{book_title: string, source_file: string, imported: array<int, array{path: string}>}
+     */
     private function buildImportPreview(string $sourceRoot, string $bookTitle): array
     {
         $directory = $this->normalizeDirectory($sourceRoot);
@@ -130,6 +137,9 @@ final class BookPackageBuilder
         ];
     }
 
+    /**
+     * @param array<int, array{path: string}> $imported
+     */
     private function collectBinderItems(?SimpleXMLElement $xml, array &$imported, string $rootTitle): void
     {
         if ($xml === null) {
@@ -141,6 +151,9 @@ final class BookPackageBuilder
         }
     }
 
+    /**
+     * @param array<int, array{path: string}> $imported
+     */
     private function collectBinderItem(SimpleXMLElement $item, array &$imported, string $rootTitle): void
     {
         $itemType = mb_trim((string) ($item['Type'] ?? ''));
@@ -196,6 +209,10 @@ final class BookPackageBuilder
         );
 
         foreach ($iterator as $fileInfo) {
+            if (!$fileInfo instanceof SplFileInfo) {
+                continue;
+            }
+
             if ($fileInfo->isFile() && mb_strtolower($fileInfo->getExtension()) === 'scrivx') {
                 return $fileInfo->getPathname();
             }
@@ -204,6 +221,9 @@ final class BookPackageBuilder
         return null;
     }
 
+    /**
+     * @return array<int, string>
+     */
     private function collectPayloadFiles(string $directory): array
     {
         $files = $this->collectFiles($directory);
@@ -211,6 +231,9 @@ final class BookPackageBuilder
         return array_map(static fn (string $relativePath): string => 'payload/book-source/' . mb_ltrim($relativePath, '/'), $files);
     }
 
+    /**
+     * @return array<int, string>
+     */
     private function collectFiles(string $directory): array
     {
         $iterator = new RecursiveIteratorIterator(
@@ -220,6 +243,10 @@ final class BookPackageBuilder
 
         $files = [];
         foreach ($iterator as $fileInfo) {
+            if (!$fileInfo instanceof SplFileInfo) {
+                continue;
+            }
+
             if (!$fileInfo->isFile()) {
                 continue;
             }

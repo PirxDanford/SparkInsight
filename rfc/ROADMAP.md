@@ -175,6 +175,7 @@ The former cross-phase security checklist has been retired. Security controls ar
 - [ ] Iterate fixes and redeploy until production behavior is stable
 - [ ] Remove the legacy file-by-file FTP deployment path after RFC 0014 is validated
 - [ ] Close blocking production findings and defer only non-blocking follow-up work to `v1.0.1+`
+- [ ] Complete deployment exception-path hardening for RFC 0014 release flow before `v1.0.0` tagging: resolve PHPStan deployment-path exceptions (or reduce baseline entries to only justified non-blockers), improve rollback/audit failure visibility, implement safer root publish behavior against partial-copy states, and make finalization/materialization cleanup errors explicit
 - [ ] Re-run required GitHub Actions checks after final production hardening changes
 - [ ] Record evidence links/notes for latest green GitHub Actions runs and production validation in the release PR/issue
 - [ ] Eliminate all method-coverage exceptions so the exception ledger is empty before `v1.0.0` tagging

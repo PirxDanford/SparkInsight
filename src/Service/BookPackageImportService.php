@@ -9,6 +9,7 @@ use FilesystemIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
+use SplFileInfo;
 use ZipArchive;
 
 class BookPackageImportService
@@ -18,7 +19,7 @@ class BookPackageImportService
     }
 
     /**
-     * @return array{imported: int, book_title: string, source_format: string, manifest: array}
+     * @return array{imported: int, book_title: string, source_format: string, manifest: array<string, mixed>}
      */
     public function importFromPackage(string $packagePath, int $authorId): array
     {
@@ -88,7 +89,7 @@ class BookPackageImportService
                     [$authorId, $bookTitle, 'ready'],
                 )->fetchOne();
 
-                $importedCount = (int) $importResult;
+                $importedCount = is_numeric($importResult) ? (int) $importResult : 0;
                 $importBatchId = 'pkg_' . bin2hex(random_bytes(6));
                 $importedItems = $this->importScrivenerProject($sourceRoot, $bookTitle, $authorId, $importBatchId, $sourceFormat, $manifest);
 
@@ -106,6 +107,10 @@ class BookPackageImportService
         }
     }
 
+    /**
+     * @param array<string, mixed> $manifest
+     * @return array<int, array<string, mixed>>
+     */
     private function importScrivenerProject(string $sourceRoot, string $bookTitle, int $authorId, string $importBatchId, string $sourceFormat, array $manifest): array
     {
         $scrivxPath = $this->findScrivx($sourceRoot);
@@ -131,6 +136,10 @@ class BookPackageImportService
         );
 
         foreach ($iterator as $fileInfo) {
+            if (!$fileInfo instanceof SplFileInfo) {
+                continue;
+            }
+
             if ($fileInfo->isFile() && mb_strtolower($fileInfo->getExtension()) === 'scrivx') {
                 return $fileInfo->getPathname();
             }
@@ -151,6 +160,10 @@ class BookPackageImportService
         );
 
         foreach ($iterator as $fileInfo) {
+            if (!$fileInfo instanceof SplFileInfo) {
+                continue;
+            }
+
             if ($fileInfo->isDir()) {
                 @rmdir($fileInfo->getPathname());
             } else {

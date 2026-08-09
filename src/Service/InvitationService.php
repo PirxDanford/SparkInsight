@@ -94,8 +94,10 @@ final class InvitationService
 
         $usedByLabel = null;
         if (!empty($result['used_by_name']) || !empty($result['used_by_email'])) {
-            $name = mb_trim((string) ($result['used_by_name'] ?? ''));
-            $email = mb_trim((string) ($result['used_by_email'] ?? ''));
+            $nameRaw = $result['used_by_name'] ?? '';
+            $emailRaw = $result['used_by_email'] ?? '';
+            $name = is_string($nameRaw) ? mb_trim($nameRaw) : '';
+            $email = is_string($emailRaw) ? mb_trim($emailRaw) : '';
 
             if ($name !== '' && $email !== '') {
                 $usedByLabel = sprintf('%s <%s>', $name, $email);
@@ -167,7 +169,8 @@ final class InvitationService
         $results = $this->connection->executeQuery($sql, $params, $types)->fetchAllAssociative();
 
         return array_map(static function (array $row) {
-            $expiresAt = $row['expires_at'] ? new DateTime($row['expires_at']) : null;
+            $expiresAtRaw = $row['expires_at'] ?? null;
+            $expiresAt = is_string($expiresAtRaw) && $expiresAtRaw !== '' ? new DateTime($expiresAtRaw) : null;
             $status = 'pending';
 
             if ($row['used_at'] !== null) {
@@ -178,8 +181,10 @@ final class InvitationService
 
             $usedByLabel = null;
             if (!empty($row['used_by_name']) || !empty($row['used_by_email'])) {
-                $name = mb_trim((string) ($row['used_by_name'] ?? ''));
-                $email = mb_trim((string) ($row['used_by_email'] ?? ''));
+                $nameRaw = $row['used_by_name'] ?? '';
+                $emailRaw = $row['used_by_email'] ?? '';
+                $name = is_string($nameRaw) ? mb_trim($nameRaw) : '';
+                $email = is_string($emailRaw) ? mb_trim($emailRaw) : '';
 
                 if ($name !== '' && $email !== '') {
                     $usedByLabel = sprintf('%s <%s>', $name, $email);
@@ -194,7 +199,7 @@ final class InvitationService
                 'id' => $row['id'],
                 'code' => $row['code'],
                 'email' => $row['email'],
-                'roles' => json_decode($row['roles'] ?? '[]', true),
+                'roles' => json_decode(is_string($row['roles'] ?? null) ? $row['roles'] : '[]', true),
                 'used_by' => $row['used_by'],
                 'used_by_name' => $row['used_by_name'] ?? null,
                 'used_by_email' => $row['used_by_email'] ?? null,

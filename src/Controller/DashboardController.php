@@ -524,6 +524,9 @@ final class DashboardController
         return $response->withHeader('Location', $itemUrl)->withStatus(302);
     }
 
+    /**
+     * @param array<string, string> $args
+     */
     public function deleteAuthorBook(Request $request, Response $response, array $args): Response
     {
         if (!$this->session->isLoggedIn()) {

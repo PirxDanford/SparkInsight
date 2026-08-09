@@ -16,6 +16,16 @@ parameters:
 			path: src/Command/BootstrapAdminCommand.php
 
 		-
+			message: "#^Cannot cast mixed to string\\.$#"
+			count: 4
+			path: src/Command/BuildBookPackageCommand.php
+
+		-
+			message: "#^Cannot cast mixed to string\\.$#"
+			count: 6
+			path: src/Command/BuildReleasePackageCommand.php
+
+		-
 			message: "#^Part \\$appEnv \\(mixed\\) of encapsed string cannot be cast to string\\.$#"
 			count: 1
 			path: src/Command/CheckEnvironmentCommand.php
@@ -59,6 +69,41 @@ parameters:
 			message: "#^Cannot cast mixed to string\\.$#"
 			count: 1
 			path: src/Command/PurgeContentImportsCommand.php
+
+		-
+			message: "#^Call to function is_array\\(\\) with null will always evaluate to false\\.$#"
+			count: 1
+			path: src/Command/ReleaseDeployCommand.php
+
+		-
+			message: "#^Cannot call method getPathname\\(\\) on mixed\\.$#"
+			count: 2
+			path: src/Command/ReleaseDeployCommand.php
+
+		-
+			message: "#^Cannot call method isDir\\(\\) on mixed\\.$#"
+			count: 1
+			path: src/Command/ReleaseDeployCommand.php
+
+		-
+			message: "#^Cannot cast mixed to string\\.$#"
+			count: 7
+			path: src/Command/ReleaseDeployCommand.php
+
+		-
+			message: "#^Offset 'previous' on \\*NEVER\\* in isset\\(\\) always exists and is not nullable\\.$#"
+			count: 1
+			path: src/Command/ReleaseDeployCommand.php
+
+		-
+			message: "#^Offset 'status' on array\\{release_id\\: mixed, operation_id\\: string, status\\: string\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: src/Command/ReleaseDeployCommand.php
+
+		-
+			message: "#^Result of && is always false\\.$#"
+			count: 3
+			path: src/Command/ReleaseDeployCommand.php
 
 		-
 			message: "#^Cannot cast mixed to int\\.$#"
@@ -106,17 +151,32 @@ parameters:
 			path: src/Controller/AdminController.php
 
 		-
-			message: "#^Cannot access offset 'roles' on array\\|object\\.$#"
+			message: "#^Cannot call method getPathname\\(\\) on mixed\\.$#"
 			count: 1
 			path: src/Controller/AdminController.php
 
 		-
-			message: "#^Cannot access offset 'status' on array\\|object\\.$#"
+			message: "#^Cannot call method isFile\\(\\) on mixed\\.$#"
 			count: 1
 			path: src/Controller/AdminController.php
 
 		-
 			message: "#^Cannot cast mixed to int\\.$#"
+			count: 1
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Cannot cast mixed to string\\.$#"
+			count: 5
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\AdminController\\:\\:buildActionsSectionData\\(\\) has parameter \\$flashMessage with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Method SparkInsight\\\\Controller\\\\AdminController\\:\\:buildActionsSectionData\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Controller/AdminController.php
 
@@ -201,22 +261,22 @@ parameters:
 			path: src/Controller/AdminController.php
 
 		-
-			message: "#^Parameter \\#1 \\$data of method SparkInsight\\\\Controller\\\\AdminController\\:\\:validateCsrfData\\(\\) expects array, array\\|object\\|null given\\.$#"
-			count: 2
-			path: src/Controller/AdminController.php
-
-		-
 			message: "#^Parameter \\#1 \\$string of method Psr\\\\Http\\\\Message\\\\StreamInterface\\:\\:write\\(\\) expects string, string\\|false given\\.$#"
-			count: 4
-			path: src/Controller/AdminController.php
-
-		-
-			message: "#^Parameter \\#2 \\.\\.\\.\\$values of function sprintf expects bool\\|float\\|int\\|string\\|null, mixed given\\.$#"
-			count: 2
+			count: 3
 			path: src/Controller/AdminController.php
 
 		-
 			message: "#^Property SparkInsight\\\\Controller\\\\AdminController\\:\\:\\$connection is never read, only written\\.$#"
+			count: 1
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Right side of && is always true\\.$#"
+			count: 1
+			path: src/Controller/AdminController.php
+
+		-
+			message: "#^Variable \\$lowest on left side of \\?\\? always exists and is not nullable\\.$#"
 			count: 1
 			path: src/Controller/AdminController.php
 
@@ -796,6 +856,11 @@ parameters:
 			path: src/Service/ContentImportService.php
 
 		-
+			message: "#^Property SparkInsight\\\\Service\\\\DeploymentStateStore\\:\\:\\$pathPolicy is never read, only written\\.$#"
+			count: 1
+			path: src/Service/DeploymentStateStore.php
+
+		-
 			message: "#^Method SparkInsight\\\\Service\\\\ImportValidationException\\:\\:__construct\\(\\) has parameter \\$errors with no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Service/ImportValidationException.php
@@ -851,13 +916,8 @@ parameters:
 			path: src/Service/InvitationService.php
 
 		-
-			message: "#^Parameter \\#1 \\$datetime of class DateTime constructor expects string, mixed given\\.$#"
-			count: 1
-			path: src/Service/InvitationService.php
-
-		-
 			message: "#^Parameter \\#1 \\$json of function json_decode expects string, mixed given\\.$#"
-			count: 2
+			count: 1
 			path: src/Service/InvitationService.php
 
 		-
@@ -919,6 +979,61 @@ parameters:
 			message: "#^Strict comparison using \\=\\=\\= between non\\-falsy\\-string and '' will always evaluate to false\\.$#"
 			count: 1
 			path: src/Service/MigrationRunner.php
+
+		-
+			message: "#^Cannot cast mixed to int\\.$#"
+			count: 1
+			path: src/Service/RecoveryKeyManager.php
+
+		-
+			message: "#^Cannot call method getPathname\\(\\) on mixed\\.$#"
+			count: 2
+			path: src/Service/ReleaseFinalizationService.php
+
+		-
+			message: "#^Cannot call method isDir\\(\\) on mixed\\.$#"
+			count: 1
+			path: src/Service/ReleaseFinalizationService.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\ReleaseFinalizationService\\:\\:finalize\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/ReleaseFinalizationService.php
+
+		-
+			message: "#^Cannot call method getPathname\\(\\) on mixed\\.$#"
+			count: 4
+			path: src/Service/ReleaseMaterializer.php
+
+		-
+			message: "#^Cannot call method isDir\\(\\) on mixed\\.$#"
+			count: 2
+			path: src/Service/ReleaseMaterializer.php
+
+		-
+			message: "#^Method SparkInsight\\\\Service\\\\ReleaseMaterializer\\:\\:materialize\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/ReleaseMaterializer.php
+
+		-
+			message: "#^Property SparkInsight\\\\Service\\\\ReleaseMaterializer\\:\\:\\$pathPolicy is never read, only written\\.$#"
+			count: 1
+			path: src/Service/ReleaseMaterializer.php
+
+		-
+			message: "#^Offset 'name' on array\\{name\\: string, index\\: int, crc\\: int, size\\: int, mtime\\: int, comp_size\\: int, comp_method\\: int, encryption_method\\: int\\} in isset\\(\\) always exists and is not nullable\\.$#"
+			count: 1
+			path: src/Service/ReleasePackageInspector.php
+
+		-
+			message: "#^Cannot call method getPathname\\(\\) on mixed\\.$#"
+			count: 6
+			path: src/Service/ReleaseRootPublisher.php
+
+		-
+			message: "#^Cannot call method isDir\\(\\) on mixed\\.$#"
+			count: 2
+			path: src/Service/ReleaseRootPublisher.php
 
 		-
 			message: "#^Cannot cast mixed to int\\.$#"
