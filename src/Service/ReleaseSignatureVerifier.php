@@ -55,7 +55,7 @@ final class ReleaseSignatureVerifier
         }
 
         // Raw binary inputs are valid and must not be altered.
-        if (mb_strlen($value) === $expectedLength) {
+        if (mb_strlen($value, '8bit') === $expectedLength) {
             return $value;
         }
 
@@ -65,7 +65,7 @@ final class ReleaseSignatureVerifier
         }
 
         $decoded = null;
-        if (preg_match('/^[A-Fa-f0-9]+$/', $trimmed) === 1 && mb_strlen($trimmed) === $expectedLength * 2) {
+        if (preg_match('/^[A-Fa-f0-9]+$/', $trimmed) === 1 && mb_strlen($trimmed, '8bit') === $expectedLength * 2) {
             $hexDecoded = hex2bin($trimmed);
             if ($hexDecoded !== false) {
                 $decoded = $hexDecoded;
@@ -77,7 +77,7 @@ final class ReleaseSignatureVerifier
             }
         }
 
-        if ($decoded === null || mb_strlen($decoded) !== $expectedLength) {
+        if ($decoded === null || mb_strlen($decoded, '8bit') !== $expectedLength) {
             throw new RuntimeException('Invalid ' . $label . ' length; expected ' . $expectedLength . ' bytes.');
         }
 
