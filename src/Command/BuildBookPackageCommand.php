@@ -62,7 +62,11 @@ final class BuildBookPackageCommand extends Command
     {
         $trimmed = mb_trim($packagePathArg);
         if ($trimmed === '') {
-            $outputDirectory = __DIR__ . '/../../build';
+            $outputDirectory = getenv('SPARKINSIGHT_BUILD_ROOT') ?: __DIR__ . '/../../build';
+            if (is_dir($outputDirectory) && !is_writable($outputDirectory)) {
+                throw new RuntimeException('Could not create output directory: ' . $outputDirectory);
+            }
+
             if (!is_dir($outputDirectory) && !mkdir($outputDirectory, 0o700, true) && !is_dir($outputDirectory)) {
                 throw new RuntimeException('Could not create output directory: ' . $outputDirectory);
             }

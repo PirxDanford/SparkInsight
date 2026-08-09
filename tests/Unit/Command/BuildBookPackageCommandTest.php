@@ -138,18 +138,20 @@ XML
 
         $root = sys_get_temp_dir() . '/sparkinsight-book-package-command-blocked-' . bin2hex(random_bytes(8));
         mkdir($root, 0777, true);
-        $expectedBuildDir = realpath(__DIR__ . '/../../../src/Command/../../build');
-        if ($expectedBuildDir !== false && is_dir($expectedBuildDir)) {
-            $this->markTestSkipped('Repository build directory exists; cannot force default build creation failure safely.');
-        }
+        $blockedBuildDir = $root . '/blocked-build';
+        file_put_contents($blockedBuildDir, 'not-a-directory');
+
+        putenv('SPARKINSIGHT_BUILD_ROOT=' . $blockedBuildDir);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Could not create output directory:');
 
         set_error_handler(static fn (): bool => true);
         try {
-            $this->expectException(\RuntimeException::class);
-            $this->expectExceptionMessage('Could not create output directory:');
             $this->invokePrivate($command, 'resolvePackagePath', '');
         } finally {
             restore_error_handler();
+            putenv('SPARKINSIGHT_BUILD_ROOT');
             $this->deleteDirectory($root);
         }
     }
