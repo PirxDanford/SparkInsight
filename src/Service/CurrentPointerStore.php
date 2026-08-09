@@ -66,10 +66,18 @@ final class CurrentPointerStore
             throw new RuntimeException('Could not write temporary current pointer document: ' . $temporaryPath);
         }
 
-        if (is_file($path) && !unlink($path)) {
-            @unlink($temporaryPath);
+        if (is_file($path)) {
+            if (!is_writable($path)) {
+                @unlink($temporaryPath);
 
-            throw new RuntimeException('Could not replace current pointer document: ' . $path);
+                throw new RuntimeException('Could not replace current pointer document: ' . $path);
+            }
+
+            if (!unlink($path)) {
+                @unlink($temporaryPath);
+
+                throw new RuntimeException('Could not replace current pointer document: ' . $path);
+            }
         }
 
         if (!rename($temporaryPath, $path)) {
