@@ -6,7 +6,7 @@ declare(strict_types=1);
  * Report method-level test coverage gaps for CI visibility.
  *
  * Usage:
- *   php tools/ci/check_method_coverage.php [coverage-input]
+ *   php tools/ci/check_method_coverage.php [coverage-input] [--warn-only]
  *
  * coverage-input can be either:
  * - a Clover XML file (legacy fallback)
@@ -16,9 +16,12 @@ final class MethodCoverageGuardrail
 {
     private string $coverageInput;
 
-    public function __construct(string $coverageInput)
+    private bool $warnOnly;
+
+    public function __construct(string $coverageInput, bool $warnOnly = false)
     {
         $this->coverageInput = $coverageInput;
+        $this->warnOnly = $warnOnly;
     }
 
     public function run(): int
@@ -33,10 +36,12 @@ final class MethodCoverageGuardrail
 
             fwrite(
                 STDOUT,
-                "\nMethod coverage guardrail reported uncovered methods. CI will enforce the final gate.\n",
+                $this->warnOnly
+                    ? "\nMethod coverage guardrail warning: uncovered methods found (warn-only mode).\n"
+                    : "\nMethod coverage guardrail failed: uncovered methods are not allowed.\n",
             );
 
-            return 0;
+            return $this->warnOnly ? 0 : 1;
         }
 
         fwrite(STDOUT, "Method coverage guardrail passed. Uncovered methods: 0.\n");
@@ -204,8 +209,9 @@ final class MethodCoverageGuardrail
 
 try {
     $coverageInput = $argv[1] ?? 'coverage.xml';
+    $warnOnly = in_array('--warn-only', $argv, true);
 
-    $guardrail = new MethodCoverageGuardrail($coverageInput);
+    $guardrail = new MethodCoverageGuardrail($coverageInput, $warnOnly);
     exit($guardrail->run());
 } catch (Throwable $throwable) {
     fwrite(STDERR, 'Method coverage guardrail failed: ' . $throwable->getMessage() . PHP_EOL);

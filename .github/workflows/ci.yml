@@ -89,7 +89,7 @@ jobs:
             --coverage-html=coverage-report
 
       - name: Enforce method coverage guardrail
-        run: php tools/ci/check_method_coverage.php tmp/coverage-xml docs/coverage-method-exceptions.json dev-main
+        run: php tools/ci/check_method_coverage.php tmp/coverage-xml
 
       - name: Check code coverage threshold
         run: |

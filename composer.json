@@ -46,7 +46,7 @@
     "hooks:pre-commit": "php tools/ci/hook_pre_commit.php",
     "hooks:pre-push": [
       "php vendor/bin/phpunit --configuration phpunit.xml.dist --coverage-xml=tmp/coverage-xml --colors=never",
-      "php tools/ci/check_method_coverage.php tmp/coverage-xml"
+      "php tools/ci/check_method_coverage.php tmp/coverage-xml --warn-only"
     ],
     "coverage": [
       "php vendor/bin/phpunit --configuration phpunit.xml.dist --coverage-text --coverage-clover=coverage.xml --coverage-xml=tmp/coverage-xml --colors=never",
