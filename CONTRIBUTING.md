@@ -120,16 +120,9 @@ Temporary bypass (for emergencies only):
 
 Method coverage guardrail policy:
 
-- Every method in `src/` must be executed by tests.
-- A method may remain uncovered only with a documented exception entry in `docs/coverage-method-exceptions.json`.
-- Exceptions are only allowed before version `1.0.0`.
-- Every exception must include:
-   - `method` in the form `src/Path/File.php::methodName`
-   - `reason` with specific technical rationale
-   - `owner` responsible for follow-up
-- `versionPolicy.allowedBeforeVersion` in `docs/coverage-method-exceptions.json` defines the global cutoff version for exceptions.
-- At version `1.0.0` and newer, any exception entry fails the guardrail.
-- Stale exceptions (method now covered) also fail CI and must be removed from the exception ledger.
+- Every method in `src/` should ideally be executed by tests.
+- Local pushes report uncovered methods for visibility; CI remains the authoritative enforcement point for merge quality.
+- Coverage gaps should be addressed in the same change when feasible, especially for code that was newly modified.
 
 Coverage expectations:
 
