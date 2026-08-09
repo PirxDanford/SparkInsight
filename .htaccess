@@ -1,0 +1,20 @@
+DirectoryIndex index.php
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Deny direct access to non-public project directories.
+    RewriteRule ^(?:vendor|src|templates|database|resources|tools|tests|docs|rfc|adr|deployment|scrivener|tmp|_tmp_noenv_runner|winget-packages)(?:/|$) - [F,L,NC]
+
+    # Deny direct access to sensitive root files.
+    RewriteRule ^(?:\.env(?:\.example)?|composer\.(?:json|lock)|phpunit\.xml\.dist|phpstan(?:-baseline)?\.neon|coverage\.xml|si\.php)$ - [F,L,NC]
+
+    # Expose selected diagnostics helpers from public/ when needed.
+    RewriteRule ^install_diagnose\.php$ public/install_diagnose.php [QSA,L]
+
+    # Route application requests through the root front controller.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
