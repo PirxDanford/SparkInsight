@@ -13,7 +13,7 @@ parameters:
   excludePaths:
     - tests
     - vendor
-    - _tmp_noenv_runner
+    - _tmp_noenv_runner (?)
   
   # PHP version
   phpVersion: 80500

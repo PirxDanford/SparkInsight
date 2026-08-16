@@ -32,13 +32,19 @@ jobs:
           fetch-depth: 0
 
       - name: Verify commit signatures
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Checking commit signatures..."
           git log --oneline -1
-          git log -1 --pretty=format:"%H %G? %GS"
+          COMMIT_SHA=$(git rev-parse HEAD)
+          VERIFICATION=$(gh api "repos/$GITHUB_REPOSITORY/commits/$COMMIT_SHA" --jq '.commit.verification.verified')
+          REASON=$(gh api "repos/$GITHUB_REPOSITORY/commits/$COMMIT_SHA" --jq '.commit.verification.reason')
           TARGET_BRANCH="${GITHUB_BASE_REF:-${GITHUB_REF_NAME}}"
-          GIT_SIGN_STATUS=$(git log -1 --pretty=format:%G?)
-          if [ "$GIT_SIGN_STATUS" = "N" ] || [ "$GIT_SIGN_STATUS" = "B" ]; then
+          echo "Commit: $COMMIT_SHA"
+          echo "GitHub verification: $VERIFICATION ($REASON)"
+
+          if [ "$VERIFICATION" != "true" ]; then
             if [[ "$TARGET_BRANCH" == release/* ]]; then
               echo "❌ Latest commit is not signed. Signed commits are required for release branches."
               exit 1
