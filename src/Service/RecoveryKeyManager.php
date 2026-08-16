@@ -10,6 +10,7 @@ final class RecoveryKeyManager
 {
     public function __construct(
         private readonly string $deployRoot,
+        private readonly ?int $hashCost = null,
     ) {
     }
 
@@ -21,7 +22,10 @@ final class RecoveryKeyManager
         }
 
         $key = bin2hex(random_bytes(24));
-        $this->writeState(password_hash($key, PASSWORD_DEFAULT), 0);
+        $hash = $this->hashCost !== null
+            ? password_hash($key, PASSWORD_BCRYPT, ['cost' => $this->hashCost])
+            : password_hash($key, PASSWORD_DEFAULT);
+        $this->writeState($hash, 0);
 
         return $key;
     }

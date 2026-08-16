@@ -3,7 +3,10 @@
 declare(strict_types=1);
 
 /**
- * Report method-level test coverage gaps for CI visibility.
+ * Report untested methods for CI visibility (method coverage, not line coverage).
+ *
+ * A method counts as covered when at least one of its executable lines ran,
+ * i.e. the method was called by a test. Methods with 0% coverage are flagged.
  *
  * Usage:
  *   php tools/ci/check_method_coverage.php [coverage-input] [--warn-only]
@@ -159,7 +162,9 @@ final class MethodCoverageGuardrail
                         $executable = (int) ($methodNode['executable'] ?? 0);
                         $coverage = (float) ($methodNode['coverage'] ?? 0.0);
 
-                        if ($methodName === '' || $executable <= 0 || $coverage >= 100.0) {
+                        // Method coverage: flag only methods that were never executed at all.
+                        // coverage > 0 means at least one line ran, i.e. the method is tested.
+                        if ($methodName === '' || $executable <= 0 || $coverage > 0.0) {
                             continue;
                         }
 

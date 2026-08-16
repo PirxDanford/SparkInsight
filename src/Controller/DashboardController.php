@@ -999,9 +999,6 @@ final class DashboardController
         }
 
         parse_str($queryString, $parsed);
-        if (!is_array($parsed)) {
-            return '';
-        }
 
         return $this->buildReviewerQueueQueryString($parsed);
     }
@@ -1308,9 +1305,6 @@ final class DashboardController
             }
 
             $parentPath = implode('/', array_slice($parts, 0, -1));
-            if ($parentPath === '') {
-                continue;
-            }
 
             if (!isset($directoryChildStats[$parentPath])) {
                 $directoryChildStats[$parentPath] = [
@@ -2020,9 +2014,6 @@ final class DashboardController
         }
 
         parse_str($queryString, $parsed);
-        if (!is_array($parsed)) {
-            return '';
-        }
 
         return $this->buildAuthorQueueQueryString($parsed);
     }
