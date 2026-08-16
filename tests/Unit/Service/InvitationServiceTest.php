@@ -120,7 +120,7 @@ class InvitationServiceTest extends TestCase
         $this->connection->expects($this->once())
             ->method('executeQuery')
             ->with(
-                'SELECT invitations.*, u.name AS used_by_name, u.email AS used_by_email FROM invitations LEFT JOIN users u ON invitations.used_by = u.id ORDER BY created_at DESC LIMIT ? OFFSET ?',
+                'SELECT invitations.*, u.name AS used_by_name, u.email AS used_by_email FROM invitations LEFT JOIN users u ON invitations.used_by = u.id ORDER BY invitations.created_at DESC LIMIT ? OFFSET ?',
                 [50, 0],
                 [ParameterType::INTEGER, ParameterType::INTEGER]
             )
@@ -157,7 +157,7 @@ class InvitationServiceTest extends TestCase
         $this->connection->expects($this->once())
             ->method('executeQuery')
             ->with(
-                'SELECT invitations.*, u.name AS used_by_name, u.email AS used_by_email FROM invitations LEFT JOIN users u ON invitations.used_by = u.id ORDER BY created_at DESC LIMIT ? OFFSET ?',
+                'SELECT invitations.*, u.name AS used_by_name, u.email AS used_by_email FROM invitations LEFT JOIN users u ON invitations.used_by = u.id ORDER BY invitations.created_at DESC LIMIT ? OFFSET ?',
                 [50, 0],
                 [ParameterType::INTEGER, ParameterType::INTEGER]
             )
@@ -193,7 +193,7 @@ class InvitationServiceTest extends TestCase
         $this->connection->expects($this->once())
             ->method('executeQuery')
             ->with(
-                $this->stringContains('WHERE email = ? AND roles LIKE ? ORDER BY created_at DESC LIMIT ? OFFSET ?'),
+                $this->stringContains('WHERE invitations.email = ? AND invitations.roles LIKE ? ORDER BY invitations.created_at DESC LIMIT ? OFFSET ?'),
                 ['test@example.com', '%"reviewer"%', 50, 0],
                 [ParameterType::STRING, ParameterType::STRING, ParameterType::INTEGER, ParameterType::INTEGER]
             )

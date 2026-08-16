@@ -130,26 +130,26 @@ final class InvitationService
         $params = [];
 
         if (!empty($filters['email'])) {
-            $where[] = 'email = ?';
+            $where[] = 'invitations.email = ?';
             $params[] = $filters['email'];
         }
 
         if (!empty($filters['role'])) {
-            $where[] = 'roles LIKE ?';
+            $where[] = 'invitations.roles LIKE ?';
             $params[] = '%"' . $filters['role'] . '"%';
         }
 
         if (!empty($filters['status'])) {
             switch ($filters['status']) {
                 case 'used':
-                    $where[] = 'used_at IS NOT NULL';
+                    $where[] = 'invitations.used_at IS NOT NULL';
                     break;
                 case 'expired':
-                    $where[] = 'used_at IS NULL AND expires_at <= CURRENT_TIMESTAMP';
+                    $where[] = 'invitations.used_at IS NULL AND invitations.expires_at <= CURRENT_TIMESTAMP';
                     break;
                 case 'pending':
                 default:
-                    $where[] = 'used_at IS NULL AND expires_at > CURRENT_TIMESTAMP';
+                    $where[] = 'invitations.used_at IS NULL AND invitations.expires_at > CURRENT_TIMESTAMP';
                     break;
             }
         }
@@ -158,7 +158,7 @@ final class InvitationService
         if ($where !== []) {
             $sql .= ' WHERE ' . implode(' AND ', $where);
         }
-        $sql .= ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+        $sql .= ' ORDER BY invitations.created_at DESC LIMIT ? OFFSET ?';
 
         $params[] = $limit;
         $params[] = $offset;
