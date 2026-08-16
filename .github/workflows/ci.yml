@@ -1,4 +1,4 @@
-name: Continuous Integration
+name: Quality Gates
 
 on:
   push:
@@ -20,7 +20,7 @@ permissions:
   issues: write
 
 jobs:
-  ci:
+  quality-gates:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
@@ -70,6 +70,35 @@ jobs:
 
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Validate migration files
+        run: php tools/ci/check_migrations.php
+
+      - name: Run migration runner unit tests
+        run: php vendor/bin/phpunit tests/Unit/Service/MigrationRunnerTest.php
+
+      - name: Check migration status command
+        env:
+          DB_DRIVER: pdo_sqlite
+          DB_NAME: ':memory:'
+          APP_URL: http://localhost:8000
+        run: php si.php db:migrate --status
+
+      - name: Ensure conflicting migration options fail fast
+        env:
+          DB_DRIVER: pdo_sqlite
+          DB_NAME: ':memory:'
+          APP_URL: http://localhost:8000
+        run: |
+          set +e
+          php si.php db:migrate --status --rollback
+          exit_code=$?
+          set -e
+
+          if [ "$exit_code" -eq 0 ]; then
+            echo "Expected db:migrate --status --rollback to fail, but it succeeded."
+            exit 1
+          fi
 
       - name: Validate composer.json
         run: composer validate --strict

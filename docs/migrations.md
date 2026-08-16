@@ -126,7 +126,7 @@ Because rollback is single-step and version-based, do not skip DOWN sections in 
 
 ## Migration CI Checks
 
-SparkInsight enforces migration quality in CI through the dedicated workflow `.github/workflows/migration-checks.yml`.
+SparkInsight enforces migration quality through the main CI workflow in `.github/workflows/ci.yml`.
 
 CI checks include:
 

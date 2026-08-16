@@ -85,11 +85,12 @@ Completed 2026-07-12. The following quality gates have been implemented:
 - **PHP-CS-Fixer Style Checks:** Dry-run validation against PSR-12 and modern PHP standards
 - **Coverage Reporting:** Generates coverage reports as artifacts and posts summary comments on PRs
 
-### Migration Checks Workflow (`.github/workflows/migration-checks.yml`)
+### Quality Gates Coverage
 
-Enhanced with:
+The main CI workflow now includes migration validation directly in the standard pipeline:
 - Commit signing verification with strict enforcement on `release/*` branches
-- Existing migration naming policy enforcement (validates `001_initial_schema.sql`, `dev_only_*.sql` patterns)
+- Migration naming policy enforcement (validates `001_initial_schema.sql`, `dev_only_*.sql` patterns)
+- Migration runner unit tests and CLI smoke checks for `db:migrate --status`
 
 ### Tooling & Configuration
 
@@ -100,8 +101,7 @@ Enhanced with:
 
 ### Deliverables
 
-- [x] `.github/workflows/ci.yml` — Main CI pipeline with all quality gates
-- [x] `.github/workflows/migration-checks.yml` — Enhanced with commit signing
+- [x] `.github/workflows/ci.yml` — Main Quality Gates pipeline with all CI checks, including migration validation
 - [x] `phpstan.neon` + `phpstan-baseline.neon` — Type checking configuration with baseline
 - [x] `.php-cs-fixer.php` — Code style enforcement configuration
 - [x] `composer.json` updated with PHPStan and PHP-CS-Fixer dependencies

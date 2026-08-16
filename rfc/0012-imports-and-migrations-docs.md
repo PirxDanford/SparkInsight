@@ -38,5 +38,5 @@ Completed 2026-07-12.
 
 - Delivered `docs/imports.md` with supported formats, validation flow, command usage, and troubleshooting.
 - Delivered `docs/migrations.md` with `db:migrate` usage, status/rollback behavior, migration policy, and pre-deploy workflow.
-- Added migration CI checks documentation and aligned it with `.github/workflows/migration-checks.yml`.
+- Added migration CI checks documentation and aligned it with the main Quality Gates workflow in `.github/workflows/ci.yml`.
 - Updated `CONTRIBUTING.md` to reference import/migration docs and required migration checks for PRs affecting migration/import behavior.
