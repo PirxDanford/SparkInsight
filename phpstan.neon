@@ -15,13 +15,12 @@ parameters:
     - vendor
     - _tmp_noenv_runner
   
-  # PHP version (using 80400 for PHP 8.4, will work with 8.5 code)
-  phpVersion: 80400
-  
+  # PHP version
+  phpVersion: 80500
+
   # Type checking
   checkMissingCallableSignature: true
-  checkMissingIterableValueType: true
-  
+
   # Error handling
   reportUnmatchedIgnoredErrors: true
 
