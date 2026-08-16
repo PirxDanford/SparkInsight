@@ -156,10 +156,6 @@ final class MigrationRunner
         $statements = array_filter(array_map('trim', explode(';', $sql)));
 
         foreach ($statements as $statement) {
-            if ($statement === '') {
-                continue;
-            }
-
             $this->connection->executeStatement($statement);
         }
     }
@@ -175,7 +171,7 @@ final class MigrationRunner
             return null;
         }
 
-        $content = file_get_contents($file);
+        $content = is_file($file) ? file_get_contents($file) : false;
         if ($content === false) {
             return null;
         }

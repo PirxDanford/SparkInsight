@@ -29,15 +29,17 @@ final class InitializeDbCommand extends Command
 
         // Check if database exists
         try {
-            $connectionParams = [
-                'driver' => $dbConfig['driver'],
-                'host' => $dbConfig['host'],
-                'port' => $dbConfig['port'],
-                'dbname' => $dbConfig['dbname'],
-                'user' => $dbConfig['user'],
-                'password' => $dbConfig['password'],
-                'charset' => $dbConfig['charset'],
-            ];
+            $connectionParams = ($dbConfig['driver'] ?? '') === 'pdo_sqlite'
+                ? $dbConfig
+                : [
+                    'driver' => $dbConfig['driver'],
+                    'host' => $dbConfig['host'] ?? 'localhost',
+                    'port' => $dbConfig['port'] ?? null,
+                    'dbname' => $dbConfig['dbname'] ?? null,
+                    'user' => $dbConfig['user'] ?? null,
+                    'password' => $dbConfig['password'] ?? null,
+                    'charset' => $dbConfig['charset'] ?? null,
+                ];
             $conn = \Doctrine\DBAL\DriverManager::getConnection($connectionParams);
             $conn->executeQuery('SELECT 1');
         } catch (Exception $e) {
