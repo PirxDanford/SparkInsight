@@ -116,9 +116,11 @@ jobs:
           echo "✓ Coverage $COVERAGE% meets threshold $THRESHOLD%"
 
       - name: Run PHPStan static analysis
+        if: always()
         run: vendor/bin/phpstan analyse --no-progress --memory-limit=512M
 
       - name: Run PHP-CS-Fixer (dry-run, check only)
+        if: always()
         run: vendor/bin/php-cs-fixer fix --dry-run --allow-unsupported-php-version=1
 
       - name: Upload coverage reports
