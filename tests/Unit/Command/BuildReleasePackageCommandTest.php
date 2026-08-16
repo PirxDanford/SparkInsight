@@ -606,6 +606,31 @@ final class BuildReleasePackageCommandTest extends TestCase
         $this->assertSame('provided-base.zip', $result);
     }
 
+    public function testResolveIncrementalPatchBasePackageReturnsFallbackWhenNoMatchingPatchFiles(): void
+    {
+        $root = sys_get_temp_dir() . '/sparkinsight-build-command-' . bin2hex(random_bytes(8));
+        $buildDir = $root . '/build';
+        mkdir($buildDir, 0777, true);
+        file_put_contents($buildDir . '/not-a-patch.zip', 'x');
+
+        try {
+            $command = new BuildReleasePackageCommand();
+            $result = $this->invokePrivate(
+                $command,
+                'resolveIncrementalPatchBasePackage',
+                $buildDir,
+                'patch',
+                '',
+                'provided-base.zip',
+                false,
+            );
+
+            $this->assertSame('provided-base.zip', $result);
+        } finally {
+            $this->deleteDirectory($root);
+        }
+    }
+
     public function testClearPatchArtifactsRemovesPackageAndManifestFiles(): void
     {
         $root = sys_get_temp_dir() . '/sparkinsight-build-command-' . bin2hex(random_bytes(8));
@@ -643,6 +668,21 @@ final class BuildReleasePackageCommandTest extends TestCase
         $this->invokePrivate($command, 'removeIfExists', sys_get_temp_dir() . '/missing-' . bin2hex(random_bytes(8)));
 
         $this->assertTrue(true);
+    }
+
+    public function testRemoveIfExistsRemovesExistingFile(): void
+    {
+        $command = new BuildReleasePackageCommand();
+        $file = sys_get_temp_dir() . '/sparkinsight-remove-if-exists-' . bin2hex(random_bytes(8)) . '.txt';
+        file_put_contents($file, 'x');
+
+        try {
+            $this->invokePrivate($command, 'removeIfExists', $file);
+
+            $this->assertFileDoesNotExist($file);
+        } finally {
+            @unlink($file);
+        }
     }
 
     private function createPrivateKeyFile(string $root): string

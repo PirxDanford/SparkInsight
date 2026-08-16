@@ -74,4 +74,83 @@ class GenerateInvitationCommandTest extends TestCase
 
         $this->assertNull($definition->getOption('hours')->getDefault());
     }
+
+    public function testExecuteSucceedsWithInjectedConnectionAndDefaultRoles(): void
+    {
+        $dbFile = sys_get_temp_dir() . '/sparkinsight-invite-command-' . bin2hex(random_bytes(8)) . '.sqlite';
+        $pdo = new \PDO('sqlite:' . $dbFile);
+        $pdo->exec(<<<'SQL'
+CREATE TABLE invitations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT NOT NULL UNIQUE,
+    email TEXT,
+    roles TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    used_at TEXT,
+    created_at TEXT NOT NULL
+);
+CREATE TABLE app_settings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    key TEXT NOT NULL UNIQUE,
+    value TEXT NOT NULL
+);
+SQL
+        );
+        $pdo->prepare('INSERT INTO app_settings (key, value) VALUES (?, ?)')->execute(['invitation_default_hours', '24']);
+
+        $connection = \Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbFile]);
+        $command = new GenerateInvitationCommand($connection);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute(['--reviewer' => true]);
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('Invitation generated successfully', $tester->getDisplay());
+
+        $pdo = null;
+        $connection->close();
+        if (file_exists($dbFile)) {
+            unlink($dbFile);
+        }
+    }
+
+    public function testExecuteUsesFallbackRolesAndHoursWhenNoRoleOrHoursProvided(): void
+    {
+        $dbFile = sys_get_temp_dir() . '/sparkinsight-invite-command-fallback-' . bin2hex(random_bytes(8)) . '.sqlite';
+        $pdo = new \PDO('sqlite:' . $dbFile);
+        $pdo->exec(<<<'SQL'
+CREATE TABLE invitations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT NOT NULL UNIQUE,
+    email TEXT,
+    roles TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    used_at TEXT,
+    created_at TEXT NOT NULL
+);
+CREATE TABLE app_settings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    key TEXT NOT NULL UNIQUE,
+    value TEXT NOT NULL
+);
+SQL
+        );
+        $pdo->prepare('INSERT INTO app_settings (key, value) VALUES (?, ?)')->execute(['invitation_default_hours', '7']);
+
+        $connection = \Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbFile]);
+        $command = new GenerateInvitationCommand($connection);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute(['--email' => 'user@example.com']);
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('Roles: reviewer', $tester->getDisplay());
+        $this->assertStringContainsString('Expires in: 168 hours', $tester->getDisplay());
+
+        $pdo = null;
+        $connection->close();
+        if (file_exists($dbFile)) {
+            unlink($dbFile);
+        }
+    }
 }

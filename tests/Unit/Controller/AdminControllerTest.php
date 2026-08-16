@@ -36,6 +36,63 @@ class AdminControllerTest extends TestCase
         return $reflection->invoke($this->controller, ...$args);
     }
 
+    private function controllerRootRealpathInput(): string
+    {
+        return dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Controller/../../';
+    }
+
+    /**
+     * @param array{composer_json?: ?string, composer_lock?: ?string, pointer?: ?string} $options
+     */
+    private function createLiveManifestFixture(array $options = []): string
+    {
+        $root = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'si-live-export-' . bin2hex(random_bytes(6));
+        mkdir($root, 0777, true);
+        mkdir($root . DIRECTORY_SEPARATOR . 'src', 0777, true);
+        file_put_contents($root . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'file.php', '<?php echo 1;');
+
+        $composerJson = array_key_exists('composer_json', $options)
+            ? $options['composer_json']
+            : json_encode(['require' => ['php' => '^8.3']], JSON_THROW_ON_ERROR);
+        if ($composerJson !== null) {
+            file_put_contents($root . DIRECTORY_SEPARATOR . 'composer.json', $composerJson);
+        }
+
+        $composerLock = array_key_exists('composer_lock', $options)
+            ? $options['composer_lock']
+            : '{"packages":[]}';
+        if ($composerLock !== null) {
+            file_put_contents($root . DIRECTORY_SEPARATOR . 'composer.lock', $composerLock);
+        }
+
+        $pointer = array_key_exists('pointer', $options)
+            ? $options['pointer']
+            : json_encode([
+                'format' => 1,
+                'current' => null,
+                'previous' => null,
+                'activated_at' => null,
+                'operation_id' => null,
+            ], JSON_PRETTY_PRINT);
+        if ($pointer !== null) {
+            mkdir($root . DIRECTORY_SEPARATOR . '.deploy', 0777, true);
+            file_put_contents($root . DIRECTORY_SEPARATOR . '.deploy' . DIRECTORY_SEPARATOR . 'current.json', $pointer);
+        }
+
+        return $root;
+    }
+
+    private function removeLiveManifestFixture(string $root): void
+    {
+        @unlink($root . DIRECTORY_SEPARATOR . '.deploy' . DIRECTORY_SEPARATOR . 'current.json');
+        @rmdir($root . DIRECTORY_SEPARATOR . '.deploy');
+        @unlink($root . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'file.php');
+        @rmdir($root . DIRECTORY_SEPARATOR . 'src');
+        @unlink($root . DIRECTORY_SEPARATOR . 'composer.json');
+        @unlink($root . DIRECTORY_SEPARATOR . 'composer.lock');
+        @rmdir($root);
+    }
+
     protected function setUp(): void
     {
         AdminControllerTestHooks::$overrideSysTempDir = null;
@@ -1089,20 +1146,30 @@ class AdminControllerTest extends TestCase
         $this->session->setUser(['id' => 1, 'roles' => ['admin']]);
         $csrfToken = $this->session->getCsrfToken();
 
-        $request = $this->createMock(ServerRequestInterface::class);
-        $request->expects($this->once())
-            ->method('getParsedBody')
-            ->willReturn([
-                '_csrf' => $csrfToken,
-            ]);
+        $root = $this->createLiveManifestFixture();
+        AdminControllerTestHooks::$forcedRealpathInput = $this->controllerRootRealpathInput();
+        AdminControllerTestHooks::$forcedRealpathResult = $root;
 
-        $response = new TestResponse();
-        $result = $this->controller->exportLiveManifest($request, $response);
+        try {
+            $request = $this->createMock(ServerRequestInterface::class);
+            $request->expects($this->once())
+                ->method('getParsedBody')
+                ->willReturn([
+                    '_csrf' => $csrfToken,
+                ]);
 
-        $this->assertSame(200, $result->getStatusCode());
-        $this->assertStringContainsString('application/json', $result->getHeaderLine('Content-Type'));
-        $this->assertStringContainsString('attachment; filename="sparkinsight-live-base-', $result->getHeaderLine('Content-Disposition'));
-        $this->assertStringContainsString('"format":', (string) $result->getBody());
+            $response = new TestResponse();
+            $result = $this->controller->exportLiveManifest($request, $response);
+
+            $this->assertSame(200, $result->getStatusCode());
+            $this->assertStringContainsString('application/json', $result->getHeaderLine('Content-Type'));
+            $this->assertStringContainsString('attachment; filename="sparkinsight-live-base-', $result->getHeaderLine('Content-Disposition'));
+            $this->assertStringContainsString('"format":', (string) $result->getBody());
+        } finally {
+            AdminControllerTestHooks::$forcedRealpathInput = null;
+            AdminControllerTestHooks::$forcedRealpathResult = null;
+            $this->removeLiveManifestFixture($root);
+        }
     }
 
     public function testExportLiveManifestUsesFallbackReleaseIdAndDefaultPhpWhenComposerMissing(): void
@@ -1110,30 +1177,9 @@ class AdminControllerTest extends TestCase
         $this->session->setUser(['id' => 1, 'roles' => ['admin']]);
         $csrfToken = $this->session->getCsrfToken();
 
-        $projectRoot = dirname(__DIR__, 3);
-        $pointerPath = $projectRoot . '/.deploy/current.json';
-        $composerPath = $projectRoot . '/composer.json';
-        $tmpDir = $projectRoot . '/tmp';
-        $tmpFile = $tmpDir . '/admin-export-fallback.txt';
-
-        @mkdir($tmpDir, 0777, true);
-        file_put_contents($tmpFile, 'fallback-export');
-
-        $pointerOriginal = is_file($pointerPath) ? (string) file_get_contents($pointerPath) : null;
-        $composerOriginal = is_file($composerPath) ? (string) file_get_contents($composerPath) : null;
-
-        @mkdir(dirname($pointerPath), 0777, true);
-        file_put_contents($pointerPath, json_encode([
-            'format' => 1,
-            'current' => null,
-            'previous' => null,
-            'activated_at' => null,
-            'operation_id' => null,
-        ], JSON_PRETTY_PRINT));
-
-        if ($composerOriginal !== null) {
-            @unlink($composerPath);
-        }
+        $root = $this->createLiveManifestFixture(['composer_json' => null]);
+        AdminControllerTestHooks::$forcedRealpathInput = $this->controllerRootRealpathInput();
+        AdminControllerTestHooks::$forcedRealpathResult = $root;
 
         try {
             $request = $this->createMock(ServerRequestInterface::class);
@@ -1150,20 +1196,13 @@ class AdminControllerTest extends TestCase
             $manifest = json_decode((string) $result->getBody(), true);
             $this->assertIsArray($manifest);
             $this->assertSame('8.1.0', $manifest['minimum_php'] ?? null);
-            $this->assertSame('SparkInsight', $manifest['release_id'] ?? null);
+            $this->assertSame(basename($root), $manifest['release_id'] ?? null);
             $composerLockHash = (string) ($manifest['composer_lock_sha256'] ?? '');
             $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $composerLockHash);
         } finally {
-            @unlink($tmpFile);
-            if ($pointerOriginal === null) {
-                @unlink($pointerPath);
-            } else {
-                file_put_contents($pointerPath, $pointerOriginal);
-            }
-
-            if ($composerOriginal !== null) {
-                file_put_contents($composerPath, $composerOriginal);
-            }
+            AdminControllerTestHooks::$forcedRealpathInput = null;
+            AdminControllerTestHooks::$forcedRealpathResult = null;
+            $this->removeLiveManifestFixture($root);
         }
     }
 
@@ -1172,11 +1211,9 @@ class AdminControllerTest extends TestCase
         $this->session->setUser(['id' => 1, 'roles' => ['admin']]);
         $csrfToken = $this->session->getCsrfToken();
 
-        $projectRoot = dirname(__DIR__, 3);
-        $composerPath = $projectRoot . '/composer.json';
-        $composerOriginal = is_file($composerPath) ? (string) file_get_contents($composerPath) : null;
-
-        file_put_contents($composerPath, '{invalid-json');
+        $root = $this->createLiveManifestFixture(['composer_json' => '{invalid-json']);
+        AdminControllerTestHooks::$forcedRealpathInput = $this->controllerRootRealpathInput();
+        AdminControllerTestHooks::$forcedRealpathResult = $root;
 
         try {
             $request = $this->createMock(ServerRequestInterface::class);
@@ -1194,9 +1231,9 @@ class AdminControllerTest extends TestCase
             $this->assertIsArray($manifest);
             $this->assertSame('8.1.0', $manifest['minimum_php'] ?? null);
         } finally {
-            if ($composerOriginal !== null) {
-                file_put_contents($composerPath, $composerOriginal);
-            }
+            AdminControllerTestHooks::$forcedRealpathInput = null;
+            AdminControllerTestHooks::$forcedRealpathResult = null;
+            $this->removeLiveManifestFixture($root);
         }
     }
 
@@ -1884,11 +1921,9 @@ class AdminControllerTest extends TestCase
         $this->session->setUser(['id' => 1, 'roles' => ['admin']]);
         $csrfToken = $this->session->getCsrfToken();
 
-        $projectRoot = dirname(__DIR__, 3);
-        $pointerPath = $projectRoot . '/.deploy/current.json';
-        $pointerOriginal = is_file($pointerPath) ? (string) file_get_contents($pointerPath) : null;
-        @mkdir(dirname($pointerPath), 0777, true);
-        file_put_contents($pointerPath, '{invalid-json');
+        $root = $this->createLiveManifestFixture(['pointer' => '{invalid-json']);
+        AdminControllerTestHooks::$forcedRealpathInput = $this->controllerRootRealpathInput();
+        AdminControllerTestHooks::$forcedRealpathResult = $root;
 
         try {
             $request = $this->createMock(ServerRequestInterface::class);
@@ -1905,11 +1940,9 @@ class AdminControllerTest extends TestCase
             $this->assertNotNull($flash);
             $this->assertStringContainsString('Could not export live manifest', (string) $flash['message']);
         } finally {
-            if ($pointerOriginal === null) {
-                @unlink($pointerPath);
-            } else {
-                file_put_contents($pointerPath, $pointerOriginal);
-            }
+            AdminControllerTestHooks::$forcedRealpathInput = null;
+            AdminControllerTestHooks::$forcedRealpathResult = null;
+            $this->removeLiveManifestFixture($root);
         }
     }
 

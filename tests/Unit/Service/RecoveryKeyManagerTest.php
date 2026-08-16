@@ -15,7 +15,7 @@ final class RecoveryKeyManagerTest extends TestCase
         mkdir($root, 0777, true);
 
         try {
-            $manager = new RecoveryKeyManager($root);
+            $manager = new RecoveryKeyManager($root, 4);
             $first = $manager->ensureInitialized();
             $second = $manager->ensureInitialized();
 
@@ -41,13 +41,31 @@ final class RecoveryKeyManagerTest extends TestCase
         }
     }
 
-    public function testVerifyReturnsTrueForValidKeyAndIncrementsAttempts(): void
+    public function testEnsureInitializedUsesDefaultHashCostWhenNotConfigured(): void
     {
         $root = sys_get_temp_dir() . '/sparkinsight-recovery-' . bin2hex(random_bytes(8));
         mkdir($root, 0777, true);
 
         try {
             $manager = new RecoveryKeyManager($root);
+            $key = $manager->ensureInitialized();
+
+            $this->assertIsString($key);
+            $state = $manager->readState();
+            $this->assertIsArray($state);
+            $this->assertTrue(password_verify($key, (string) $state['key_hash']));
+        } finally {
+            $this->deleteDirectory($root);
+        }
+    }
+
+    public function testVerifyReturnsTrueForValidKeyAndIncrementsAttempts(): void
+    {
+        $root = sys_get_temp_dir() . '/sparkinsight-recovery-' . bin2hex(random_bytes(8));
+        mkdir($root, 0777, true);
+
+        try {
+            $manager = new RecoveryKeyManager($root, 4);
             $plain = (string) $manager->ensureInitialized();
 
             $this->assertTrue($manager->verify($plain));
@@ -100,7 +118,7 @@ final class RecoveryKeyManagerTest extends TestCase
 
         try {
             $manager = new RecoveryKeyManager($root);
-            $hash = password_hash('my-key', PASSWORD_DEFAULT);
+            $hash = password_hash('my-key', PASSWORD_BCRYPT, ['cost' => 4]);
             $manager->writeState($hash, 7);
 
             $state = $manager->readState();

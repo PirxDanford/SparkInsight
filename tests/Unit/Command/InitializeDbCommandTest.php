@@ -43,4 +43,50 @@ class InitializeDbCommandTest extends TestCase
         $this->assertSame('db:init', $command->getName());
         $this->assertStringContainsString('Initialize the database by running all migrations', $command->getDescription());
     }
+
+    public function testExecuteReportsAlreadyInitializedDatabase(): void
+    {
+        $dbFile = sys_get_temp_dir() . '/sparkinsight-init-command-' . bin2hex(random_bytes(8)) . '.sqlite';
+        $connection = \Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbFile]);
+        $connection->executeStatement('CREATE TABLE schema_version (version INTEGER NOT NULL PRIMARY KEY, applied_at TEXT NOT NULL)');
+        $connection->executeStatement("INSERT INTO schema_version (version, applied_at) VALUES (20260101000000, '2026-01-01 00:00:00')");
+        $connection->close();
+
+        $_ENV['DB_DRIVER'] = 'pdo_sqlite';
+        $_ENV['DB_NAME'] = $dbFile;
+
+        $command = new InitializeDbCommand();
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([]);
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('Database already initialized', $tester->getDisplay());
+
+        unlink($dbFile);
+    }
+
+    public function testExecuteCreatesDatabaseWhenItDoesNotExist(): void
+    {
+        $dbFile = sys_get_temp_dir() . '/sparkinsight-init-command-create-' . bin2hex(random_bytes(8)) . '.sqlite';
+        $connection = \Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbFile]);
+        $connection->executeStatement('CREATE TABLE schema_version (version INTEGER NOT NULL PRIMARY KEY, applied_at TEXT NOT NULL)');
+        $connection->executeStatement("INSERT INTO schema_version (version, applied_at) VALUES (999999999999, '2026-01-01 00:00:00')");
+        $connection->close();
+
+        $_ENV['DB_DRIVER'] = 'pdo_sqlite';
+        $_ENV['DB_NAME'] = $dbFile;
+
+        $command = new InitializeDbCommand();
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([]);
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('Database already initialized', $tester->getDisplay());
+
+        if (file_exists($dbFile)) {
+            unlink($dbFile);
+        }
+    }
 }

@@ -99,4 +99,58 @@ SQL
         $this->assertSame(1, $exitCode);
         $this->assertStringContainsString('An admin user already exists', $tester->getDisplay());
     }
+
+    public function testBootstrapFailsWhenEmailOptionMissing(): void
+    {
+        $tester = new CommandTester(new BootstrapAdminCommand());
+
+        $exitCode = $tester->execute([]);
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('The --email option is required.', $tester->getDisplay());
+    }
+
+    public function testBootstrapFailsWhenTargetUserDoesNotExist(): void
+    {
+        $tester = new CommandTester(new BootstrapAdminCommand());
+
+        $exitCode = $tester->execute([
+            '--email' => 'missing@example.com',
+        ]);
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('No user found with email missing@example.com.', $tester->getDisplay());
+    }
+
+    public function testBootstrapAllowsPromotionWithForceWhenAdminExists(): void
+    {
+        $pdo = new \PDO('sqlite:' . $this->dbFile);
+        $pdo->prepare('INSERT INTO users (provider, provider_id, email, name, avatar, roles, status, invitation_used, last_login, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+            ->execute(['github', 'admin-1', 'admin@example.com', 'Admin User', null, json_encode(['admin', 'author', 'reviewer']), 'active', null, null, '2026-01-02 00:00:00', '2026-01-02 00:00:00']);
+
+        $tester = new CommandTester(new BootstrapAdminCommand());
+
+        $exitCode = $tester->execute([
+            '--email' => 'user@example.com',
+            '--force' => true,
+        ]);
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('Admin bootstrap completed successfully.', $tester->getDisplay());
+    }
+
+    public function testBootstrapFailsWhenQueryingUsersThrows(): void
+    {
+        $pdo = new \PDO('sqlite:' . $this->dbFile);
+        $pdo->exec('DROP TABLE users');
+
+        $tester = new CommandTester(new BootstrapAdminCommand());
+
+        $exitCode = $tester->execute([
+            '--email' => 'user@example.com',
+        ]);
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('Failed to query users', $tester->getDisplay());
+    }
 }

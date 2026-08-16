@@ -21,6 +21,13 @@ final class ReaderPresentationBuilderTest extends TestCase
         $this->removeDirectory($this->projectRoot);
     }
 
+    private function invokePrivate(ReaderPresentationBuilder $builder, string $method, mixed ...$args): mixed
+    {
+        $reflection = new \ReflectionMethod($builder, $method);
+
+        return $reflection->invoke($builder, ...$args);
+    }
+
     public function testBuildPresentationLoadsScrivenerSourceFromMetadataAndRestoresLinks(): void
     {
         $uuid = 'ABCDEF12-3456-7890-ABCD-EF1234567890';
@@ -75,6 +82,57 @@ RTF;
         $this->assertCount(2, $presentation['sections']);
         $this->assertSame('First paragraph', $presentation['sections'][0]['text']);
         $this->assertSame('Second paragraph', $presentation['sections'][1]['text']);
+    }
+
+    public function testExtractPlainTextFromRtfStripsDestinationGroupsAndControlWords(): void
+    {
+        $builder = new ReaderPresentationBuilder($this->projectRoot);
+
+        $plainText = $this->invokePrivate(
+            $builder,
+            'extractPlainTextFromRtf',
+            "{\\fonttbl{\\f0 Arial;}}{\\colortbl ;\\red0\\green0\\blue0;}\\pard Hello\\par\\tab world}",
+        );
+
+        $this->assertStringContainsString('Hello', $plainText);
+        $this->assertStringContainsString('world', $plainText);
+    }
+
+    public function testStripRtfDestinationGroupsRemovesConfiguredGroups(): void
+    {
+        $builder = new ReaderPresentationBuilder($this->projectRoot);
+        $rtf = "{\\fonttbl{\\f0 Arial;}}{\\info{\\title Demo}}Plain text";
+
+        $result = $this->invokePrivate($builder, 'stripRtfDestinationGroups', $rtf, ['fonttbl', 'info']);
+
+        $this->assertStringContainsString('Plain text', $result);
+        $this->assertStringNotContainsString('\\fonttbl', $result);
+        $this->assertStringNotContainsString('\\info', $result);
+    }
+
+    public function testResolveReadableSourcePathFromMetadataRejectsInvalidInput(): void
+    {
+        $builder = new ReaderPresentationBuilder($this->projectRoot);
+
+        $this->assertNull($this->invokePrivate($builder, 'resolveReadableSourcePathFromMetadata', ['scrivener' => ['project_file' => '../outside', 'uuid' => 'bad']]));
+        $this->assertNull($this->invokePrivate($builder, 'resolveReadableSourcePathFromMetadata', ['scrivener' => ['project_file' => 'scrivener/project.scrivx', 'uuid' => 'bad-uuid']]));
+    }
+
+    public function testBuildReaderSectionLabelHandlesEmptyAndLongText(): void
+    {
+        $builder = new ReaderPresentationBuilder($this->projectRoot);
+
+        $this->assertSame('Section 2', $this->invokePrivate($builder, 'buildReaderSectionLabel', '', 2));
+        $this->assertSame('Alpha beta gamma delta epsilon zeta eta theta...', $this->invokePrivate($builder, 'buildReaderSectionLabel', 'Alpha beta gamma delta epsilon zeta eta theta iota', 3));
+    }
+
+    public function testExtractScrivenerQueueMetadataAcceptsJsonAndArrayInput(): void
+    {
+        $builder = new ReaderPresentationBuilder($this->projectRoot);
+
+        $this->assertSame([], $this->invokePrivate($builder, 'extractScrivenerQueueMetadata', 'not-json'));
+        $this->assertSame(['project_file' => 'scrivener/project.scrivx'], $this->invokePrivate($builder, 'extractScrivenerQueueMetadata', ['scrivener' => ['project_file' => 'scrivener/project.scrivx']]));
+        $this->assertSame(['uuid' => 'ABCDEF12'], $this->invokePrivate($builder, 'extractScrivenerQueueMetadata', json_encode(['scrivener' => ['uuid' => 'ABCDEF12']], JSON_THROW_ON_ERROR)));
     }
 
     public function testBuildPresentationReturnsUnavailableWhenSourceCannotBeResolved(): void

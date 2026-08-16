@@ -22,6 +22,49 @@ class UserServiceTest extends TestCase
         $this->userService = new UserService($this->connection);
     }
 
+    public function testUpdateUserDisplayNameTrimsAndStoresName(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('executeStatement')
+            ->with(
+                'UPDATE users SET display_name = ?, updated_at = ? WHERE id = ?',
+                $this->callback(static fn (array $params): bool => $params[0] === 'New Name' && is_string($params[1]) && $params[2] === 7),
+            )
+            ->willReturn(1);
+
+        $this->assertTrue($this->userService->updateUserDisplayName(7, '  New Name  '));
+    }
+
+    public function testUpdateUserDisplayNameStoresNullForEmptyInput(): void
+    {
+        $this->connection->expects($this->exactly(2))
+            ->method('executeStatement')
+            ->with(
+                'UPDATE users SET display_name = ?, updated_at = ? WHERE id = ?',
+                $this->callback(static fn (array $params): bool => $params[0] === null),
+            )
+            ->willReturn(1);
+
+        $this->assertTrue($this->userService->updateUserDisplayName(7, null));
+        $this->assertTrue($this->userService->updateUserDisplayName(7, '   '));
+    }
+
+    public function testUpdateUserDisplayNameRejectsOverlyLongNames(): void
+    {
+        $this->connection->expects($this->never())->method('executeStatement');
+
+        $this->assertFalse($this->userService->updateUserDisplayName(7, str_repeat('a', 256)));
+    }
+
+    public function testUpdateUserDisplayNameReturnsFalseWhenNothingUpdated(): void
+    {
+        $this->connection->expects($this->once())
+            ->method('executeStatement')
+            ->willReturn(0);
+
+        $this->assertFalse($this->userService->updateUserDisplayName(7, 'Name'));
+    }
+
     public function testFindOrCreateUserCreatesNewUser(): void
     {
         $resultMock = $this->createMock(Result::class);

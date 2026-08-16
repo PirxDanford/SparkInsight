@@ -122,6 +122,22 @@ XML
         $this->assertStringEndsWith('folder' . DIRECTORY_SEPARATOR . 'sub' . DIRECTORY_SEPARATOR . 'explicit.zip', $path);
     }
 
+    public function testResolvePackagePathBuildsAutoNameWhenArgumentIsDirectory(): void
+    {
+        $command = new BuildBookPackageCommand();
+        $root = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'sparkinsight-book-package-command-dir-' . bin2hex(random_bytes(8));
+        mkdir($root, 0777, true);
+
+        try {
+            $path = $this->invokePrivate($command, 'resolvePackagePath', $root);
+
+            $this->assertStringStartsWith($root . DIRECTORY_SEPARATOR . 'book-package-', $path);
+            $this->assertStringEndsWith('.zip', $path);
+        } finally {
+            $this->deleteDirectory($root);
+        }
+    }
+
     public function testResolvePackagePathReturnsDefaultBuildPathWhenArgumentEmpty(): void
     {
         $command = new BuildBookPackageCommand();

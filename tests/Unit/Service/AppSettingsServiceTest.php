@@ -20,6 +20,32 @@ class AppSettingsServiceTest extends TestCase
         $this->service = new AppSettingsService($this->connection);
     }
 
+    private function invokePrivate(string $method, mixed ...$args): mixed
+    {
+        $reflection = new \ReflectionMethod($this->service, $method);
+
+        return $reflection->invoke($this->service, ...$args);
+    }
+
+    public function testNormalizeHoursHandlesAllBranches(): void
+    {
+        $this->assertSame(168, $this->invokePrivate('normalizeHours', 'not-a-number'));
+        $this->assertSame(168, $this->invokePrivate('normalizeHours', 0));
+        $this->assertSame(168, $this->invokePrivate('normalizeHours', -5));
+        $this->assertSame(24, $this->invokePrivate('normalizeHours', '24'));
+        $this->assertSame(720, $this->invokePrivate('normalizeHours', 5000));
+    }
+
+    public function testNormalizeRolesHandlesAllBranches(): void
+    {
+        $this->assertSame(['reviewer'], $this->invokePrivate('normalizeRoles', []));
+        $this->assertSame(['reviewer'], $this->invokePrivate('normalizeRoles', ['invalid', '']));
+        $this->assertSame(
+            ['reviewer', 'author', 'admin'],
+            $this->invokePrivate('normalizeRoles', [' reviewer ', 'author', 'admin', 'reviewer', 'nope']),
+        );
+    }
+
     public function testGetReturnsNullForUnknownSetting(): void
     {
         $this->assertNull($this->service->get('unknown_setting'));

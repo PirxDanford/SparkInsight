@@ -105,6 +105,117 @@ class MigrationRunnerTest extends TestCase
         }
     }
 
+    public function testGetMigrationFilesSortsByVersionThenBasenameWithNullVersionsLast(): void
+    {
+        $tempDir = sys_get_temp_dir() . '/sparkinsight_migrations_' . bin2hex(random_bytes(8));
+        mkdir($tempDir);
+        file_put_contents($tempDir . '/002_b.sql', 'SELECT 1;');
+        file_put_contents($tempDir . '/002_a.sql', 'SELECT 1;');
+        file_put_contents($tempDir . '/001_a.sql', 'SELECT 1;');
+        file_put_contents($tempDir . '/dev_only_x.sql', 'INSERT INTO schema_version (version, applied_at) VALUES (5, NOW());');
+        file_put_contents($tempDir . '/dev_only_y.sql', 'SELECT 1;');
+        file_put_contents($tempDir . '/notes.sql', 'SELECT 1;');
+        file_put_contents($tempDir . '/aaa.sql', 'SELECT 1;');
+
+        try {
+            $files = array_map('basename', $this->runner->getMigrationFiles($tempDir));
+
+            $this->assertSame(
+                ['001_a.sql', '002_a.sql', '002_b.sql', 'dev_only_x.sql', 'aaa.sql', 'dev_only_y.sql', 'notes.sql'],
+                $files,
+            );
+        } finally {
+            unlink($tempDir . '/001_a.sql');
+            unlink($tempDir . '/002_a.sql');
+            unlink($tempDir . '/002_b.sql');
+            unlink($tempDir . '/dev_only_x.sql');
+            unlink($tempDir . '/dev_only_y.sql');
+            unlink($tempDir . '/notes.sql');
+            unlink($tempDir . '/aaa.sql');
+            rmdir($tempDir);
+        }
+    }
+
+    public function testGetMigrationVersionReturnsNullForMissingDevOnlyFile(): void
+    {
+        $reflection = new \ReflectionMethod($this->runner, 'getMigrationVersion');
+        $missing = sys_get_temp_dir() . '/dev_only_missing_' . bin2hex(random_bytes(6)) . '.sql';
+
+        $this->assertNull($reflection->invoke($this->runner, $missing));
+    }
+
+    public function testRollbackLastMigrationReturnsNullWhenNoMigrationApplied(): void
+    {
+        $resultMock = $this->createMock(Result::class);
+        $resultMock->method('fetchOne')->willReturn('0');
+
+        $this->connection->expects($this->once())
+            ->method('executeQuery')
+            ->with('SELECT MAX(version) FROM schema_version')
+            ->willReturn($resultMock);
+
+        $this->connection->expects($this->never())->method('executeStatement');
+
+        $tempDir = sys_get_temp_dir() . '/sparkinsight_migrations_' . bin2hex(random_bytes(8));
+        mkdir($tempDir);
+
+        try {
+            $this->assertNull($this->runner->rollbackLastMigration($tempDir));
+        } finally {
+            rmdir($tempDir);
+        }
+    }
+
+    public function testRollbackLastMigrationReturnsNullWhenNoFileMatchesCurrentVersion(): void
+    {
+        $resultMock = $this->createMock(Result::class);
+        $resultMock->method('fetchOne')->willReturn('5');
+
+        $this->connection->expects($this->once())
+            ->method('executeQuery')
+            ->with('SELECT MAX(version) FROM schema_version')
+            ->willReturn($resultMock);
+
+        $this->connection->expects($this->never())->method('executeStatement');
+
+        $tempDir = sys_get_temp_dir() . '/sparkinsight_migrations_' . bin2hex(random_bytes(8));
+        mkdir($tempDir);
+        file_put_contents($tempDir . '/001_initial.sql', 'SELECT 1;');
+        file_put_contents($tempDir . '/notes.sql', 'SELECT 1;');
+
+        try {
+            $this->assertNull($this->runner->rollbackLastMigration($tempDir));
+        } finally {
+            unlink($tempDir . '/001_initial.sql');
+            unlink($tempDir . '/notes.sql');
+            rmdir($tempDir);
+        }
+    }
+
+    public function testRollbackLastMigrationThrowsWhenDownSectionIsMissing(): void
+    {
+        $resultMock = $this->createMock(Result::class);
+        $resultMock->method('fetchOne')->willReturn('1');
+
+        $this->connection->expects($this->once())
+            ->method('executeQuery')
+            ->with('SELECT MAX(version) FROM schema_version')
+            ->willReturn($resultMock);
+
+        $tempDir = sys_get_temp_dir() . '/sparkinsight_migrations_' . bin2hex(random_bytes(8));
+        mkdir($tempDir);
+        file_put_contents($tempDir . '/001_initial.sql', 'CREATE TABLE t (id INT);');
+
+        try {
+            $this->expectException(\RuntimeException::class);
+            $this->expectExceptionMessage('No rollback section found');
+            $this->runner->rollbackLastMigration($tempDir);
+        } finally {
+            unlink($tempDir . '/001_initial.sql');
+            rmdir($tempDir);
+        }
+    }
+
     public function testRunMigrationsExecutesNewSqlFiles(): void
     {
         $resultMock = $this->createMock(\Doctrine\DBAL\Result::class);
