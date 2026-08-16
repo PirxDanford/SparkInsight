@@ -134,4 +134,40 @@ class CheckEnvironmentCommandTest extends TestCase
         $output = $tester->getDisplay();
         $this->assertStringContainsString('production', $output);
     }
+
+    public function testExecuteShowsCreateRightsWarningWhenDatabaseNeedsCreation(): void
+    {
+        $missingDbPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'sparkinsight_missing_db_' . uniqid('', true);
+
+        $_ENV['DB_DRIVER'] = 'pdo_sqlite';
+        $_ENV['DB_NAME'] = $missingDbPath;
+
+        $command = new CheckEnvironmentCommand();
+        $tester = new CommandTester($command);
+
+        try {
+            $exitCode = $tester->execute([]);
+
+            $this->assertSame(0, $exitCode);
+            $this->assertStringContainsString('Database connection successful', $tester->getDisplay());
+        } finally {
+            if (file_exists($missingDbPath)) {
+                unlink($missingDbPath);
+            }
+        }
+    }
+
+    public function testExecuteFailsWhenCreateDatabaseIsNotAllowed(): void
+    {
+        $_ENV['DB_DRIVER'] = 'mysql';
+        $_ENV['DB_NAME'] = 'sparkinsight_test';
+
+        $command = new CheckEnvironmentCommand();
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([]);
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('Database connection failed', $tester->getDisplay());
+    }
 }
